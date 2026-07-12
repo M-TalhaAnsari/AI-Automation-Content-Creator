@@ -1,0 +1,51 @@
+
+╔══════════════════════════════════════════════════════════╗
+║  🔥 TRENDFORGE — LINKEDIN CONTENT SERIES                              ║
+║  Topic: docker concepts                                  ║
+║  Sources: github, tavily                                 ║
+╚══════════════════════════════════════════════════════════╝
+
+────────────────────────────────────────────────────────────
+  POST 1/1 — Docker Interview Questions and Answers
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Want to ace your next Docker interview with confidence?
+
+  📌 SUMMARY
+  Highlight Dockerized applications you’ve built or contributed to
+  Describe issues you encountered, such as debugging containerization
+  Showcase your problem-solving skills in Docker environments
+
+  🔗 LINK
+  https://www.datacamp.com/blog/docker-interview-questions
+
+  ✍️  CAPTION
+  As a professional in the tech industry, being prepared for interviews is crucial. Docker is a key concept that can make or break your chances of landing your dream job. 
+         
+         Understanding Docker and its applications can help you stand out from the crowd. It's essential to be familiar with Dockerized applications, containerization, and debugging techniques. 
+         
+         By showcasing your knowledge and experience with Docker, you can demonstrate your problem-solving skills and ability to work with complex systems. This can be a major factor in determining your success in the industry.
+
+  🏷️  HASHTAGS
+  #Docker #InterviewPrep #CareerGrowth
+
+────────────────────────────────────────────────────────────
+  📊 TREND INSIGHT
+────────────────────────────────────────────────────────────
+  With the increasing demand for skilled professionals in the tech industry, being prepared for interviews is more crucial than ever. Docker is a highly sought-after skill, and having a deep understanding of its concepts and applications can significantly boost your chances of landing your dream job. By staying up-to-date with the latest trends and best practices, you can stay ahead of the competition and achieve your career goals.
+
+════════════════════════════════════════════════════
+  TOKEN USAGE REPORT
+════════════════════════════════════════════════════
+  Prompt parsing:        1306 tokens  (LLaMA3 8B)
+  Source routing:           0 tokens  (rules + LLaMA3 8B)
+  Data fetching:            0 tokens  (HTTP APIs — free)
+  Content generation:     586 tokens  (Gemini 2.0 Flash)
+  ────────────────────────────────────────────────
+  TOTAL:                 1892 tokens
+  ESTIMATED COST:      $0.0001 USD
+  ────────────────────────────────────────────────
+  Models used:    LLaMA3 8B (Groq), Gemini 2.0 Flash
+  Sources used:   github, tavily
+════════════════════════════════════════════════════

@@ -1,0 +1,143 @@
+
+╔══════════════════════════════════════════════════════════╗
+║  🔥 TRENDFORGE — INSTAGRAM CONTENT SERIES                             ║
+║  Topic: ML projects for career                           ║
+║  Sources: tavily                                         ║
+╚══════════════════════════════════════════════════════════╝
+
+────────────────────────────────────────────────────────────
+  POST 1/5 — The 5 Machine Learning Projects That Will Make Your Resume Stand Out in 2025
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  These 5 ML projects will stop recruiters from ignoring your resume.
+
+  📌 SUMMARY
+  Beats generic portfolio feedback
+  Targets 2025 industry demands
+  Designed for ambitious developers
+
+  🔗 LINK
+  https://medium.com/ai-analytics-diaries/the-5-machine-learning-projects-that-will-make-your-resume-stand-out-in-2025-3b2801d2de42
+
+  ✍️  CAPTION
+  Stop sending resumes that recruiters instantly reject. 💸
+  These 5 specific projects prove you build real-world AI.
+  🚀 High-impact portfolios open doors to $150k+ roles.
+  Which of these 5 projects are you building first?
+
+  🏷️  HASHTAGS
+  #machinelearning #datascience #ai #portfolio #resume #careerdevelopment #techcareers #softwareengineer #artificialintelligence #pythonprogramming #codinglife #careerchange #mlprojects #techjobs #dataanalyst
+
+────────────────────────────────────────────────────────────
+  POST 2/5 — 33 Machine Learning Projects for All Levels in 2026 - DataCamp
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  DataCamp just dropped 33 ML projects for all levels.
+
+  📌 SUMMARY
+  Matches industry leader applications
+  Defines cross-functional data roles
+  Scales from beginner to advanced
+
+  🔗 LINK
+  https://www.datacamp.com/blog/machine-learning-projects-for-all-levels
+
+  ✍️  CAPTION
+  Ready to see how global leaders actually use data? 📊
+  Get hands-on experience with 33 real-world machine learning builds.
+  💡 Real skills beat theoretical courses every single time.
+  What level project are you starting with today?
+
+  🏷️  HASHTAGS
+  #datacamp #machinelearningprojects #python #datascience #learncoding #careergoals #techcommunity #dataengineering #artificialintelligence #analytics #codingbootcamp #deeplearning #careerpath #ml #stem
+
+────────────────────────────────────────────────────────────
+  POST 3/5 — 10 Machine Learning Projects That Will Boost Your Portfolio | Udacity
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Udacity says projects speak louder than your degrees.
+
+  📌 SUMMARY
+  10 portfolio-boosting practical builds
+  Proves your actual ML competence
+  Perfect for job-seeking engineers
+
+  🔗 LINK
+  https://www.udacity.com/blog/10-machine-learning-projects-that-will-boost-your-portfolio
+
+  ✍️  CAPTION
+  Stop relying solely on degrees to get you hired. 🎓
+  Udacity’s 10 strategic projects prove you can solve complex problems.
+  🔥 Real builders write code, they don't just collect certificates.
+  Which project is going on your resume tonight?
+
+  🏷️  HASHTAGS
+  #udacity #portfoliobuilding #machinelearning #softwareengineering #techjobs #coding #careerdevelopment #aiengineer #selftaught #datasciencetips #programmerlife #developer #deeplearning #pythoncode #careertips
+
+────────────────────────────────────────────────────────────
+  POST 4/5 — 75+ Machine Learning Projects with Source Code [Solved]
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Get 75+ solved ML projects with complete Python source code.
+
+  📌 SUMMARY
+  75+ solved Python repositories
+  Instant plug-and-play portfolio assets
+  Designed for quick skill deployment
+
+  🔗 LINK
+  https://www.projectpro.io/article/top-10-machine-learning-projects-for-beginners-in-2021/397
+
+  ✍️  CAPTION
+  Stuck wondering how to write clean, production-grade ML code? 💻
+  This library has 75+ solved projects with Python source code.
+  🤯 No more guessing—just copy, learn, and deploy instantly.
+  Are you copying these solved projects or building solo?
+
+  🏷️  HASHTAGS
+  #pythonprojects #github #machinelearning #codinglife #programming #datascience #pythoncode #ai #softwaredeveloper #techcareer #learnpython #projectpro #sourcecode #portfolio #deeplearning
+
+────────────────────────────────────────────────────────────
+  POST 5/5 — How to Build a High-Value Machine Learning Career Portfolio
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Why your generic ML portfolio is keeping you unemployed.
+
+  📌 SUMMARY
+  Focus on solved production pipelines
+  Align builds with industry standards
+  For ambitious career switchers
+
+  ✍️  CAPTION
+  Generic Titanic datasets will not land you a 6-figure job. 📉
+  Industry leaders demand unique, production-grade machine learning pipelines.
+  ⚡️ Elevate your portfolio by solving real-world business problems today.
+  What is holding you back from launching your next project?
+
+  🏷️  HASHTAGS
+  #careeradvice #techindustry #machinelearning #portfolio #datascience #careerchange #hiringtech #aiengineer #softwaredevelopment #pythonprogramming #codingtips #careergoals #futureofwork #artificialintelligence #jobsearch
+
+────────────────────────────────────────────────────────────
+  📊 TREND INSIGHT
+────────────────────────────────────────────────────────────
+  Aspiring tech professionals are tired of generic roadmap advice. Sharing curated listicles with direct, actionable resources (like Python source code and industry-backed frameworks) drives massive save-to-share ratios on Instagram because it represents tangible shortcuts to employment.
+
+════════════════════════════════════════════════════
+  TOKEN USAGE REPORT
+════════════════════════════════════════════════════
+  Prompt parsing:         685 tokens  (LLaMA3 8B)
+  Source routing:           0 tokens  (rules + LLaMA3 8B)
+  Data fetching:            0 tokens  (HTTP APIs — free)
+  Content generation:    5538 tokens  (Gemini 2.0 Flash)
+  ────────────────────────────────────────────────
+  TOTAL:                 6223 tokens
+  ESTIMATED COST:      $0.0006 USD
+  ────────────────────────────────────────────────
+  Models used:    LLaMA3 8B (Groq), Gemini 2.0 Flash
+  Sources used:   tavily
+════════════════════════════════════════════════════

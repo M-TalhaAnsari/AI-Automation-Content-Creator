@@ -1,0 +1,161 @@
+
+╔══════════════════════════════════════════════════════════╗
+║  🔥 TRENDFORGE — YOUTUBE CONTENT SERIES                               ║
+║  Topic: top ML projects                                  ║
+║  Sources: hackernews, paperswithcode, tavily             ║
+╚══════════════════════════════════════════════════════════╝
+
+────────────────────────────────────────────────────────────
+  POST 1/5 — Decoding the obfuscated bash script on a Uniqlo t-shirt
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  This top ML projects project is changing everything 👇
+
+  📌 SUMMARY
+  📌 Decoding the obfuscated bash script on a Uniqlo t-shirt
+  🔗 Check the link for full details
+  ⭐ Save this post to revisit later
+
+  🔗 LINK
+  https://tris.sherliker.net/blog/obfuscated-self-evaluating-bash-script-by-cdn-akamai-being-supplied-to-consumers-via-retail-stores/
+
+  ✍️  CAPTION
+  🚀 Decoding the obfuscated bash script on a Uniqlo t-shirt
+  
+  
+  
+  Link in bio 👆
+  
+  Save this! 🔖
+
+  🏷️  HASHTAGS
+  #topMLprojects #trending #fyp #viral #learnmore
+
+────────────────────────────────────────────────────────────
+  POST 2/5 — Apple to increase spend with Broadcom to produce billions more U.S. chips
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  This top ML projects project is changing everything 👇
+
+  📌 SUMMARY
+  📌 Apple to increase spend with Broadcom to produce billions more U.S. chips
+  🔗 Check the link for full details
+  ⭐ Save this post to revisit later
+
+  🔗 LINK
+  https://www.apple.com/newsroom/2026/07/apple-to-increase-spend-with-broadcom-to-produce-billions-more-us-chips/
+
+  ✍️  CAPTION
+  🚀 Apple to increase spend with Broadcom to produce billions more U.S. chips
+  
+  
+  
+  Link in bio 👆
+  
+  Save this! 🔖
+
+  🏷️  HASHTAGS
+  #topMLprojects #trending #fyp #viral #learnmore
+
+────────────────────────────────────────────────────────────
+  POST 3/5 — Tiny data centre used to heat public swimming pool
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  This top ML projects project is changing everything 👇
+
+  📌 SUMMARY
+  📌 Tiny data centre used to heat public swimming pool
+  🔗 Check the link for full details
+  ⭐ Save this post to revisit later
+
+  🔗 LINK
+  https://www.bbc.com/news/technology-64939558
+
+  ✍️  CAPTION
+  🚀 Tiny data centre used to heat public swimming pool
+  
+  
+  
+  Link in bio 👆
+  
+  Save this! 🔖
+
+  🏷️  HASHTAGS
+  #topMLprojects #trending #fyp #viral #learnmore
+
+────────────────────────────────────────────────────────────
+  POST 4/5 — GitLost: We Tricked GitHub's AI Agent into Leaking Private Repos
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  This top ML projects project is changing everything 👇
+
+  📌 SUMMARY
+  📌 GitLost: We Tricked GitHub's AI Agent into Leaking Private Repos
+  🔗 Check the link for full details
+  ⭐ Save this post to revisit later
+
+  🔗 LINK
+  https://noma.security/blog/gitlost-how-we-tricked-githubs-ai-agent-into-leaking-private-repos/
+
+  ✍️  CAPTION
+  🚀 GitLost: We Tricked GitHub's AI Agent into Leaking Private Repos
+  
+  
+  
+  Link in bio 👆
+  
+  Save this! 🔖
+
+  🏷️  HASHTAGS
+  #topMLprojects #trending #fyp #viral #learnmore
+
+────────────────────────────────────────────────────────────
+  POST 5/5 — How to Build a Minimal ZFS NAS Without Synology, QNAP, TrueNAS (2024)
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  This top ML projects project is changing everything 👇
+
+  📌 SUMMARY
+  📌 How to Build a Minimal ZFS NAS Without Synology, QNAP, TrueNAS (2024)
+  🔗 Check the link for full details
+  ⭐ Save this post to revisit later
+
+  🔗 LINK
+  https://neil.computer/notes/how-to-setup-minimal-zfs-nas-without-truenas/
+
+  ✍️  CAPTION
+  🚀 How to Build a Minimal ZFS NAS Without Synology, QNAP, TrueNAS (2024)
+  
+  
+  
+  Link in bio 👆
+  
+  Save this! 🔖
+
+  🏷️  HASHTAGS
+  #topMLprojects #trending #fyp #viral #learnmore
+
+────────────────────────────────────────────────────────────
+  📊 TREND INSIGHT
+────────────────────────────────────────────────────────────
+  best machine learning projects online
+
+════════════════════════════════════════════════════
+  TOKEN USAGE REPORT
+════════════════════════════════════════════════════
+  Prompt parsing:         402 tokens  (LLaMA3 8B)
+  Source routing:           0 tokens  (rules + LLaMA3 8B)
+  Data fetching:            0 tokens  (HTTP APIs — free)
+  Content generation:    4436 tokens  (Gemini 2.0 Flash)
+  ────────────────────────────────────────────────
+  TOTAL:                 4838 tokens
+  ESTIMATED COST:      $0.0005 USD
+  ────────────────────────────────────────────────
+  Models used:    LLaMA3 8B (Groq), Gemini 2.0 Flash
+  Sources used:   hackernews, paperswithcode, tavily
+════════════════════════════════════════════════════

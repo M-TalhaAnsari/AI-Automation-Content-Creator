@@ -1,0 +1,53 @@
+﻿use_default_settings: true
+
+server:
+  secret_key: "your-secret-key-change-this"
+  limiter: false
+  public_instance: false
+  http_protocol_version: "1.1"
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "en"
+  formats:
+    - html
+    - json
+
+outgoing:
+  request_timeout: 10.0
+  max_request_timeout: 20.0
+  useragent_suffix: ""
+  pool_connections: 100
+  pool_maxsize: 20
+  enable_http2: true
+
+ui:
+  theme: simple
+  default_locale: "en"
+  query_in_title: true
+
+engines:
+  - name: google
+    engine: google
+    shortcut: go
+    categories: [general]
+    disabled: false
+
+  - name: bing
+    engine: bing
+    shortcut: bi
+    categories: [general]
+    disabled: false
+
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: ddg
+    categories: [general]
+    disabled: false
+
+  - name: reddit
+    engine: reddit
+    shortcut: rd
+    categories: [social]
+    disabled: false

@@ -1,0 +1,20 @@
+# LLM providers
+groq>=0.11.0                    # LLaMA3 8B/70B — routing + parsing
+google-generativeai>=0.8.0      # Gemini 2.0 Flash — content generation
+
+# Agent framework
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-community>=0.3.0
+langgraph>=0.2.0
+
+# Data sources
+tavily-python>=0.5.0            # Web search fallback
+praw>=7.7.0                     # Reddit API
+pytrends>=4.9.0                 # Google Trends
+google-api-python-client>=2.0   # YouTube Data API
+requests>=2.31.0                # GitHub + HackerNews + PwC + HuggingFace (HTTP)
+
+# Utilities
+python-dotenv>=1.0.0
+rich>=13.0.0                    # Pretty terminal output

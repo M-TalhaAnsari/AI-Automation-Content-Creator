@@ -1,0 +1,161 @@
+
+╔══════════════════════════════════════════════════════════╗
+║  🔥 TRENDFORGE — INSTAGRAM CONTENT SERIES                             ║
+║  Topic: docker cheatsheet                                ║
+║  Sources: github, tavily                                 ║
+╚══════════════════════════════════════════════════════════╝
+
+────────────────────────────────────────────────────────────
+  POST 1/5 — crescentpartha/CheatSheets-for-Developers
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  This docker cheatsheet project is changing everything 👇
+
+  📌 SUMMARY
+  📌 A collection of programming CheatSheets for developers to boost your productivit
+  🔗 Check the link for full details
+  ⭐ Save this post to revisit later
+
+  🔗 LINK
+  https://github.com/crescentpartha/CheatSheets-for-Developers
+
+  ✍️  CAPTION
+  🚀 crescentpartha/CheatSheets-for-Developers
+  
+  A collection of programming CheatSheets for developers to boost your productivity and quick review to remember while working.
+  
+  Link in bio 👆
+  
+  Save this! 🔖
+
+  🏷️  HASHTAGS
+  #dockercheatsheet #trending #fyp #viral #learnmore
+
+────────────────────────────────────────────────────────────
+  POST 2/5 — The Ultimate Docker Cheat Sheet | dockerlabs - Collabnix
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  This docker cheatsheet project is changing everything 👇
+
+  📌 SUMMARY
+  📌 A cheatsheet is a concise summary of important information that is meant to be u
+  🔗 Check the link for full details
+  ⭐ Save this post to revisit later
+
+  🔗 LINK
+  https://dockerlabs.collabnix.com/docker/cheatsheet
+
+  ✍️  CAPTION
+  🚀 The Ultimate Docker Cheat Sheet | dockerlabs - Collabnix
+  
+  A cheatsheet is a concise summary of important information that is meant to be used as a quick reference. In the context of Docker, a Docker cheatshee
+  
+  Link in bio 👆
+  
+  Save this! 🔖
+
+  🏷️  HASHTAGS
+  #dockercheatsheet #trending #fyp #viral #learnmore
+
+────────────────────────────────────────────────────────────
+  POST 3/5 — Docker Cheat Sheet
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  This docker cheatsheet project is changing everything 👇
+
+  📌 SUMMARY
+  📌 It is a quick and easy way to learn about the most common Docker commands and co
+  🔗 Check the link for full details
+  ⭐ Save this post to revisit later
+
+  🔗 LINK
+  https://www.coursera.org/collections/docker-cheat-sheet
+
+  ✍️  CAPTION
+  🚀 Docker Cheat Sheet
+  
+  It is a quick and easy way to learn about the most common Docker commands and concepts, and it can help you to containerize and deploy applications ef
+  
+  Link in bio 👆
+  
+  Save this! 🔖
+
+  🏷️  HASHTAGS
+  #dockercheatsheet #trending #fyp #viral #learnmore
+
+────────────────────────────────────────────────────────────
+  POST 4/5 — [PDF] CLI Cheat Sheet - Docker Docs
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  This docker cheatsheet project is changing everything 👇
+
+  📌 SUMMARY
+  📌 Publish an image to Docker Hub. Search Hub for an image. Pull an image from a Do
+  🔗 Check the link for full details
+  ⭐ Save this post to revisit later
+
+  🔗 LINK
+  https://docs.docker.com/get-started/docker_cheatsheet.pdf
+
+  ✍️  CAPTION
+  🚀 [PDF] CLI Cheat Sheet - Docker Docs
+  
+  Publish an image to Docker Hub. Search Hub for an image. Pull an image from a Docker Hub. Create and run a container from an image, with a custom name
+  
+  Link in bio 👆
+  
+  Save this! 🔖
+
+  🏷️  HASHTAGS
+  #dockercheatsheet #trending #fyp #viral #learnmore
+
+────────────────────────────────────────────────────────────
+  POST 5/5 — CLI Cheat Sheet
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  This docker cheatsheet project is changing everything 👇
+
+  📌 SUMMARY
+  📌 #### Docker Desktop. #### Docker Hub. #### Docker Scout. #### 1 Docker Scout-ena
+  🔗 Check the link for full details
+  ⭐ Save this post to revisit later
+
+  🔗 LINK
+  https://www.docker.com/resources/cli-cheat-sheet
+
+  ✍️  CAPTION
+  🚀 CLI Cheat Sheet
+  
+  #### Docker Desktop. #### Docker Hub. #### Docker Scout. #### 1 Docker Scout-enabled repo\*. #### 100 Docker Hub pulls/hr\*. #### 1 private Docker Hub
+  
+  Link in bio 👆
+  
+  Save this! 🔖
+
+  🏷️  HASHTAGS
+  #dockercheatsheet #trending #fyp #viral #learnmore
+
+────────────────────────────────────────────────────────────
+  📊 TREND INSIGHT
+────────────────────────────────────────────────────────────
+  docker commands cheatsheet
+
+════════════════════════════════════════════════════
+  TOKEN USAGE REPORT
+════════════════════════════════════════════════════
+  Prompt parsing:         390 tokens  (LLaMA3 8B)
+  Source routing:           0 tokens  (rules + LLaMA3 8B)
+  Data fetching:            0 tokens  (HTTP APIs — free)
+  Content generation:       0 tokens  (Gemini 2.0 Flash)
+  ────────────────────────────────────────────────
+  TOTAL:                  390 tokens
+  ESTIMATED COST:      $0.0000 USD
+  ────────────────────────────────────────────────
+  Models used:    LLaMA3 8B (Groq), Gemini 2.0 Flash
+  Sources used:   github, tavily
+════════════════════════════════════════════════════

@@ -1,0 +1,141 @@
+
+╔══════════════════════════════════════════════════════════╗
+║  🔥 TRENDFORGE — INSTAGRAM CONTENT SERIES                             ║
+║  Topic: machine learning projects                        ║
+║  Sources: github, tavily                                 ║
+╚══════════════════════════════════════════════════════════╝
+
+────────────────────────────────────────────────────────────
+  POST 1/5 — TensorFlow
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Want to build AI models like a pro? 🤖💻
+
+  📌 SUMMARY
+  TensorFlow is an open-source machine learning framework
+  It has over 196,000 stars on GitHub, making it a widely-used tool
+  Developers can use it to build and train AI models with ease
+
+  🔗 LINK
+  https://github.com/tensorflow/tensorflow
+
+  ✍️  CAPTION
+  Are you ready to take your machine learning skills to the next level? 🚀 TensorFlow is an open-source framework that makes it easy to build and train AI models. With its vast community and extensive documentation, you'll be able to create complex models in no time. 🤓 Whether you're a beginner or an experienced developer, TensorFlow is the perfect tool for you. So why wait? Start building your AI models today and join the thousands of developers who have already made the switch. 💻👍
+  
+             TensorFlow is used in a variety of applications, from image recognition to natural language processing. It's also widely used in the industry, with companies like Google, Facebook, and Netflix relying on it for their AI needs. 📊 So if you want to build AI models like a pro, look no further than TensorFlow. 🚀
+
+  🏷️  HASHTAGS
+  #MachineLearning #AI #TensorFlow #OpenSource
+
+────────────────────────────────────────────────────────────
+  POST 2/5 — ML-For-Beginners
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  New to machine learning? Start here! 📚
+
+  📌 SUMMARY
+  ML-For-Beginners is a 12-week course with 26 lessons and 52 quizzes
+  It covers the basics of machine learning, including data preprocessing and model evaluation
+  The course is perfect for beginners who want to learn machine learning from scratch
+
+  🔗 LINK
+  https://github.com/microsoft/ML-For-Beginners
+
+  ✍️  CAPTION
+  Are you new to machine learning and don't know where to start? 🤔 Look no further than ML-For-Beginners, a 12-week course that covers the basics of machine learning. With 26 lessons and 52 quizzes, you'll be able to learn machine learning from scratch and start building your own models in no time. 📊
+  
+             The course is designed for beginners, so you don't need any prior experience with machine learning to get started. 📚 It's also completely free, so you can learn at your own pace without breaking the bank. 💸 So why wait? Start learning machine learning today and join the thousands of developers who have already made the switch. 🚀
+
+  🏷️  HASHTAGS
+  #MachineLearning #Beginners #Course #Free
+
+────────────────────────────────────────────────────────────
+  POST 3/5 — Machine Learning Projects on GitHub
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Want to build your own machine learning projects? 🤔
+
+  📌 SUMMARY
+  There are thousands of machine learning projects on GitHub to choose from
+  You can find projects on image recognition, natural language processing, and more
+  Building your own projects is a great way to learn machine learning and improve your skills
+
+  🔗 LINK
+  https://www.projectpro.io/article/machine-learning-projects-on-github/465
+
+  ✍️  CAPTION
+  Are you looking for a way to improve your machine learning skills and build your own projects? 🤔 Look no further than GitHub, where you can find thousands of machine learning projects to choose from. From image recognition to natural language processing, there's a project out there for you. 📊
+  
+             Building your own projects is a great way to learn machine learning and improve your skills. 📚 You'll be able to work with real-world data and build models that can solve real-world problems. 🌎 So why wait? Start building your own machine learning projects today and join the thousands of developers who have already made the switch. 🚀
+
+  🏷️  HASHTAGS
+  #MachineLearning #Projects #GitHub #BuildYourOwn
+
+────────────────────────────────────────────────────────────
+  POST 4/5 — 100+ Machine Learning Projects with Source Code
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Want to learn from the best machine learning projects? 🤓
+
+  📌 SUMMARY
+  There are over 100 machine learning projects with source code available
+  You can learn from projects on image recognition, natural language processing, and more
+  The projects are perfect for beginners and experienced developers alike
+
+  🔗 LINK
+  https://www.geeksforgeeks.org/machine-learning/machine-learning-projects
+
+  ✍️  CAPTION
+  Are you looking for a way to learn from the best machine learning projects? 🤓 Look no further than GeeksforGeeks, where you can find over 100 machine learning projects with source code. From image recognition to natural language processing, there's a project out there for you. 📊
+  
+             The projects are perfect for beginners and experienced developers alike. 📚 You'll be able to learn from the best and improve your skills in no time. 🚀 So why wait? Start learning from the best machine learning projects today and join the thousands of developers who have already made the switch. 💻
+
+  🏷️  HASHTAGS
+  #MachineLearning #Projects #SourceCode #LearnFromTheBest
+
+────────────────────────────────────────────────────────────
+  POST 5/5 — Top AI GitHub Repositories
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Want to stay up-to-date with the latest AI trends? 🚀
+
+  📌 SUMMARY
+  There are thousands of AI-related repositories on GitHub
+  You can find repositories on machine learning, natural language processing, and more
+  Staying up-to-date with the latest AI trends is crucial for any developer
+
+  🔗 LINK
+  https://blog.bytebytego.com/p/top-ai-github-repositories-in-2026
+
+  ✍️  CAPTION
+  Are you looking for a way to stay up-to-date with the latest AI trends? 🚀 Look no further than GitHub, where you can find thousands of AI-related repositories. From machine learning to natural language processing, there's a repository out there for you. 📊
+  
+             Staying up-to-date with the latest AI trends is crucial for any developer. 📚 You'll be able to learn from the best and improve your skills in no time. 🤓 So why wait? Start exploring the top AI GitHub repositories today and join the thousands of developers who have already made the switch. 💻
+
+  🏷️  HASHTAGS
+  #AI #GitHub #Repositories #StayUpToDate
+
+────────────────────────────────────────────────────────────
+  📊 TREND INSIGHT
+────────────────────────────────────────────────────────────
+  Machine learning is one of the fastest-growing fields in tech, with thousands of new projects and repositories being created every day. 🚀 Staying up-to-date with the latest trends and technologies is crucial for any developer who wants to succeed in this field. 📊 By following these 5 projects and resources, you'll be able to learn from the best and improve your skills in no time. 🤓
+
+════════════════════════════════════════════════════
+  TOKEN USAGE REPORT
+════════════════════════════════════════════════════
+  Prompt parsing:        1419 tokens  (LLaMA3 8B)
+  Source routing:           0 tokens  (rules + LLaMA3 8B)
+  Data fetching:            0 tokens  (HTTP APIs — free)
+  Content generation:    1478 tokens  (Gemini 2.0 Flash)
+  ────────────────────────────────────────────────
+  TOTAL:                 2897 tokens
+  ESTIMATED COST:      $0.0002 USD
+  ────────────────────────────────────────────────
+  Models used:    LLaMA3 8B (Groq), Gemini 2.0 Flash
+  Sources used:   github, tavily
+════════════════════════════════════════════════════

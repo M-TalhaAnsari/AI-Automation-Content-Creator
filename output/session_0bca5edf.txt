@@ -1,0 +1,141 @@
+
+╔══════════════════════════════════════════════════════════╗
+║  🔥 TRENDFORGE — INSTAGRAM CONTENT SERIES                             ║
+║  Topic: top ML projects                                  ║
+║  Sources: github, tavily                                 ║
+╚══════════════════════════════════════════════════════════╝
+
+────────────────────────────────────────────────────────────
+  POST 1/5 — TensorFlow
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  🚀 Unlock the power of AI with the world’s most popular ML framework!
+
+  📌 SUMMARY
+  Scalable across CPUs, GPUs, and mobile devices
+  Rich ecosystem of tools, tutorials, and community support
+  Boosts your career with in‑demand deep‑learning skills
+
+  🔗 LINK
+  https://github.com/tensorflow/tensorflow
+
+  ✍️  CAPTION
+  🌟 Imagine building image classifiers, language translators, or recommendation engines—all from your laptop. TensorFlow makes that dream a reality with its flexible APIs and massive community support.
+  
+  Whether you’re a hobbyist or aiming for a senior AI role, mastering TensorFlow opens doors to cutting‑edge projects and high‑impact positions. 🎯 Dive in, experiment, and watch your ideas come to life!
+
+  🏷️  HASHTAGS
+  #TensorFlow #AI #MachineLearning #DeepLearning #TechLifestyle
+
+────────────────────────────────────────────────────────────
+  POST 2/5 — 30 Days of Python
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  💡 What if you could master Python in just 30 days?
+
+  📌 SUMMARY
+  Daily bite‑sized lessons keep momentum high
+  Hands‑on mini‑projects reinforce real‑world coding
+  Build a showcase portfolio faster than a semester
+
+  🔗 LINK
+  https://github.com/Asabeneh/30-Days-Of-Python
+
+  ✍️  CAPTION
+  🚀 A month, 30 challenges, endless possibilities. This curated Python sprint turns beginners into confident coders, one day at a time.
+  
+  Each lesson pairs theory with a mini‑project—think data visualizations, web scrapers, and simple AI models. By day 30 you’ll have a polished GitHub repo that screams “ready for AI internships!” 🌱
+
+  🏷️  HASHTAGS
+  #Python #30DaysChallenge #CodingLife #DataScience #LearnToCode
+
+────────────────────────────────────────────────────────────
+  POST 3/5 — Best of ML Python Libraries
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  🔎 Discover the hidden gems of Python ML libraries that pros swear by!
+
+  📌 SUMMARY
+  Curated, weekly‑updated list saves research time
+  Covers data prep, modeling, visualization, and deployment
+  Helps you pick the right tool for any AI problem
+
+  🔗 LINK
+  https://github.com/lukasmasuch/best-of-ml-python
+
+  ✍️  CAPTION
+  ✨ From pandas to PyTorch Lightning, this treasure map of Python ML libraries lets you skip the endless Googling.
+  
+  Each entry includes a short description, star rating, and quick start tips—perfect for building sleek pipelines or impressing recruiters with the latest tech stack. 📊 Upgrade your toolbox today!
+
+  🏷️  HASHTAGS
+  #MLPython #OpenSource #DataScienceTools #AICommunity #DevLife
+
+────────────────────────────────────────────────────────────
+  POST 4/5 — ONNX
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  ⚡️ Want your models to run anywhere? Meet the universal AI translator.
+
+  📌 SUMMARY
+  Framework‑agnostic model exchange format
+  Optimized inference for edge, cloud, and mobile
+  Future‑proofs projects against tech lock‑in
+
+  🔗 LINK
+  https://github.com/onnx/onnx
+
+  ✍️  CAPTION
+  🌐 Build a model in TensorFlow, PyTorch, or Scikit‑Learn—then export it with ONNX to run on any platform.
+  
+  This open standard cuts deployment friction, speeds up experimentation, and ensures your AI creations stay versatile as the ecosystem evolves. 🚀 Ready to make your models truly portable?
+
+  🏷️  HASHTAGS
+  #ONNX #ModelInteroperability #AI #TechInnovation #CrossPlatform
+
+────────────────────────────────────────────────────────────
+  POST 5/5 — 100+ Machine Learning Projects (GeeksforGeeks)
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  📚 100+ hands‑on ML projects to skyrocket your portfolio!
+
+  📌 SUMMARY
+  Real‑world use cases across vision, NLP, and tabular data
+  Ready‑to‑clone source code accelerates learning
+  Ideal for interview prep and showcasing expertise
+
+  🔗 LINK
+  https://www.geeksforgeeks.org/machine-learning/machine-learning-projects
+
+  ✍️  CAPTION
+  🔥 Need a project that turns heads? This curated list offers over a hundred end‑to‑end ML ideas—spam detection, sentiment analysis, image classification, and more.
+  
+  Pick a project, fork the repo, add your twist, and post the results. Watch recruiters and peers engage, comment, and share your work. 🎉 Your next career boost is just a click away!
+
+  🏷️  HASHTAGS
+  #MachineLearningProjects #PortfolioBoost #AIProjects #TechCareer #GFG
+
+────────────────────────────────────────────────────────────
+  📊 TREND INSIGHT
+────────────────────────────────────────────────────────────
+  AI skills are exploding on LinkedIn and Instagram, and creators who share concrete project ideas see massive saves as followers use them for career pivots. Short, actionable project lists tap into the community’s hunger for tangible, share‑ready content, driving high engagement.
+
+════════════════════════════════════════════════════
+  TOKEN USAGE REPORT
+════════════════════════════════════════════════════
+  Prompt parsing:         642 tokens  (LLaMA3 8B)
+  Source routing:           0 tokens  (rules + LLaMA3 8B)
+  Data fetching:            0 tokens  (HTTP APIs — free)
+  Content generation:    1024 tokens  (Gemini 2.0 Flash)
+  ────────────────────────────────────────────────
+  TOTAL:                 1666 tokens
+  ESTIMATED COST:      $0.0001 USD
+  ────────────────────────────────────────────────
+  Models used:    LLaMA3 8B (Groq), Gemini 2.0 Flash
+  Sources used:   github, tavily
+════════════════════════════════════════════════════

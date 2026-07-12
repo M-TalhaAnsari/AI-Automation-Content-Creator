@@ -1,0 +1,116 @@
+
+╔══════════════════════════════════════════════════════════╗
+║  🔥 TRENDFORGE — INSTAGRAM CONTENT SERIES                             ║
+║  Topic: machine learning projects                        ║
+║  Sources: github, tavily                                 ║
+╚══════════════════════════════════════════════════════════╝
+
+────────────────────────────────────────────────────────────
+  POST 1/5 — Deep Learning Travel Planner
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Want to build an AI-powered travel planner that can suggest personalized itineraries?
+
+  📌 SUMMARY
+  Core Technical Highlight: Natural Language Processing
+  Key System Asset: Destination recommendation engine
+  Deployment Target: Mobile application
+
+  ✍️  CAPTION
+  Are you ready to revolutionize the travel industry with AI? Our Deep Learning Travel Planner project uses natural language processing to understand user preferences and suggest personalized itineraries. The tech stack includes Python, TensorFlow, and Keras. The core system architecture consists of a user input interface, a destination recommendation engine, and a booking system integration. Want to get started? Comment 'TRAVEL' below to receive the GitHub link in your DMs!
+
+  🏷️  HASHTAGS
+  #MachineLearning #TravelTech #AI
+
+────────────────────────────────────────────────────────────
+  POST 2/5 — Fake News Detector using Deep Learning
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Can you build a system that can detect fake news with high accuracy?
+
+  📌 SUMMARY
+  Core Technical Highlight: Deep learning-based text classification
+  Key System Asset: News article dataset
+  Deployment Target: Web application
+
+  ✍️  CAPTION
+  Fake news can have serious consequences, but what if you could build a system to detect it? Our Fake News Detector project uses deep learning-based text classification to identify false news items. The tech stack includes Python, TensorFlow, and scikit-learn. The core system architecture consists of a news article dataset, a text preprocessing module, and a classification model. Want to get started? Comment 'FAKE' below to receive the GitHub link in your DMs!
+
+  🏷️  HASHTAGS
+  #MachineLearning #FakeNews #DeepLearning
+
+────────────────────────────────────────────────────────────
+  POST 3/5 — ChatGPT Project: Effective Prompt Engineering
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Want to build a conversational AI model that can understand and respond to user queries?
+
+  📌 SUMMARY
+  Core Technical Highlight: Prompt engineering
+  Key System Asset: Conversational AI dataset
+  Deployment Target: Chat application
+
+  ✍️  CAPTION
+  Conversational AI models are becoming increasingly popular, but building an effective one can be challenging. Our ChatGPT Project uses prompt engineering to improve the performance of conversational AI models. The tech stack includes Python, TensorFlow, and PyTorch. The core system architecture consists of a conversational AI dataset, a prompt engineering module, and a model training module. Want to get started? Comment 'CHAT' below to receive the GitHub link in your DMs!
+
+  🏷️  HASHTAGS
+  #MachineLearning #ConversationalAI #PromptEngineering
+
+────────────────────────────────────────────────────────────
+  POST 4/5 — Classifying Banking Intent from Customer Queries
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Can you build a system that can classify banking intent from customer queries with high accuracy?
+
+  📌 SUMMARY
+  Core Technical Highlight: Natural Language Processing
+  Key System Asset: Banking query dataset
+  Deployment Target: Customer service application
+
+  ✍️  CAPTION
+  Classifying banking intent from customer queries can help improve customer service and reduce response time. Our project uses natural language processing to classify banking intent from customer queries. The tech stack includes Python, scikit-learn, and NLTK. The core system architecture consists of a banking query dataset, a text preprocessing module, and a classification model. Want to get started? Comment 'BANK' below to receive the GitHub link in your DMs!
+
+  🏷️  HASHTAGS
+  #MachineLearning #NaturalLanguageProcessing #Banking
+
+────────────────────────────────────────────────────────────
+  POST 5/5 — Instagram Machine Learning Algorithm
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Want to build a machine learning algorithm that can suggest personalized content to users?
+
+  📌 SUMMARY
+  Core Technical Highlight: Collaborative filtering
+  Key System Asset: User interaction dataset
+  Deployment Target: Social media application
+
+  ✍️  CAPTION
+  Instagram's machine learning algorithm is a complex system that suggests personalized content to users. Our project uses collaborative filtering to build a similar algorithm. The tech stack includes Python, TensorFlow, and PyTorch. The core system architecture consists of a user interaction dataset, a collaborative filtering module, and a recommendation engine. Want to get started? Comment 'INSTA' below to receive the GitHub link in your DMs!
+
+  🏷️  HASHTAGS
+  #MachineLearning #Instagram #RecommendationSystem
+
+────────────────────────────────────────────────────────────
+  📊 TREND INSIGHT
+────────────────────────────────────────────────────────────
+  Machine learning is a rapidly growing field with increasing demand for skilled professionals. Building a strong portfolio with real-world projects can help you stand out in the job market. With the rise of social media and e-commerce, there is a growing need for personalized recommendation systems and conversational AI models. By working on these projects, you can gain hands-on experience with machine learning algorithms and techniques, and demonstrate your skills to potential employers.
+
+════════════════════════════════════════════════════
+  TOKEN USAGE REPORT
+════════════════════════════════════════════════════
+  Prompt parsing:        1512 tokens  (LLaMA3 8B)
+  Source routing:           0 tokens  (rules + LLaMA3 8B)
+  Data fetching:            0 tokens  (HTTP APIs — free)
+  Content generation:    1698 tokens  (Gemini 2.0 Flash)
+  ────────────────────────────────────────────────
+  TOTAL:                 3210 tokens
+  ESTIMATED COST:      $0.0002 USD
+  ────────────────────────────────────────────────
+  Models used:    LLaMA3 8B (Groq), Gemini 2.0 Flash
+  Sources used:   github, tavily
+════════════════════════════════════════════════════

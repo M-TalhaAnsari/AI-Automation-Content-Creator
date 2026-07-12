@@ -1,0 +1,125 @@
+
+╔══════════════════════════════════════════════════════════╗
+║  🔥 TRENDFORGE — INSTAGRAM CONTENT SERIES                             ║
+║  Topic: claude fable 5                                   ║
+║  Sources: tavily, google_trends                          ║
+╚══════════════════════════════════════════════════════════╝
+
+────────────────────────────────────────────────────────────
+  POST 1/5 — Introducing Claude Fable 5: The Latest AI Innovation
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Get ready to experience the future of AI with Claude Fable 5!
+
+  📌 SUMMARY
+  Claude Fable 5 has been launched with new features
+  It supports task budgets, memory tools, and code execution
+  Developers can expect improved performance and security
+
+  🔗 LINK
+  https://platform.claude.com/docs/en/about-claude/models/introducing-claude-fable-5-and-claude-mythos-5
+
+  ✍️  CAPTION
+  Claude Fable 5 is here! This latest AI model from Anthropic comes with exciting features like task budgets, memory tools, and code execution. But what does this mean for developers? With Claude Fable 5, you can expect improved performance, security, and efficiency. How do you think Claude Fable 5 will change the game for AI development? 🤔💻
+
+  🏷️  HASHTAGS
+  #ClaudeFable5 #AIInnovation #Anthropic
+
+────────────────────────────────────────────────────────────
+  POST 2/5 — Claude Fable 5 Review: What Developers Really Think
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  The wait is over! See what developers are saying about Claude Fable 5
+
+  📌 SUMMARY
+  Developers have shared their initial reactions to Claude Fable 5
+  The model has received praise for its performance and features
+  Some developers have reported issues with integration and compatibility
+
+  🔗 LINK
+  https://tosea.ai/blog/claude-fable-5-review-developer-reactions
+
+  ✍️  CAPTION
+  The reviews are in! Developers have been sharing their thoughts on Claude Fable 5, and the consensus is overwhelmingly positive. With its impressive performance and features, Claude Fable 5 is set to revolutionize the world of AI development. But what are the potential drawbacks? How do you think Claude Fable 5 will impact your work as a developer? 💬👀
+
+  🏷️  HASHTAGS
+  #ClaudeFable5Review #DeveloperReactions #AICommunity
+
+────────────────────────────────────────────────────────────
+  POST 3/5 — Unlocking the Power of Claude Fable 5 with CodeGraph
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Take your Claude Fable 5 experience to the next level with CodeGraph!
+
+  📌 SUMMARY
+  CodeGraph is a local MCP knowledge-graph that optimizes Claude Fable 5 performance
+  It reduces costs and improves efficiency by up to 70%
+  Developers can integrate CodeGraph with Claude Fable 5 for enhanced results
+
+  🔗 LINK
+  https://tosea.ai/blog/claude-fable-5-review-developer-reactions
+
+  ✍️  CAPTION
+  Want to get the most out of Claude Fable 5? CodeGraph is the answer! This powerful tool optimizes performance, reduces costs, and improves efficiency. By integrating CodeGraph with Claude Fable 5, developers can unlock new possibilities and take their work to the next level. What are your thoughts on using CodeGraph with Claude Fable 5? 🚀💻
+
+  🏷️  HASHTAGS
+  #CodeGraph #ClaudeFable5Optimization #AIPerformance
+
+────────────────────────────────────────────────────────────
+  POST 4/5 — Claude Fable 5 vs Other AI Models: How Does it Compare?
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  The ultimate showdown: Claude Fable 5 vs the competition!
+
+  📌 SUMMARY
+  Claude Fable 5 has been compared to other AI models like GPT 5.5 and Gemini 3.5 Flash
+  It offers unique features and performance advantages
+  Developers must consider their specific needs when choosing an AI model
+
+  ✍️  CAPTION
+  The AI landscape is getting crowded! Claude Fable 5 is just one of many models vying for attention. But how does it stack up against the competition? With its unique features and performance advantages, Claude Fable 5 is a strong contender. What factors do you consider when choosing an AI model for your projects? 🤔📊
+
+  🏷️  HASHTAGS
+  #ClaudeFable5Comparison #AIModelShowdown #DeveloperChoices
+
+────────────────────────────────────────────────────────────
+  POST 5/5 — The Future of AI Development with Claude Fable 5
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  The future is here! See how Claude Fable 5 is shaping the world of AI development
+
+  📌 SUMMARY
+  Claude Fable 5 is poised to revolutionize AI development
+  It offers new possibilities for innovation and growth
+  Developers must stay ahead of the curve to capitalize on its potential
+
+  ✍️  CAPTION
+  The future of AI development is bright! With Claude Fable 5, developers have a powerful tool at their disposal. As the AI landscape continues to evolve, it's essential to stay ahead of the curve and capitalize on the latest advancements. What do you think the future holds for AI development, and how will Claude Fable 5 play a role? 🌟💡
+
+  🏷️  HASHTAGS
+  #AIFuture #ClaudeFable5Impact #DeveloperInnovation
+
+────────────────────────────────────────────────────────────
+  📊 TREND INSIGHT
+────────────────────────────────────────────────────────────
+  The AI market is experiencing rapid growth, with new models and technologies emerging every day. Claude Fable 5 is at the forefront of this trend, offering developers a powerful tool for innovation and growth. As the demand for AI solutions continues to rise, staying informed about the latest developments is crucial for success. With its unique features and performance advantages, Claude Fable 5 is set to drive high organic engagement and interest among developers and AI enthusiasts.
+
+════════════════════════════════════════════════════
+                TOKEN USAGE REPORT
+                ════════════════════════════════════════════════════
+                Prompt parsing:        1484 tokens  (Groq — openai/gpt-oss-20b)
+                Source routing:           0 tokens  (rules + Groq fallback)
+                Data fetching:            0 tokens  (HTTP APIs — free)
+                Content generation:    1960 tokens  (openai/gpt-oss-120b)
+                ────────────────────────────────────────────────
+                TOTAL:                 3444 tokens
+                ESTIMATED COST:      $0.0012 USD
+                ────────────────────────────────────────────────
+                Models used:    openai/gpt-oss-20b (Groq), openai/gpt-oss-120b (Groq)
+                Sources used:   tavily, google_trends
+                ════════════════════════════════════════════════════

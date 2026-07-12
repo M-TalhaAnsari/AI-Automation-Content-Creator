@@ -1,0 +1,50 @@
+
+╔══════════════════════════════════════════════════════════╗
+║  🔥 TRENDFORGE — INSTAGRAM CONTENT SERIES                             ║
+║  Topic: docker key concepts                              ║
+║  Sources: tavily                                         ║
+╚══════════════════════════════════════════════════════════╝
+
+────────────────────────────────────────────────────────────
+  POST 1/1 — Docker Container Lifecycle
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Want to ace your next Docker interview? 🚀 Let's dive into the Docker container lifecycle! 📊
+
+  📌 SUMMARY
+  The Docker container lifecycle includes 5 stages: Created, Running, Paused, Stopped, and Deleted
+  Understanding the lifecycle is crucial for debugging and managing containers
+  Mastering the Docker container lifecycle will make you a pro in Docker interviews! 💼
+
+  ✍️  CAPTION
+  The Docker container lifecycle is a fundamental concept in Docker that every developer and DevOps engineer should know. It includes 5 stages: Created, Running, Paused, Stopped, and Deleted. 
+             
+             When a container is created, it is initialized with the specified image and configuration. The Running stage is where the container is executing the specified command. The Paused stage is where the container is temporarily stopped, and the Stopped stage is where the container is stopped permanently. The Deleted stage is where the container is removed from the system.
+             
+             Understanding the Docker container lifecycle is crucial for debugging and managing containers. It helps you identify issues and take corrective actions. For example, if a container is not responding, you can pause it, debug it, and then resume it. 
+             
+             Mastering the Docker container lifecycle will make you a pro in Docker interviews! It shows that you have a deep understanding of Docker and its ecosystem. So, let's get started and explore the Docker container lifecycle in depth! 🚀
+
+  🏷️  HASHTAGS
+  #Docker #ContainerLifecycle #DevOps #InterviewPrep
+
+────────────────────────────────────────────────────────────
+  📊 TREND INSIGHT
+────────────────────────────────────────────────────────────
+  Docker is a highly sought-after skill in the job market, and understanding its key concepts can give you a competitive edge. The Docker container lifecycle is a fundamental concept that drives high engagement and save rates, as it provides a deep understanding of Docker and its ecosystem. With the increasing adoption of containerization and DevOps practices, the demand for Docker experts is on the rise, making it a trending topic in the industry. 🚀
+
+════════════════════════════════════════════════════
+  TOKEN USAGE REPORT
+════════════════════════════════════════════════════
+  Prompt parsing:        1442 tokens  (LLaMA3 8B)
+  Source routing:           0 tokens  (rules + LLaMA3 8B)
+  Data fetching:            0 tokens  (HTTP APIs — free)
+  Content generation:     908 tokens  (Gemini 2.0 Flash)
+  ────────────────────────────────────────────────
+  TOTAL:                 2350 tokens
+  ESTIMATED COST:      $0.0002 USD
+  ────────────────────────────────────────────────
+  Models used:    LLaMA3 8B (Groq), Gemini 2.0 Flash
+  Sources used:   tavily
+════════════════════════════════════════════════════

@@ -1,0 +1,151 @@
+
+╔══════════════════════════════════════════════════════════╗
+║  🔥 TRENDFORGE — INSTAGRAM CONTENT SERIES                             ║
+║  Topic: top ML projects                                  ║
+║  Sources: github, tavily                                 ║
+╚══════════════════════════════════════════════════════════╝
+
+────────────────────────────────────────────────────────────
+  POST 1/5 — TensorFlow
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  🚀 Unlock AI superpowers with the world’s most popular ML framework!
+
+  📌 SUMMARY
+  Industry‑grade library for building and scaling deep‑learning models
+  Keras API lets you prototype in minutes, then deploy to cloud, mobile, or edge
+  Boosts your portfolio and opens doors to high‑impact AI roles
+
+  🔗 LINK
+  https://github.com/tensorflow/tensorflow
+
+  ✍️  CAPTION
+  🌟 Imagine creating image classifiers, language translators, or recommendation engines right from your laptop. TensorFlow provides the scalable, production‑ready toolbox that powers everything from startups to Google Search.
+  
+  🔧 With its flexible Keras API you can prototype in minutes and then deploy at scale across cloud, mobile, and edge devices. TensorBoard, TF‑Lite, and TensorFlow Hub keep you in control at every step.
+  
+  🚀 Mastering TensorFlow not only supercharges your resume but also unlocks high‑impact AI opportunities. Drop a comment with the model you’re dreaming to build and let’s inspire each other! 💬
+
+  🏷️  HASHTAGS
+  #MachineLearning #TensorFlow #AICommunity #DeepLearning #TechLifestyle
+
+────────────────────────────────────────────────────────────
+  POST 2/5 — 30 Days of Python Challenge
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  💡 What if you could master Python in just one month?
+
+  📌 SUMMARY
+  Step‑by‑step daily exercises covering fundamentals to advanced topics
+  Hands‑on scripts you can adapt for data cleaning, visualization, and ML pipelines
+  Creates a habit that showcases consistency on your GitHub profile
+
+  🔗 LINK
+  https://github.com/Asabeneh/30-Days-Of-Python
+
+  ✍️  CAPTION
+  📅 30 days, 30 bite‑size projects—each designed to turn a beginner into a confident Pythonista.
+  
+  🛠️ From basic loops to building REST APIs, the challenge equips you with reusable code snippets you’ll use in every AI project.
+  
+  ✨ Consistency is the secret sauce for career growth. Share your progress in the comments and tag a friend who needs a coding boost! 🎯
+
+  🏷️  HASHTAGS
+  #Python #30DaysOfPython #CodingJourney #LearnToCode #AIEngineer
+
+────────────────────────────────────────────────────────────
+  POST 3/5 — Best of ML Python Libraries
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  🔎 Discover the hidden gems that power today’s AI breakthroughs!
+
+  📌 SUMMARY
+  Curated list of top‑rated ML libraries, from data prep to model explainability
+  Weekly updates ensure you stay on the cutting edge of open‑source tools
+  Helps you pick the right stack for faster prototyping and production
+
+  🔗 LINK
+  https://github.com/lukasmasuch/best-of-ml-python
+
+  ✍️  CAPTION
+  📚 Want to know which libraries the pros swear by? This ranked collection spotlights everything from pandas‑ml to PyTorch‑Lightning.
+  
+  ⚡️ Quick‑start guides and benchmark links let you test performance before you commit.
+  
+  💡 Swipe through, pick a new tool, and tell us which one you’ll try first! Your next breakthrough might be just a pip install away. 🚀
+
+  🏷️  HASHTAGS
+  #MLLibraries #PythonAI #OpenSource #DataScience #TechStack
+
+────────────────────────────────────────────────────────────
+  POST 4/5 — ONNX – Open Neural Network Exchange
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  ⚡️ Why are top AI teams swapping models with ONNX? Find out!
+
+  📌 SUMMARY
+  Standard format enabling model portability across frameworks (PyTorch, TensorFlow, etc.)
+  Reduces deployment friction for edge, cloud, and mobile environments
+  Empowers collaboration by letting teams share models without re‑training
+
+  🔗 LINK
+  https://github.com/onnx/onnx
+
+  ✍️  CAPTION
+  🔄 Ever built a model in PyTorch only to discover your production stack prefers TensorFlow? ONNX bridges that gap.
+  
+  🧩 Convert, optimize, and run the same model anywhere—cloud GPUs, edge devices, or browsers—without losing accuracy.
+  
+  🌍 Join the interoperability movement: comment the framework you love and let’s discuss how ONNX can streamline your workflow! 🌟
+
+  🏷️  HASHTAGS
+  #ONNX #ModelInteroperability #AIWorkflow #DeepLearning #TechInnovation
+
+────────────────────────────────────────────────────────────
+  POST 5/5 — 100+ ML Projects (GeeksforGeeks)
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  📚 Ready to turn ideas into AI prototypes? Dive into 100+ projects!
+
+  📌 SUMMARY
+  Curated collection of project ideas with source code and step‑by‑step guides
+  Covers beginner to advanced topics: classification, NLP, computer vision, and more
+  Perfect for building a portfolio that catches recruiter eyes
+
+  🔗 LINK
+  https://www.geeksforgeeks.org/machine-learning/machine-learning-projects
+
+  ✍️  CAPTION
+  🚀 From sentiment analysis to autonomous driving simulators, this treasure trove gives you ready‑made blueprints to showcase real‑world impact.
+  
+  🛠️ Clone, tweak, and publish—each project includes data sources, model architecture, and evaluation metrics.
+  
+  💬 Which project sparks your curiosity? Drop a comment and let’s brainstorm how you can make it your own masterpiece! 🎨
+
+  🏷️  HASHTAGS
+  #MLProjects #AIIdeas #HandsOnAI #DataScience #ProjectInspo
+
+────────────────────────────────────────────────────────────
+  📊 TREND INSIGHT
+────────────────────────────────────────────────────────────
+  AI‑focused content is exploding because professionals crave quick, actionable resources that boost their skill set and marketability. Visual, aspirational posts that promise tangible project outcomes generate high saves as followers bookmark them for future reference and portfolio building.
+
+════════════════════════════════════════════════════
+  TOKEN USAGE REPORT
+════════════════════════════════════════════════════
+  Prompt parsing:         632 tokens  (LLaMA3 8B)
+  Source routing:           0 tokens  (rules + LLaMA3 8B)
+  Data fetching:            0 tokens  (HTTP APIs — free)
+  Content generation:    1153 tokens  (Gemini 2.0 Flash)
+  ────────────────────────────────────────────────
+  TOTAL:                 1785 tokens
+  ESTIMATED COST:      $0.0001 USD
+  ────────────────────────────────────────────────
+  Models used:    LLaMA3 8B (Groq), Gemini 2.0 Flash
+  Sources used:   github, tavily
+════════════════════════════════════════════════════

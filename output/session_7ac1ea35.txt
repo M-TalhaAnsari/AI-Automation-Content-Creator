@@ -1,0 +1,161 @@
+
+╔══════════════════════════════════════════════════════════╗
+║  🔥 TRENDFORGE — INSTAGRAM CONTENT SERIES                             ║
+║  Topic: Machine Learning Projects                        ║
+║  Sources: hackernews                                     ║
+╚══════════════════════════════════════════════════════════╝
+
+────────────────────────────────────────────────────────────
+  POST 1/5 — Decoding the obfuscated bash script on a Uniqlo t-shirt
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  This Machine Learning Projects project is changing everything 👇
+
+  📌 SUMMARY
+  📌 Decoding the obfuscated bash script on a Uniqlo t-shirt
+  🔗 Check the link for full details
+  ⭐ Save this post to revisit later
+
+  🔗 LINK
+  https://tris.sherliker.net/blog/obfuscated-self-evaluating-bash-script-by-cdn-akamai-being-supplied-to-consumers-via-retail-stores/
+
+  ✍️  CAPTION
+  🚀 Decoding the obfuscated bash script on a Uniqlo t-shirt
+  
+  
+  
+  Link in bio 👆
+  
+  Save this! 🔖
+
+  🏷️  HASHTAGS
+  #MachineLearningProjects #trending #fyp #viral #learnmore
+
+────────────────────────────────────────────────────────────
+  POST 2/5 — GitLost: We Tricked GitHub's AI Agent into Leaking Private Repos
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  This Machine Learning Projects project is changing everything 👇
+
+  📌 SUMMARY
+  📌 GitLost: We Tricked GitHub's AI Agent into Leaking Private Repos
+  🔗 Check the link for full details
+  ⭐ Save this post to revisit later
+
+  🔗 LINK
+  https://noma.security/blog/gitlost-how-we-tricked-githubs-ai-agent-into-leaking-private-repos/
+
+  ✍️  CAPTION
+  🚀 GitLost: We Tricked GitHub's AI Agent into Leaking Private Repos
+  
+  
+  
+  Link in bio 👆
+  
+  Save this! 🔖
+
+  🏷️  HASHTAGS
+  #MachineLearningProjects #trending #fyp #viral #learnmore
+
+────────────────────────────────────────────────────────────
+  POST 3/5 — How to Build a Minimal ZFS NAS Without Synology, QNAP, TrueNAS (2024)
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  This Machine Learning Projects project is changing everything 👇
+
+  📌 SUMMARY
+  📌 How to Build a Minimal ZFS NAS Without Synology, QNAP, TrueNAS (2024)
+  🔗 Check the link for full details
+  ⭐ Save this post to revisit later
+
+  🔗 LINK
+  https://neil.computer/notes/how-to-setup-minimal-zfs-nas-without-truenas/
+
+  ✍️  CAPTION
+  🚀 How to Build a Minimal ZFS NAS Without Synology, QNAP, TrueNAS (2024)
+  
+  
+  
+  Link in bio 👆
+  
+  Save this! 🔖
+
+  🏷️  HASHTAGS
+  #MachineLearningProjects #trending #fyp #viral #learnmore
+
+────────────────────────────────────────────────────────────
+  POST 4/5 — Geosql: A Claude/Codex skill for geospatial data
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  This Machine Learning Projects project is changing everything 👇
+
+  📌 SUMMARY
+  📌 Geosql: A Claude/Codex skill for geospatial data
+  🔗 Check the link for full details
+  ⭐ Save this post to revisit later
+
+  🔗 LINK
+  https://github.com/dekart-xyz/geosql
+
+  ✍️  CAPTION
+  🚀 Geosql: A Claude/Codex skill for geospatial data
+  
+  
+  
+  Link in bio 👆
+  
+  Save this! 🔖
+
+  🏷️  HASHTAGS
+  #MachineLearningProjects #trending #fyp #viral #learnmore
+
+────────────────────────────────────────────────────────────
+  POST 5/5 — We Got This Wrong. and We Are Fixing It
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  This Machine Learning Projects project is changing everything 👇
+
+  📌 SUMMARY
+  📌 We Got This Wrong. and We Are Fixing It
+  🔗 Check the link for full details
+  ⭐ Save this post to revisit later
+
+  🔗 LINK
+  https://community.hubspot.com/t/we-got-this-wrong-and-we-are-fixing-it/152063
+
+  ✍️  CAPTION
+  🚀 We Got This Wrong. and We Are Fixing It
+  
+  
+  
+  Link in bio 👆
+  
+  Save this! 🔖
+
+  🏷️  HASHTAGS
+  #MachineLearningProjects #trending #fyp #viral #learnmore
+
+────────────────────────────────────────────────────────────
+  📊 TREND INSIGHT
+────────────────────────────────────────────────────────────
+  Engaging Machine Learning Ideas
+
+════════════════════════════════════════════════════
+  TOKEN USAGE REPORT
+════════════════════════════════════════════════════
+  Prompt parsing:         425 tokens  (LLaMA3 8B)
+  Source routing:           0 tokens  (rules + LLaMA3 8B)
+  Data fetching:            0 tokens  (HTTP APIs — free)
+  Content generation:    3685 tokens  (Gemini 2.0 Flash)
+  ────────────────────────────────────────────────
+  TOTAL:                 4110 tokens
+  ESTIMATED COST:      $0.0004 USD
+  ────────────────────────────────────────────────
+  Models used:    LLaMA3 8B (Groq), Gemini 2.0 Flash
+  Sources used:   hackernews
+════════════════════════════════════════════════════
