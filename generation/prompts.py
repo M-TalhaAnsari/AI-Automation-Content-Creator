@@ -63,18 +63,24 @@ def build_generation_prompt(state: dict) -> str:
 
     if content_intent == "educate":
         intent_instruction = (
-            "The user wants high-value EDUCATIONAL content that breaks down core concepts for interviews. "
+            "The user wants high-value EDUCATIONAL content that breaks down core concepts of the topic clearly, "
+            "for a general audience interested in the subject. "
             "Do NOT write project blueprints or instruct people to download a code repository. "
-            "Instead, use your deep technical knowledge base to explain the mechanics of the subject clearly. "
-            "Use the fetched source data as modern context, real-world proof, or baseline references."
+            "Use your deep knowledge base to explain the mechanics, principles, or reasoning behind the subject. "
+            "Use the fetched source data as modern context, real-world proof, or baseline references. "
+            "Only frame this around interviews, exams, or professional certification if the user's raw request "
+            "explicitly asks for that (see CORE INSTRUCTIONS below) — otherwise explain the topic on its own "
+            "terms, whatever domain it's in (technical, lifestyle, business, etc.)."
         )
         item_instruction = (
             f"Each of the generated slots must teach ONE distinct, foundational concept of '{topic}' "
-            "(e.g., if Docker: explain Images vs Containers, Storage Volumes, or Network Isolation independently)."
+            "independently — for a technical topic, distinct mechanisms or components (e.g., if Docker: "
+            "Images vs Containers, Storage Volumes, Network Isolation); for a non-technical topic, distinct "
+            "principles, techniques, or steps relevant to that subject."
         )
-        title_guide = "Clean, high-impact technical concept name (e.g., 'How Docker Isolation Actually Works')"
-        hook_guide = "A powerful, authority-driven engineering hook sentence. If the user explicitly requested a specific line or theme in their raw prompt (like an interview-specific phrase), you MUST adapt and use that exact sentiment as your hook."
-        summary_guide = '["Technical Sub-Concept Breakdown 1", "Under-the-Hood Mechanism 2", "Common Interview Pitfall/Fix 3"]'
+        title_guide = "Clean, high-impact concept name relevant to the topic's own domain — not necessarily technical (e.g., 'How Docker Isolation Actually Works' for a tech topic, or 'Why Morning Light Resets Your Cortisol' for a lifestyle topic)"
+        hook_guide = "A powerful, authority-driven hook sentence establishing why this concept matters. If the user explicitly requested a specific line, theme, or framing (like interview prep) in their raw prompt, you MUST adapt and use that exact sentiment as your hook — otherwise keep the hook general-audience, not assuming any specific professional context."
+        summary_guide = '["Core Sub-Concept Breakdown 1", "Underlying Mechanism or Principle 2", "Common Misconception or Pitfall 3"]'
         # Concept-first, not source-first — a given concept slot often has no
         # single real-world URL it maps to. Link stays optional here.
         link_guide = (
@@ -109,8 +115,11 @@ def build_generation_prompt(state: dict) -> str:
         )
         caption_guide = (
             "Report the facts clearly and in order: what happened, when, and why it matters to the audience. "
-            "Keep speculation clearly labeled as speculation, not fact. End with a question inviting the "
-            "audience's take on the development, not a repo/download CTA."
+            "If you go beyond what the source data states, phrase it as a genuine question or possibility "
+            "woven naturally into the sentence (e.g. 'this could shift funding toward...', 'it remains to be "
+            "seen whether...') — do NOT insert literal labels like the word 'Speculation' or bracketed asides "
+            "into the caption text. End with a question inviting the audience's take on the development, not "
+            "a repo/download CTA."
         )
 
     elif content_intent == "inspire":
@@ -163,24 +172,54 @@ def build_generation_prompt(state: dict) -> str:
 
     else:
         # Default / true fallback: showcase (also covers any unexpected value)
-        intent_instruction = (
-            "The user wants to showcase epic, actionable, portfolio-grade project implementations designed to drive high engagement. "
-            "Do NOT write generic tool overviews. Turn the source data into a concrete project build blueprint."
-        )
-        item_instruction = (
-            "Each slot must focus entirely on ONE individual project implementation. Every single caption must end with a highly "
-            "specific comment-bait CTA forcing engineers to comment a keyword to receive the repository link in their DMs."
-        )
+        data_starved = state.get("data_starved", False)
+
+        if data_starved:
+            # No real project data survived fetching (even after retries) —
+            # the CTA "comment X and I'll DM you the repo link" would be a
+            # flat lie here, since there's no repo to send. Found via a real
+            # forced-failure run: the model kept the fake-repo CTA anyway,
+            # producing generic invented "project ideas" with a promise it
+            # can't keep. Shift framing to honest concept pitches instead.
+            intent_instruction = (
+                "The user wants to showcase compelling PROJECT CONCEPTS related to the topic, but the fetched "
+                "source data was insufficient or low-quality even after retries — treat these as original concept "
+                "pitches drawn from your own knowledge, NOT as descriptions of a specific existing repository. "
+                "Do not imply a real, ready-made codebase exists to hand over."
+            )
+            item_instruction = (
+                "Each slot must pitch ONE distinct, plausible project concept. End each caption with a genuine "
+                "engagement question or a 'would you build this?' style prompt — NOT a 'comment X and I'll DM "
+                "you the repo' CTA, since no real repository exists behind this concept."
+            )
+            link_guide = (
+                'Leave as an empty string "" — there is no real source to link to. Never invent a URL.'
+            )
+            caption_guide = (
+                "Full multi-paragraph caption structured with: Concept Overview, Suggested Tech Stack, and how it "
+                "could work — framed clearly as an idea/concept, not a real existing project. End with a genuine "
+                "question inviting engagement, not a fake repo-DM CTA."
+            )
+        else:
+            intent_instruction = (
+                "The user wants to showcase epic, actionable, portfolio-grade project implementations designed to drive high engagement. "
+                "Do NOT write generic tool overviews. Turn the source data into a concrete project build blueprint."
+            )
+            item_instruction = (
+                "Each slot must focus entirely on ONE individual project implementation. Every single caption must end with a highly "
+                "specific comment-bait CTA forcing engineers to comment a keyword to receive the repository link in their DMs."
+            )
+            link_guide = (
+                "MUST be a real URL copied exactly from the source data above — never empty for showcase mode, never invented"
+            )
+            caption_guide = (
+                "Full multi-paragraph caption structured with: Project Overview, Tech Stack breakdown, Core System Architecture, "
+                "and a high-conversion Call-To-Action explicitly inviting users to comment a key word to get the GitHub link auto-sent to their DMs. Do not output hashtags here."
+            )
+
         title_guide = f"Highly compelling, specific real-world project name built using {topic}"
         hook_guide = "Disruptive, curiosity-spiking hook sentence that grabs a developer's attention instantly"
         summary_guide = '["Core Technical Highlight 1", "Key System Asset 2", "Deployment Target 3"]'
-        link_guide = (
-            "MUST be a real URL copied exactly from the source data above — never empty for showcase mode, never invented"
-        )
-        caption_guide = (
-            "Full multi-paragraph caption structured with: Project Overview, Tech Stack breakdown, Core System Architecture, "
-            "and a high-conversion Call-To-Action explicitly inviting users to comment a key word to get the GitHub link auto-sent to their DMs. Do not output hashtags here."
-        )
 
     # ── Dynamic schema template injecting the context-aware guides ──
     def _build_slot(n):

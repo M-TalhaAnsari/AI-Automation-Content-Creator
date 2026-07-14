@@ -19,7 +19,7 @@ def fetch_hackernews(state, config) -> List[Dict[str, Any]]:
     Returns an empty list if no topic is available — this source has
     nothing relevant to contribute without something to search for.
     """
-    topic = getattr(state, "core_topic", "")
+    topic = getattr(state, "fetch_summary", None) or getattr(state, "core_topic", "")
     items: List[Dict[str, Any]] = []
 
     if not topic:

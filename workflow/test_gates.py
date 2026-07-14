@@ -69,6 +69,22 @@ check("insufficient data past retry cap stops retrying", r["should_retry"] is Fa
 r = evaluate_fetch_quality(base_state(total_items_fetched=50, sources_used=[]))
 check("items present but no source in sources_used is still insufficient", r["sufficient"] is False)
 
+r = evaluate_fetch_quality(base_state(
+    total_items_fetched=10, sources_used=["google_trends"], content_intent="showcase",
+    fetched_data={"google_trends": [
+        {"link": "https://www.google.com/search?q=machine+learning+projects"},
+        {"link": "https://www.google.com/search?q=machine+learning+github"},
+    ]}
+))
+check("enough items but all links are generic search URLs — caught for showcase intent (real thrashing bug found in production)",
+      r["sufficient"] is False)
+
+r = evaluate_fetch_quality(base_state(
+    total_items_fetched=10, sources_used=["google_trends"], content_intent="educate",
+    fetched_data={"google_trends": [{"link": "https://www.google.com/search?q=docker"}]}
+))
+check("all-search-URL links NOT flagged for educate intent (links are optional there)", r["sufficient"] is True)
+
 r = evaluate_fetch_quality(base_state(total_items_fetched=0, sources_used=[], fetch_retry_count=0,
                                        search_queries=["only one query"]))
 check("exhausted query variants reuses last instead of erroring", r["next_query"] == "only one query")
@@ -88,6 +104,16 @@ check("empty summary list caught", any("summary" in e for e in r["errors"]))
 
 r = evaluate_post_validation(base_state(content_intent="showcase", generated_posts=[good_post(link="")]))
 check("missing link caught for showcase intent", any("link" in e for e in r["errors"]))
+
+r = evaluate_post_validation(base_state(content_intent="showcase",
+                                         generated_posts=[good_post(link="https://www.google.com/search?q=machine+learning+projects")]))
+check("generic Google search URL rejected for showcase intent (real bug found in forced-failure test run)",
+      any("search-engine" in e for e in r["errors"]))
+
+r = evaluate_post_validation(base_state(content_intent="educate",
+                                         generated_posts=[good_post(link="https://www.bing.com/search?q=docker")]))
+check("generic search URL NOT flagged for educate intent (link is optional there, empty preferred over fake but not an error)",
+      r["valid"] is True)
 
 r = evaluate_post_validation(base_state(content_intent="educate", generated_posts=[good_post(link="")]))
 check("missing link allowed for educate intent", r["valid"] is True)

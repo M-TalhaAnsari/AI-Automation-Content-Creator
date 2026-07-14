@@ -1,8 +1,0 @@
-
-╔══════════════════════════════════════════════════════════╗
-║  🔥 TRENDFORGE — INSTAGRAM CONTENT SERIES                             ║
-║  Topic: top ML projects                                  ║
-║  Sources: paperswithcode, tavily                         ║
-╚══════════════════════════════════════════════════════════╝
-
-  ⚠️  No posts generated. Check your API keys and fetched data.

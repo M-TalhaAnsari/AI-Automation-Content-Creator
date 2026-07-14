@@ -47,6 +47,34 @@ def _strip_topic_filler(text: str) -> str:
 
 
 # ─────────────────────────────────────────────
+# CONTENT INTENT FALLBACK — the ONE place this default logic lives.
+#
+# "showcase" is NOT a safe universal default — its entire generation
+# branch (generation/prompts.py) assumes a developer project with a real
+# GitHub repo ("Tech Stack breakdown", "comment X for the repo link").
+# When the LLM's classification call fails to return content_intent at
+# all (a real, observed Groq JSON-reliability failure, not hypothetical —
+# confirmed via a live run where "morning productivity habits" fell back
+# to showcase and produced fake developer-project posts for a lifestyle
+# topic), the fallback should be informed by whatever detected_category
+# WAS successfully resolved, not blindly assume tech/showcase regardless.
+#
+# This mapping is a reasonable starting default, not a definitive one —
+# revisit if a category's fallback still feels wrong in practice.
+# ─────────────────────────────────────────────
+
+CATEGORY_DEFAULT_INTENT = {
+    "tech":           "showcase",
+    "business":       "news",
+    "lifestyle":      "inspire",
+    "entertainment":  "review",
+    "education":      "educate",
+    "news":           "news",
+    "unknown":        "showcase",
+}
+
+
+# ─────────────────────────────────────────────
 # SYSTEM PROMPT
 # ─────────────────────────────────────────────
 
@@ -289,9 +317,19 @@ class IntentExtractor:
         state["detected_category"] = llm_category if llm_category in valid_categories else "unknown"
 
         # ── content_intent: determines HOW content is generated downstream ──
-        llm_intent = llm.get("content_intent", "showcase")
+        # Fallback is category-aware, not a blind "showcase" default — see
+        # CATEGORY_DEFAULT_INTENT's docstring for why this matters. A missing
+        # content_intent from the LLM is a real, observed failure mode (Groq's
+        # JSON output can omit fields), not just a hypothetical edge case.
         valid_intents = ["showcase", "educate", "news", "inspire", "review"]
-        state["content_intent"] = llm_intent if llm_intent in valid_intents else "showcase"
+        llm_intent = llm.get("content_intent")
+        if llm_intent in valid_intents:
+            state["content_intent"] = llm_intent
+        else:
+            fallback_intent = CATEGORY_DEFAULT_INTENT.get(state["detected_category"], "showcase")
+            add_log(state, f"[IntentExtractor] content_intent missing/invalid from LLM — "
+                           f"defaulting to '{fallback_intent}' based on category='{state['detected_category']}'")
+            state["content_intent"] = fallback_intent
 
         # ── special_requests: union of both sources, no conflict possible ──
         rule_requests = set(rules.get("detected_special_requests", []))

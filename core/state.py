@@ -73,6 +73,20 @@ class TrendForgeState(TypedDict):
     generation_retry_count: int              # current post-validation retry attempt, capped at 2
     generation_validation_errors: List[str]  # Tier 1 validation failure reasons from the last check
 
+    # ── PHASE 1 INTEGRATION: explicit gate decisions ──────────
+    # Set exactly once by node_evaluate_fetch/node_evaluate_generation
+    # (workflow/nodes.py), using the correct pre-increment retry count.
+    # The routing functions in workflow/graph.py read these directly and
+    # NEVER recompute the decision — recomputing after the node's own
+    # increment produced an off-by-one bug (verified via simulation:
+    # cut the retry loop short by one attempt) and, in the alternate fix
+    # attempted, an infinite loop in the "still invalid on the final
+    # allowed attempt" case. A frozen retry-count integer alone can't
+    # distinguish "just approved this retry" from "already gave up" once
+    # it stops changing — these booleans remove that ambiguity entirely.
+    fetch_should_retry: bool
+    generation_should_retry: bool
+
 
 def create_initial_state(raw_prompt: str, session_id: str) -> TrendForgeState:
     """
@@ -123,6 +137,8 @@ def create_initial_state(raw_prompt: str, session_id: str) -> TrendForgeState:
         fetch_retry_count=0,
         generation_retry_count=0,
         generation_validation_errors=[],
+        fetch_should_retry=False,
+        generation_should_retry=False,
     )
 
 

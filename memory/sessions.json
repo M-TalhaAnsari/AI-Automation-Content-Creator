@@ -1,0 +1,1024 @@
+{
+  "sessions": [
+    {
+      "session_id": "2f9f765b",
+      "timestamp": "2026-07-13T08:59:07.712622",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "google_trends",
+        "hackernews"
+      ],
+      "posts_count": 5,
+      "total_tokens": 2919,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\nPlease retry in 57.920007656s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '57s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI\u2011Powered Fashion Recommender",
+          "link": "https://www.google.com/search?q=machine+learning+projects"
+        },
+        {
+          "title": "Smart Crop Disease Detector",
+          "link": "https://www.google.com/search?q=machine+learning+projects+github"
+        },
+        {
+          "title": "Real\u2011Time Speech Emotion Analyzer",
+          "link": "https://www.google.com/search?q=machine+learning+projects+ideas"
+        },
+        {
+          "title": "Personalized News Summarizer",
+          "link": "https://www.google.com/search?q=machine+learning+projects+with+source+code"
+        },
+        {
+          "title": "Final\u2011Year Capstone: Autonomous Drone Navigation",
+          "link": "https://www.google.com/search?q=machine+learning+projects+for+final+year"
+        }
+      ]
+    },
+    {
+      "session_id": "9f056934",
+      "timestamp": "2026-07-13T08:59:24.776139",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "google_trends",
+        "hackernews"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3348,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\nPlease retry in 41.214019835s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '41s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI\u2011Powered Travel Photo Enhancer \ud83d\udcf8\u2728",
+          "link": "https://www.google.com/search?q=machine+learning+projects"
+        },
+        {
+          "title": "Smart Home Energy Optimizer \ud83c\udf3f\u26a1",
+          "link": "https://www.google.com/search?q=machine+learning+projects+github"
+        },
+        {
+          "title": "Real\u2011Time Sports Play Predictor \ud83c\udfc8\ud83d\udd2e",
+          "link": "https://www.google.com/search?q=machine+learning+projects+ideas"
+        },
+        {
+          "title": "Dynamic Stock Portfolio Analyzer \ud83d\udcc8\ud83e\udd16",
+          "link": "https://www.google.com/search?q=machine+learning+projects+with+source+code"
+        },
+        {
+          "title": "Personalized Workout Form Coach \ud83c\udfcb\ufe0f\u200d\u2642\ufe0f\ud83d\udcca",
+          "link": "https://www.google.com/search?q=machine+learning+projects+for+final+year"
+        }
+      ]
+    },
+    {
+      "session_id": "dbf3de18",
+      "timestamp": "2026-07-13T09:01:46.889329",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "google_trends",
+        "hackernews"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3169,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\nPlease retry in 18.280473013s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '18s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI\u2011Powered Instagram Caption Generator",
+          "link": "https://www.google.com/search?q=machine+learning+projects"
+        },
+        {
+          "title": "Real\u2011Time Visual Style Transfer Filter for Stories",
+          "link": "https://www.google.com/search?q=machine+learning+projects+github"
+        },
+        {
+          "title": "Smart Hashtag Optimizer Using NLP",
+          "link": "https://www.google.com/search?q=machine+learning+projects+ideas"
+        },
+        {
+          "title": "Object Detection for Automatic Product Tagging",
+          "link": "https://www.google.com/search?q=machine+learning+projects+with+source+code"
+        },
+        {
+          "title": "Sentiment\u2011Aware Comment Responder Bot",
+          "link": "https://www.google.com/search?q=machine+learning+projects+for+final+year"
+        }
+      ]
+    },
+    {
+      "session_id": "bebdfa11",
+      "timestamp": "2026-07-13T09:02:33.685711",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "google_trends",
+        "hackernews"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3345,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\nPlease retry in 1.271827509s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '1s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AutoReel: AI\u2011Driven Instagram Reel Auto\u2011Editor",
+          "link": "https://www.google.com/search?q=machine+learning+projects"
+        },
+        {
+          "title": "TravelStory AI: Personalized Photo\u2011to\u2011Narrative Generator",
+          "link": "https://www.google.com/search?q=machine+learning+projects+github"
+        },
+        {
+          "title": "EcoFit: Carbon\u2011Footprint Analyzer for Outfits",
+          "link": "https://www.google.com/search?q=machine+learning+projects+ideas"
+        },
+        {
+          "title": "MoodMix: Real\u2011Time Music Playlist Curator Based on Facial Emotion",
+          "link": "https://www.google.com/search?q=machine+learning+projects+with+source+code"
+        },
+        {
+          "title": "ARPet Buddy: Pose\u2011Aware Virtual Pet for Instagram Stories",
+          "link": "https://www.google.com/search?q=machine+learning+projects+for+final+year"
+        }
+      ]
+    },
+    {
+      "session_id": "2da86798",
+      "timestamp": "2026-07-13T19:14:25.301111",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3238,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\nPlease retry in 41.61864521s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '41s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Real\u2011Time Instagram Filter Generator with TensorFlow",
+          "link": "https://github.com/tensorflow/tensorflow"
+        },
+        {
+          "title": "Smart Caption & Hashtag Generator using Hugging\u202fFace Transformers",
+          "link": "https://github.com/huggingface/transformers"
+        },
+        {
+          "title": "Interactive ML Portfolio Builder for Instagram Analytics",
+          "link": "https://github.com/microsoft/ML-For-Beginners"
+        },
+        {
+          "title": "Deep Learning Visual Storyboard Creator with D2L",
+          "link": "https://github.com/d2l-ai/d2l-zh"
+        },
+        {
+          "title": "Top\u201110 ML Project Playbook for Instagram Creators",
+          "link": "https://blog.huebits.in/10-machine-learning-projects-for-2025-build-learn-boost-your-portfolio-with-code"
+        }
+      ]
+    },
+    {
+      "session_id": "81e8adef",
+      "timestamp": "2026-07-13T19:15:01.344248",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3271,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\nPlease retry in 4.841639159s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '4s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI Outfit Color Matcher (TensorFlow Vision)",
+          "link": "https://github.com/tensorflow/tensorflow"
+        },
+        {
+          "title": "Multilingual Reel Caption Generator (Hugging Face Transformers)",
+          "link": "https://github.com/huggingface/transformers"
+        },
+        {
+          "title": "Beginner\u2011Friendly Instagram Growth Analyzer (ML\u2011For\u2011Beginners)",
+          "link": "https://github.com/microsoft/ML-For-Beginners"
+        },
+        {
+          "title": "Deep Learning Visual Storyboard Builder (D2L AI)",
+          "link": "https://github.com/d2l-ai/d2l-zh"
+        },
+        {
+          "title": "AI\u2011Curated Fitness Pose Coach (TensorFlow\u202f+\u202fTransformers)",
+          "link": "https://github.com/tensorflow/tensorflow"
+        }
+      ]
+    },
+    {
+      "session_id": "ea289519",
+      "timestamp": "2026-07-13T19:15:35.765969",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "google_trends",
+        "hackernews"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3009,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\nPlease retry in 31.204137401s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '31s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Sustainable Brand Scorecard for Instagram Feeds",
+          "link": "https://www.google.com/search?q=machine+learning+projects"
+        },
+        {
+          "title": "Real\u2011Time AR Background Swapper for Stories",
+          "link": "https://www.google.com/search?q=machine+learning+projects+github"
+        },
+        {
+          "title": "Voice\u2011Activated Caption Assistant",
+          "link": "https://www.google.com/search?q=machine+learning+projects+ideas"
+        },
+        {
+          "title": "Dynamic Engagement Heatmap Dashboard",
+          "link": "https://www.google.com/search?q=machine+learning+projects+with+source+code"
+        },
+        {
+          "title": "AI\u2011Powered Influencer Collaboration Matcher",
+          "link": "https://www.google.com/search?q=machine+learning+projects+for+final+year"
+        }
+      ]
+    },
+    {
+      "session_id": "2cf969c5",
+      "timestamp": "2026-07-13T19:17:27.363687",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "google_trends",
+        "hackernews"
+      ],
+      "posts_count": 5,
+      "total_tokens": 6867,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\nPlease retry in 8.007938075s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '8s'}]}}",
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\nPlease retry in 32.745440563s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '32s'}]}}",
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\nPlease retry in 1.715847594s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '1s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI-Powered Visual Moodboard Generator",
+          "link": "https://www.google.com/search?q=machine+learning+projects"
+        },
+        {
+          "title": "Smart Hashtag & Caption Optimizer",
+          "link": "https://www.google.com/search?q=machine+learning+projects+github"
+        },
+        {
+          "title": "Real\u2011Time Style Transfer Reel Creator",
+          "link": "https://www.google.com/search?q=machine+learning+projects+ideas"
+        },
+        {
+          "title": "Predictive Audience Growth Dashboard",
+          "link": "https://www.google.com/search?q=machine+learning+projects+with+source+code"
+        },
+        {
+          "title": "AI\u2011Driven Product Photo Tagger for E\u2011Commerce",
+          "link": "https://www.google.com/search?q=machine+learning+projects+for+final+year"
+        }
+      ]
+    },
+    {
+      "session_id": "3aa8b3b5",
+      "timestamp": "2026-07-13T19:18:29.625273",
+      "prompt": "explain docker core concepts for interview prep on instagram",
+      "topic": "docker core concepts",
+      "platform": "instagram",
+      "sources_used": [
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3875,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\nPlease retry in 37.401894511s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '37s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Containers vs Images: The Core Difference",
+          "link": "https://www.vskills.in/certification/blog/top-100-docker-job-interview-questions-latest-and-updated"
+        },
+        {
+          "title": "Dockerfile Layers & Build Cache Explained",
+          "link": "https://www.dataquest.io/blog/docker-interview-questions-and-answers"
+        },
+        {
+          "title": "Docker Networking 101: Bridge, Host & Overlay",
+          "link": "https://aws.plainenglish.io/docker-foundations-part-1-core-concepts-interview-scenarios-beginner-553899fd37d6"
+        },
+        {
+          "title": "Persisting Data: Volumes vs Bind Mounts",
+          "link": "https://www.turing.com/interview-questions/docker"
+        },
+        {
+          "title": "Compose Up: Multi\u2011Container Orchestration Made Simple",
+          "link": "https://www.youtube.com/watch?v=Tpyh88yymaA"
+        }
+      ]
+    },
+    {
+      "session_id": "59997922",
+      "timestamp": "2026-07-13T19:18:46.954885",
+      "prompt": "explain docker core concepts for interview prep on instagram",
+      "topic": "docker core concepts",
+      "platform": "instagram",
+      "sources_used": [
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 4079,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\nPlease retry in 21.14457981s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '21s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Docker Engine Deep Dive: Daemon, CLI, and Registry",
+          "link": "https://www.vskills.in/certification/blog/top-100-docker-job-interview-questions-latest-and-updated"
+        },
+        {
+          "title": "Namespace Magic: How Docker Isolates Processes",
+          "link": ""
+        },
+        {
+          "title": "Cgroups Unleashed: Resource Governance in Docker",
+          "link": "https://www.turing.com/interview-questions/docker"
+        },
+        {
+          "title": "Docker Image Tagging Strategy: Versioning Like a Pro",
+          "link": "https://www.dataquest.io/blog/docker-interview-questions-and-answers"
+        },
+        {
+          "title": "Healthchecks & Logging Drivers: Keeping Containers Alive & Audible",
+          "link": "https://aws.plainenglish.io/docker-foundations-part-1-core-concepts-interview-scenarios-beginner-553899fd37d6"
+        }
+      ]
+    },
+    {
+      "session_id": "fa7be9b8",
+      "timestamp": "2026-07-13T19:23:32.730781",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "google_trends"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3059,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\nPlease retry in 33.345725778s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '33s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI\u2011Powered Instagram Comment Sentiment Analyzer",
+          "link": "https://www.google.com/search?q=machine+learning+projects"
+        },
+        {
+          "title": "Dynamic Visual Trend Predictor for Reel Virality",
+          "link": "https://www.google.com/search?q=machine+learning+projects+github"
+        },
+        {
+          "title": "Personalized Content Scheduler using Reinforcement Learning",
+          "link": "https://www.google.com/search?q=machine+learning+projects+ideas"
+        },
+        {
+          "title": "Zero\u2011Shot Image Tagger for Brand Asset Management",
+          "link": "https://www.google.com/search?q=machine+learning+projects+with+source+code"
+        },
+        {
+          "title": "Multi\u2011Modal Story Generator for Final\u2011Year Capstone",
+          "link": "https://www.google.com/search?q=machine+learning+projects+for+final+year"
+        }
+      ]
+    },
+    {
+      "session_id": "dbc9659f",
+      "timestamp": "2026-07-13T19:25:09.187355",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "google_trends",
+        "hackernews"
+      ],
+      "posts_count": 5,
+      "total_tokens": 6456,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\nPlease retry in 13.137282357s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '13s'}]}}",
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\nPlease retry in 29.345129494s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '29s'}]}}",
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\nPlease retry in 3.073363518s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '3s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI\u2011Powered Outfit Recommender for Instagram Shopping \ud83d\udecd\ufe0f\ud83e\udd16",
+          "link": "https://www.google.com/search?q=machine+learning+projects"
+        },
+        {
+          "title": "Real\u2011Time Visual Sentiment Analyzer for Story Comments \ud83d\udcca\ud83d\udde8\ufe0f",
+          "link": "https://www.google.com/search?q=machine+learning+projects+github"
+        },
+        {
+          "title": "Generative Caption Engine using GPT for Carousel Posts \u270d\ufe0f\ud83d\uddbc\ufe0f",
+          "link": "https://www.google.com/search?q=machine+learning+projects+ideas"
+        },
+        {
+          "title": "Smart Product Price Optimizer with Demand Forecasting \ud83d\udcc8\ud83d\udcb0",
+          "link": "https://www.google.com/search?q=machine+learning+projects+with+source+code"
+        },
+        {
+          "title": "Interactive AR Filter Creator with StyleGAN \ud83c\udfad\u2728",
+          "link": "https://www.google.com/search?q=machine+learning+projects+for+final+year"
+        }
+      ]
+    },
+    {
+      "session_id": "595a4f38",
+      "timestamp": "2026-07-14T04:43:25.345574",
+      "prompt": "explain docker core concepts for interview prep on instagram",
+      "topic": "docker core concepts",
+      "platform": "instagram",
+      "sources_used": [
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 4059,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\nPlease retry in 41.866423328s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '41s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Docker Architecture: Client\u2011Server Magic",
+          "link": "https://www.vskills.in/certification/blog/top-100-docker-job-interview-questions-latest-and-updated"
+        },
+        {
+          "title": "Image IDs, Tags & Digests \u2013 The Immutable Identity",
+          "link": "https://www.dataquest.io/blog/docker-interview-questions-and-answers"
+        },
+        {
+          "title": "Container Lifecycle: From Creation to Exit",
+          "link": "https://aws.plainenglish.io/docker-foundations-part-1-core-concepts-interview-scenarios-beginner-553899fd37d6"
+        },
+        {
+          "title": "Dockerfile Instructions: Building Blocks Explained",
+          "link": "https://www.youtube.com/watch?v=Tpyh88yymaA"
+        },
+        {
+          "title": "Docker Registry & Distribution Mechanics",
+          "link": "https://www.youtube.com/watch?v=VtC5te__J8g&vl=en"
+        }
+      ]
+    },
+    {
+      "session_id": "ae73e967",
+      "timestamp": "2026-07-14T04:43:37.089537",
+      "prompt": "explain docker core concepts for interview prep on instagram",
+      "topic": "docker core concepts",
+      "platform": "instagram",
+      "sources_used": [
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3649,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\nPlease retry in 28.955634011s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '28s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Multi\u2011Stage Docker Builds: Trim the Fat",
+          "link": "https://www.vskills.in/certification/blog/top-100-docker-job-interview-questions-latest-and-updated"
+        },
+        {
+          "title": "ENTRYPOINT vs CMD: Controlling Container Startup",
+          "link": "https://www.vskills.in/certification/blog/top-100-docker-job-interview-questions-latest-and-updated"
+        },
+        {
+          "title": "Resource Limits: CPU & Memory Guardrails",
+          "link": "https://www.vskills.in/certification/blog/top-100-docker-job-interview-questions-latest-and-updated"
+        },
+        {
+          "title": "Image Signing & Verification with Notary",
+          "link": "https://www.vskills.in/certification/blog/top-100-docker-job-interview-questions-latest-and-updated"
+        },
+        {
+          "title": "BuildKit & buildx: Next\u2011Gen Docker Builds",
+          "link": "https://www.vskills.in/certification/blog/top-100-docker-job-interview-questions-latest-and-updated"
+        }
+      ]
+    },
+    {
+      "session_id": "6dda9708",
+      "timestamp": "2026-07-14T04:46:53.639609",
+      "prompt": "productivity habits for morning routines",
+      "topic": "morning productivity habits",
+      "platform": "instagram",
+      "sources_used": [
+        "youtube",
+        "google_trends",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3518,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\nPlease retry in 12.974451899s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '12s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Atomic Sunrise Scheduler \u2013 5\u2011minute habit engine",
+          "link": "https://www.youtube.com/watch?v=PZ7lDrwYdZc"
+        },
+        {
+          "title": "Aesthetic Wake\u2011Up Dashboard \u2013 Visual Routine Tracker",
+          "link": "https://www.youtube.com/watch?v=xY1ZsqJe1vs"
+        },
+        {
+          "title": "Teen\u2011Power Goal Engine \u2013 Student Productivity Hub",
+          "link": "https://www.youtube.com/watch?v=mXQX9Nv0YQY"
+        },
+        {
+          "title": "Quarantine\u2011Proof Habit Loop \u2013 Resilient Morning Suite",
+          "link": "https://www.youtube.com/watch?v=5V45zhthpMs"
+        },
+        {
+          "title": "Repeatable Success Blueprint \u2013 Automated Routine Builder",
+          "link": "https://www.youtube.com/watch?v=UiXZPmxSQJw"
+        }
+      ]
+    },
+    {
+      "session_id": "206a65fb",
+      "timestamp": "2026-07-14T04:48:30.325532",
+      "prompt": "startup funding trends 2026",
+      "topic": "startup funding trends",
+      "platform": "instagram",
+      "sources_used": [
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3272,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\nPlease retry in 35.230525779s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '35s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Venture Capital Enters a New Era in 2026 After 2021\u201122 Boom",
+          "link": "https://seedscope.ai/blog/startup-funding-trends-in-2026-venture-capital-s-new-era"
+        },
+        {
+          "title": "Investors Prioritize Efficiency and ROI Over Pure Velocity in 2026",
+          "link": "https://www.pitchwise.se/blog/the-complete-guide-to-seed-and-series-funding-rounds-for-founders-in-2026"
+        },
+        {
+          "title": "VC Funding Hits $300\u202fB Across 6,000 Startups in 2026",
+          "link": "https://www.hubspot.com/startups/fundraising/vc-fundraising-trends"
+        },
+        {
+          "title": "Top Venture Funds Dominate Pre\u2011Seed and Seed Rounds in March 2026",
+          "link": "https://www.cdp.center/post/startup-report-venture-funds-deals-and-trends-march-2026"
+        },
+        {
+          "title": "Strategic Corporate Partnerships Fuel Startup Growth in 2026",
+          "link": "https://angelinvestorsnetwork.com/startups/startup-funding-complete-guide"
+        }
+      ]
+    },
+    {
+      "session_id": "35ebc0ca",
+      "timestamp": "2026-07-14T05:02:09.848507",
+      "prompt": "productivity habits for morning routines",
+      "topic": "morning productivity habits",
+      "platform": "instagram",
+      "sources_used": [
+        "youtube",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 4018,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\nPlease retry in 56.149078434s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '56s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Micro\u2011Optimization of Morning Time Blocks",
+          "link": "https://www.webveda.com/blogs/ultimate-morning-routine-for-success-in-2026"
+        },
+        {
+          "title": "Neurochemical Triggers: Gratitude\u2019s Impact on Cognitive Load",
+          "link": "https://growselfdaily.com/morning-routine-habits-2026"
+        },
+        {
+          "title": "Physical Activation: Hydration & Light for Peak Brain Power",
+          "link": "https://www.youtube.com/watch?v=rW-M04-IvLk"
+        },
+        {
+          "title": "Strategic Planning Sprint: The 5\u2011Minute Daily Blueprint",
+          "link": "https://asana.com/resources/best-morning-routine"
+        },
+        {
+          "title": "Kindness Momentum: Leveraging Social Capital in Your Morning",
+          "link": "https://www.asana.com/resources/best-morning-routine"
+        }
+      ]
+    },
+    {
+      "session_id": "8c57a24e",
+      "timestamp": "2026-07-14T05:07:27.845216",
+      "prompt": "productivity habits for morning routines",
+      "topic": "morning productivity habits",
+      "platform": "instagram",
+      "sources_used": [
+        "youtube",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 4410,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\nPlease retry in 39.360216169s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '39s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Circadian Sync: The Science of the First 30 Minutes",
+          "link": "https://www.webveda.com/blogs/ultimate-morning-routine-for-success-in-2026"
+        },
+        {
+          "title": "MIT Capture: Locking Down Your Most Important Task",
+          "link": "https://growselfdaily.com/morning-routine-habits-2026"
+        },
+        {
+          "title": "Macro\u2011Nutrient Power\u2011Breakfast Blueprint",
+          "link": "https://asana.com/resources/best-morning-routine"
+        },
+        {
+          "title": "Digital Dawn: Why a Screen\u2011Free First Hour Wins",
+          "link": ""
+        },
+        {
+          "title": "Micro\u2011Journal Loop: Turning Insight into Action",
+          "link": "https://www.webveda.com/blogs/ultimate-morning-routine-for-success-in-2026"
+        }
+      ]
+    },
+    {
+      "session_id": "97cb9cc0",
+      "timestamp": "2026-07-14T05:15:01.556310",
+      "prompt": "some motivation for ppl trying to get back into shape after quitting for months",
+      "topic": "fitness motivation",
+      "platform": "instagram",
+      "sources_used": [
+        "youtube",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3395,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\nPlease retry in 3.241552297s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '3s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Restart, Not Reset",
+          "link": "https://www.cleaneatzkitchen.com/a/blog/10-mental-tricks-for-fitness-motivation"
+        },
+        {
+          "title": "Friendship Fuel",
+          "link": "https://www.goldsgym.com/blog/new-year-fitness-resolutions"
+        },
+        {
+          "title": "Your Body, Your Schedule",
+          "link": "https://www.zing.coach/fitness-library/workout-motivation-tips"
+        },
+        {
+          "title": "Celebrate Tiny Wins",
+          "link": "https://www.goldsgym.com/blog/new-year-fitness-resolutions"
+        },
+        {
+          "title": "Refresh Your Space",
+          "link": "https://stridekick.com/blog/fresh-workout-ideas-from-fitness-pros-for-your-2026-exercise-routine"
+        }
+      ]
+    },
+    {
+      "session_id": "69b2c130",
+      "timestamp": "2026-07-14T05:16:43.292094",
+      "prompt": "is the oura ring actually worth buying",
+      "topic": "oura ring",
+      "platform": "instagram",
+      "sources_used": [
+        "youtube",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3514,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\nPlease retry in 22.491753989s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '22s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Sleep Tracking: Oura\u2019s Gold Standard or Overhyped?",
+          "link": "https://www.youtube.com/watch?v=SrjpiyRscS4"
+        },
+        {
+          "title": "Battery Life: Oura outlasts the competition",
+          "link": "https://www.youtube.com/watch?v=SrjpiyRscS4"
+        },
+        {
+          "title": "Price Tag: $400 for a ring? Not worth it for most",
+          "link": "https://www.youtube.com/watch?v=p6ki824SWaY"
+        },
+        {
+          "title": "Design & Comfort: A sleek ring that feels like jewelry",
+          "link": "https://www.youtube.com/watch?v=yybGE4aE7WI"
+        },
+        {
+          "title": "Overall Verdict: Oura beats watches for sleep, but falls short on activity",
+          "link": "https://www.youtube.com/watch?v=djBacLcMIic"
+        }
+      ]
+    },
+    {
+      "session_id": "ed65e1b2",
+      "timestamp": "2026-07-14T05:30:09.732078",
+      "prompt": "is the oura ring actually worth buying",
+      "topic": "oura ring",
+      "platform": "instagram",
+      "sources_used": [
+        "youtube",
+        "google_trends",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3789,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\nPlease retry in 56.115952269s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '56s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Heart\u2011Rate & HRV Accuracy: Oura Beats Most Rings",
+          "link": "https://www.youtube.com/watch?v=yybGE4aE7WI"
+        },
+        {
+          "title": "Ecosystem Sync: Oura Plays Nice with All Your Apps",
+          "link": "https://www.youtube.com/watch?v=SrjpiyRscS4"
+        },
+        {
+          "title": "Durability Test: Oura Survives the Real World",
+          "link": "https://www.youtube.com/watch?v=tYUC_Ni3lb4"
+        },
+        {
+          "title": "Privacy Matters: Oura\u2019s Data Ownership Is Transparent",
+          "link": ""
+        },
+        {
+          "title": "Athlete vs. Casual User: Oura\u2019s Performance Metrics",
+          "link": "https://www.youtube.com/watch?v=djBacLcMIic"
+        }
+      ]
+    },
+    {
+      "session_id": "501ae0f6",
+      "timestamp": "2026-07-14T10:44:44.139631",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "google_trends"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3216,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\nPlease retry in 21.847410804s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '21s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Reel\u2011Boost AI: Automatic Highlight Reel Builder",
+          "link": "https://www.google.com/search?q=machine+learning+projects"
+        },
+        {
+          "title": "TrendPulse Dashboard: Real\u2011Time Visual Trend Forecasting",
+          "link": "https://www.google.com/search?q=machine+learning+projects+github"
+        },
+        {
+          "title": "SyncSound Engine: AI\u2011Driven Audio\u2011Visual Matching for Stories",
+          "link": "https://www.google.com/search?q=machine+learning+projects+ideas"
+        },
+        {
+          "title": "CollabMatch AI: Personalized Influencer Partnership Finder",
+          "link": "https://www.google.com/search?q=machine+learning+projects+with+source+code"
+        },
+        {
+          "title": "PaletteSnap: Automated Brand Color Extraction from Feeds",
+          "link": "https://www.google.com/search?q=machine+learning+projects+for+final+year"
+        }
+      ]
+    },
+    {
+      "session_id": "cdf8d0f7",
+      "timestamp": "2026-07-14T10:45:02.059139",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "google_trends"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3098,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\nPlease retry in 3.011944451s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '3s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI-Powered Instagram Feed Analyzer",
+          "link": "https://www.google.com/search?q=machine+learning+projects"
+        },
+        {
+          "title": "Dynamic Hashtag Generator with BERT",
+          "link": "https://www.google.com/search?q=machine+learning+projects+github"
+        },
+        {
+          "title": "Visual Style Transfer for Story Highlights",
+          "link": "https://www.google.com/search?q=machine+learning+projects+ideas"
+        },
+        {
+          "title": "Real\u2011Time Comment Toxicity Detector",
+          "link": "https://www.google.com/search?q=machine+learning+projects+with+source+code"
+        },
+        {
+          "title": "Capstone: Multi\u2011Modal Fashion Recommendation Engine",
+          "link": "https://www.google.com/search?q=machine+learning+projects+for+final+year"
+        }
+      ]
+    },
+    {
+      "session_id": "e9624f60",
+      "timestamp": "2026-07-14T10:49:22.577100",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "google_trends"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3094,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\nPlease retry in 42.914077457s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '42s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI-Powered Visual Moodboard Generator",
+          "link": "https://www.google.com/search?q=machine+learning+projects"
+        },
+        {
+          "title": "Smart Photo Curation Bot for Carousel Feeds",
+          "link": "https://www.google.com/search?q=machine+learning+projects+github"
+        },
+        {
+          "title": "Dynamic Outfit Pairing Engine with Body Pose Detection",
+          "link": "https://www.google.com/search?q=machine+learning+projects+ideas"
+        },
+        {
+          "title": "Real-Time Engagement Heatmap Analyzer",
+          "link": "https://www.google.com/search?q=machine+learning+projects+with+source+code"
+        },
+        {
+          "title": "Voice\u2011Activated Caption Composer",
+          "link": "https://www.google.com/search?q=machine+learning+projects+for+final+year"
+        }
+      ]
+    },
+    {
+      "session_id": "a4bac4d1",
+      "timestamp": "2026-07-14T10:49:41.910819",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "google_trends"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3175,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\nPlease retry in 24.080553797s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '24s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Visual Trend Forecasting Bot for Carousel Posts",
+          "link": "https://www.google.com/search?q=machine+learning+projects"
+        },
+        {
+          "title": "Smart Caption Generator with Multilingual Flair",
+          "link": "https://www.google.com/search?q=machine+learning+projects+github"
+        },
+        {
+          "title": "Dynamic Audience Segmentation Engine using Graph Neural Nets",
+          "link": "https://www.google.com/search?q=machine+learning+projects+ideas"
+        },
+        {
+          "title": "Real\u2011Time AR Filter Recommendation System",
+          "link": "https://www.google.com/search?q=machine+learning+projects+with+source+code"
+        },
+        {
+          "title": "Automated Influencer ROI Predictor",
+          "link": "https://www.google.com/search?q=machine+learning+projects+for+final+year"
+        }
+      ]
+    },
+    {
+      "session_id": "186f1d53",
+      "timestamp": "2026-07-14T10:56:06.092669",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "google_trends"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3131,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\nPlease retry in 2.322266386s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '2s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "ReelWizard: AI\u2011Driven Automatic Reel Editing Engine",
+          "link": "https://www.google.com/search?q=machine+learning+projects"
+        },
+        {
+          "title": "SchedulrX: Reinforcement Learning Powered Content Calendar",
+          "link": "https://www.google.com/search?q=machine+learning+projects+github"
+        },
+        {
+          "title": "AestheticLens: Deep Learning Image Scorer for Feed Curation",
+          "link": "https://www.google.com/search?q=machine+learning+projects+ideas"
+        },
+        {
+          "title": "GrowthOracle: Time\u2011Series Follower Forecast Engine",
+          "link": "https://www.google.com/search?q=machine+learning+projects+with+source+code"
+        },
+        {
+          "title": "StorySentinel: Multi\u2011Modal Sentiment Analyzer for Instagram Stories",
+          "link": "https://www.google.com/search?q=machine+learning+projects+for+final+year"
+        }
+      ]
+    },
+    {
+      "session_id": "bf76fa55",
+      "timestamp": "2026-07-14T10:56:26.103731",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "google_trends"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3251,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\\nPlease retry in 40.886213124s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'model': 'gemini-2.0-flash', 'location': 'global'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '40s'}]}}"
+      ],
+      "posts": [
+        {
+          "title": "InstaLens AI: Automated Photo Composition Optimizer",
+          "link": ""
+        },
+        {
+          "title": "Hashtag Harmony: Semantic Hashtag Generator using Graph Embeddings",
+          "link": ""
+        },
+        {
+          "title": "StoryArc Builder: AI-driven Narrative Flow Planner for Multi-part Stories",
+          "link": ""
+        },
+        {
+          "title": "Follower Sentiment Radar: Real-time Comment Emotion Analyzer",
+          "link": ""
+        },
+        {
+          "title": "Visual Rhythm Scheduler: AI-powered Posting Time & Rhythm Planner",
+          "link": ""
+        }
+      ]
+    }
+  ]
+}

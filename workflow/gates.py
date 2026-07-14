@@ -33,6 +33,13 @@ def _is_generic_search_url(link: str) -> bool:
     return any(p in link_l for p in GENERIC_SEARCH_URL_PATTERNS)
 
 
+# Intents that require a real link downstream (see generation/prompts.py's
+# link_guide per branch) — only these are worth checking link quality for
+# at the fetch stage. educate/inspire allow empty links, so garbage links
+# there don't block anything.
+LINK_REQUIRED_INTENTS = {"showcase", "news", "review"}
+
+
 def evaluate_fetch_quality(state: TrendForgeState) -> Dict[str, Any]:
     """
     Checks whether fetched data is sufficient to proceed to generation.
@@ -48,9 +55,34 @@ def evaluate_fetch_quality(state: TrendForgeState) -> Dict[str, Any]:
     total_items = state.get("total_items_fetched", 0)
     sources_used = state.get("sources_used", [])
     retry_count = state.get("fetch_retry_count", 0)
+    content_intent = state.get("content_intent", "showcase")
 
     has_returning_source = len(sources_used) > 0
-    sufficient = total_items >= MIN_ITEMS_FLOOR and has_returning_source
+    count_sufficient = total_items >= MIN_ITEMS_FLOOR and has_returning_source
+
+    # Link-quality check — found via a real forced-failure run: fallback
+    # sources (e.g. google_trends/hackernews) can return enough ITEMS to
+    # pass the count check while every "link" field is a generic
+    # search-engine URL. That data would then fail evaluate_post_validation
+    # on every single generation retry for the identical reason, since
+    # content_generator.py's Pass 1 selection only narrows fetched_data
+    # once — retries regenerate from the SAME already-selected items, so
+    # regenerating can't invent a real link from data that structurally
+    # lacks one. Catching it here instead sends the retry to fetch new
+    # data, not wasted generation attempts.
+    link_quality_ok = True
+    if content_intent in LINK_REQUIRED_INTENTS:
+        fetched_data = state.get("fetched_data", {})
+        all_links = [
+            item.get("link", "")
+            for items in fetched_data.values()
+            for item in items
+            if item.get("link")
+        ]
+        if all_links and all(_is_generic_search_url(l) for l in all_links):
+            link_quality_ok = False
+
+    sufficient = count_sufficient and link_quality_ok
 
     if sufficient:
         return {
@@ -62,8 +94,11 @@ def evaluate_fetch_quality(state: TrendForgeState) -> Dict[str, Any]:
 
     if not has_returning_source:
         reason = "no source in sources_used returned any items"
-    else:
+    elif not count_sufficient:
         reason = f"only {total_items} items fetched, below floor of {MIN_ITEMS_FLOOR}"
+    else:
+        reason = ("all fetched items have generic search-engine links, not real sources — "
+                   "regenerating content won't fix this, need different fetched data")
 
     retry_available = retry_count < MAX_FETCH_RETRIES
     next_query = None
@@ -138,9 +173,17 @@ def evaluate_post_validation(state: TrendForgeState) -> Dict[str, Any]:
             # Link rule — data_starved overrides the normal per-intent
             # requirement regardless of what content_intent says.
             link = post.get("link", "")
-            if not data_starved and content_intent in link_required_intents and not link:
-                errors.append(f"{label}: link is required for content_intent='{content_intent}' but is empty")
+            if not data_starved and content_intent in link_required_intents:
+                if not link:
+                    errors.append(f"{label}: link is required for content_intent='{content_intent}' but is empty")
+                elif _is_generic_search_url(link):
+                    errors.append(
+                        f"{label}: link is a generic search-engine results page, not a specific source — {link}"
+                    )
             # link_optional_intents and data_starved=True: no check needed, empty is fine.
+            # (A generic search URL is still low-value for optional-link intents too, but
+            # since those don't require a link at all, an empty string is preferable to a
+            # fake one there — not flagged as an error in that branch.)
 
             caption = post.get("caption", "")
             if isinstance(caption, str) and len(caption) > max_caption_chars:

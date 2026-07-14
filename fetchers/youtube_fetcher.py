@@ -42,7 +42,7 @@ def fetch_youtube(state, config) -> List[Dict[str, Any]]:
     Each item includes title, description, and (if available) transcript.
     Deliberately excludes comments — not useful signal for content generation.
     """
-    topic = getattr(state, "core_topic", None)
+    topic = getattr(state, "fetch_summary", None) or getattr(state, "core_topic", "")
     items: List[Dict[str, Any]] = []
 
     if not config.YOUTUBE_API_KEY:

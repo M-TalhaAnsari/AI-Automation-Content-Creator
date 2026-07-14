@@ -93,3 +93,76 @@ def node_format(state: TrendForgeState) -> TrendForgeState:
         add_log(state, f"[Graph] Session history save failed: {e}")
 
     return state
+
+
+# ── Phase 1 integration: evaluation nodes ──────────────────────────
+# These call the pure functions in workflow/gates.py and apply their
+# result to state (retry counters, data_starved, next query). gates.py
+# itself never mutates state — that contract stays intact; this is the
+# orchestration layer that acts on what the gates decide.
+
+def node_evaluate_fetch(state: TrendForgeState) -> TrendForgeState:
+    """After fetch — decides whether to proceed to generation or loop
+    back to routing with a different search query. Sets fetch_should_retry
+    explicitly so the router never has to recompute this decision."""
+    from workflow.gates import evaluate_fetch_quality
+
+    result = evaluate_fetch_quality(state)
+    add_log(state, f"[Graph] Fetch quality check: {result['reason']}")
+    state["fetch_should_retry"] = False
+
+    if result["sufficient"]:
+        return state
+
+    if result["should_retry"]:
+        state["fetch_retry_count"] = state.get("fetch_retry_count", 0) + 1
+        if result["next_query"]:
+            state["fetch_summary"] = result["next_query"]
+            add_log(state, f"[Graph] Fetch insufficient — retrying "
+                           f"(attempt {state['fetch_retry_count']}) with query: {result['next_query']!r}")
+        state["fetch_should_retry"] = True
+        return state
+
+    # Retry cap already exhausted — stop looping, proceed with whatever
+    # data exists. data_starved relaxes the link requirement downstream
+    # regardless of content_intent (see generation/prompts.py's link_guide
+    # and workflow/gates.py's evaluate_post_validation).
+    state["data_starved"] = True
+    add_log(state, "[Graph] Fetch retries exhausted — proceeding with data_starved=True")
+    return state
+
+
+def node_evaluate_generation(state: TrendForgeState) -> TrendForgeState:
+    """After generation — decides whether to proceed to formatting or
+    regenerate the batch. Sets generation_should_retry explicitly, computed
+    once here using the correct pre-increment retry count — the router
+    reads this directly and never recomputes it. Recomputing after this
+    node's own increment produced a verified off-by-one bug: it cut the
+    retry loop short by one attempt, and the naive alternate fix (using a
+    different comparison operator) caused an infinite loop instead, in the
+    case where generation is still invalid on the final allowed attempt —
+    a frozen retry-count integer alone can't distinguish "just approved
+    this retry" from "already gave up" once it stops changing."""
+    from workflow.gates import evaluate_post_validation, MAX_GENERATION_RETRIES
+
+    result = evaluate_post_validation(state)
+    state["generation_validation_errors"] = result["errors"]
+    state["generation_should_retry"] = False
+
+    if result["valid"]:
+        add_log(state, "[Graph] Post validation passed")
+        return state
+
+    if result["should_retry"]:
+        state["generation_retry_count"] = state.get("generation_retry_count", 0) + 1
+        add_log(state, f"[Graph] Post validation failed ({len(result['errors'])} issue(s)) — "
+                       f"retrying generation (attempt {state['generation_retry_count']}/{MAX_GENERATION_RETRIES})")
+        state["generation_should_retry"] = True
+    else:
+        add_log(state, f"[Graph] Post validation failed after {MAX_GENERATION_RETRIES} retries — "
+                       f"proceeding with best-effort output")
+
+    for e in result["errors"]:
+        add_log(state, f"[Graph]   - {e}")
+
+    return state
