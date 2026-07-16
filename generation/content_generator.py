@@ -241,8 +241,21 @@ Return ONLY a JSON array of index numbers (1-based). Example: [1, 3, 5, 7, 9]"""
                 src = item.get("_source", "selected")
                 regrouped.setdefault(src, []).append(item)
             state["fetched_data"] = regrouped
+
+            # Phase 2: retain what Pass 1 didn't select. Previously this was
+            # a local variable, discarded the moment generate() returned —
+            # confirmed via grep before this fix, not assumed. targeted_refetch
+            # (conversation/actions.py) needs this pool to check whether a
+            # follow-up request ("broaden this", "not this one") can be
+            # satisfied from data already paid to fetch, before triggering a
+            # brand new network fetch.
+            selected_ids = {id(item) for item in best_items}
+            state["leftover_fetch_pool"] = [item for item in all_items if id(item) not in selected_ids]
         else:
             add_log(state, f"[Generator] Skipped Pass 1 selection — intent={content_intent}, keeping all {len(all_items)} items as loose reference")
+            # Nothing was narrowed (educate mode, or fetched count already <=
+            # target) — no leftover to speak of.
+            state["leftover_fetch_pool"] = []
 
         prompt = build_generation_prompt(state)
         raw_response = None

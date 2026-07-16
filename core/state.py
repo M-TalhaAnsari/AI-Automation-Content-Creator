@@ -73,6 +73,19 @@ class TrendForgeState(TypedDict):
     generation_retry_count: int              # current post-validation retry attempt, capped at 2
     generation_validation_errors: List[str]  # Tier 1 validation failure reasons from the last check
 
+    # ── PHASE 2: CONVERSATION ACTIONS (conversation/actions.py) ─
+    # Both fields live here for convenience of passing into a single
+    # pipeline run, but are CONCEPTUALLY conversation-level state that
+    # persists across multiple runs within one interactive_mode() session
+    # — the main.py integration step is responsible for carrying these
+    # forward between runs, not resetting them the way other fields are.
+    active_constraints: List[Dict]      # e.g. [{"type": "exclude", "value": "tensorflow"}]
+    leftover_fetch_pool: List[Dict]     # items fetched but not used in Pass 1 selection
+                                         # (generation/content_generator.py) — targeted_refetch
+                                         # checks this before triggering a brand new fetch.
+                                         # Previously discarded entirely (confirmed via grep before
+                                         # this field was added); empty list if nothing was narrowed.
+
     # ── PHASE 1 INTEGRATION: explicit gate decisions ──────────
     # Set exactly once by node_evaluate_fetch/node_evaluate_generation
     # (workflow/nodes.py), using the correct pre-increment retry count.
@@ -137,6 +150,8 @@ def create_initial_state(raw_prompt: str, session_id: str) -> TrendForgeState:
         fetch_retry_count=0,
         generation_retry_count=0,
         generation_validation_errors=[],
+        active_constraints=[],
+        leftover_fetch_pool=[],
         fetch_should_retry=False,
         generation_should_retry=False,
     )
