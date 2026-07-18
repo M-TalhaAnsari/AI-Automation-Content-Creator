@@ -51,11 +51,38 @@ ADD_CONSTRAINT_PATTERN = re.compile(
     r"remove\s+the\s+)",
     re.IGNORECASE
 )
-_ADD_VALUE_PATTERN = re.compile(
-    r"(?:don'?t\s+(?:use|mention|include|show|add)\s+|"
-    r"avoid\s+|no\s+(?:more\s+)?|stop\s+(?:using|mentioning)\s+|"
-    r"without\s+|exclude\s+|never\s+(?:use|mention)\s+|"
-    r"remove\s+the\s+)(.+)",
+
+# Broad detector: any negation-shaped language, independent of which verb
+# follows it. "don't use X", "don't give me X", "don't show me things
+# that involve X" all start the same way -- the verb list approach only
+# catches the first phrasing. This exists precisely because real users
+# don't repeat the same sentence shape twice.
+NEGATION_CUE = re.compile(
+    r"\b(don'?t|do\s+not|never|no\s+more|avoid|without|exclude|stop|skip)\b",
+    re.IGNORECASE
+)
+
+# Precise extraction #1: object sits in a subordinate clause ("...that
+# include X", "...with tensorflow in it", "...featuring X"). This is
+# checked FIRST because it's the more specific/reliable of the two --
+# it pinpoints the actual excluded thing rather than the whole clause.
+_ADD_SUBORDINATE_VALUE = re.compile(
+    r"\b(?:that|which)?\s*(?:include[sd]?|including|contain[s]?|containing|"
+    r"has|have|having|featuring|using|use[sd]?|mention[s]?|mentioning|with)\s+(.+)",
+    re.IGNORECASE
+)
+
+# Precise extraction #2: object sits directly after the negation cue +
+# verb ("don't use X", "avoid X", "never mention X"). Verb list widened
+# to cover common conversational phrasings beyond the original set.
+_ADD_DIRECT_VALUE = re.compile(
+    r"(?:don'?t\s+(?:use|mention|include|show|add|give(?:\s+me)?|want|need|"
+    r"recommend|suggest|send(?:\s+me)?)\s+|"
+    r"do\s+not\s+(?:use|mention|include|show|add|give(?:\s+me)?|want|need|"
+    r"recommend|suggest|send(?:\s+me)?)\s+|"
+    r"avoid\s+|no\s+(?:more\s+)?|stop\s+(?:using|mentioning|showing)\s+|"
+    r"without\s+|exclude\s+|never\s+(?:use|mention|show|include)\s+|"
+    r"remove\s+the\s+|skip\s+)(.+)",
     re.IGNORECASE
 )
 
@@ -76,12 +103,32 @@ _REMOVE_VALUE_PATTERN = re.compile(
     re.IGNORECASE
 )
 
-_TRAILING_FILLER = re.compile(r'\b(please|thanks|thank you|okay|ok|now)\b\.?$', re.IGNORECASE)
+_TRAILING_FILLER = re.compile(
+    r'\b(please|thanks|thank you|okay|ok|now|in it|in them|in there|in this)\b\.?$',
+    re.IGNORECASE
+)
 _UNSAFE_CHARS = re.compile(r'[{}\[\]]')
 
-VALID_ACTIONS = list(ACTION_MAP.keys()) + [
-    "add_constraint", "remove_constraint", "run_new_request"
-]
+# Cuts off a second, self-referential clause that got swept into the
+# capture -- e.g. "the chinese language i don't want it" is really just
+# "the chinese language"; "i don't want it" restates the negation and
+# isn't part of the excluded topic.
+_EMBEDDED_CLAUSE_CUT = re.compile(
+    r"\s+\b(i|you|we|they|he|she|it)\s+(?:don'?t|do\s+not|dont|didn'?t|did\s+not|"
+    r"want(?:s|ed)?|need(?:s|ed)?|like[sd]?|is|are|was|were)\b.*$",
+    re.IGNORECASE
+)
+_LEADING_ARTICLE = re.compile(r"^(the|a|an|this|that|these|those)\s+", re.IGNORECASE)
+
+VALID_ACTIONS = list(
+    set(ACTION_MAP.keys()) | {"add_constraint", "remove_constraint", "run_new_request"}
+)
+# ^ add_constraint/remove_constraint are guaranteed valid even if they
+# aren't registered as ACTION_MAP dict entries in your actions.py (they
+# may just be standalone functions main.py imports directly). Without
+# this, an LLM-proposed add_constraint/remove_constraint silently gets
+# overwritten to run_new_request by the Stage 4 check below -- worth
+# double-checking your actual ACTION_MAP for this.
 
 ACTION_ARG_SCHEMAS = {
     "edit_existing": {"target_posts": (list, str), "instruction": str},
@@ -110,12 +157,15 @@ def _get_groq_client():
 # ------------------------------------------------------------------
 def _clean_value(raw: str) -> str:
     """Strip quoting/punctuation, cut at the first conjunction/comma so we
-    don't sweep trailing chatter into the constraint, drop trailing filler
-    words, strip characters that could break downstream JSON/prompt
-    templates, and hard-cap the length."""
+    don't sweep trailing chatter into the constraint, cut off any embedded
+    self-referential clause ("...i don't want it"), drop trailing filler
+    words and leading articles, strip characters that could break
+    downstream JSON/prompt templates, and hard-cap the length."""
     value = raw.strip().rstrip('.').strip('"').strip("'")
     value = re.split(r'\s*[,;]\s*|\s+\band\b\s+|\s+\bbut\b\s+', value, maxsplit=1)[0]
+    value = _EMBEDDED_CLAUSE_CUT.sub('', value).strip()
     value = _TRAILING_FILLER.sub('', value).strip()
+    value = _LEADING_ARTICLE.sub('', value).strip()
     value = _UNSAFE_CHARS.sub('', value).strip()
     return value[:MAX_CONSTRAINT_VALUE_LEN]
 
@@ -245,14 +295,26 @@ def check_needs_history_and_action(
                 "args": {"target_posts": "all", "instruction": user_message}}
 
     # Add constraint
-    if ADD_CONSTRAINT_PATTERN.search(user_message):
-        value_match = _ADD_VALUE_PATTERN.search(user_message)
-        cv = _clean_value(value_match.group(1)) if value_match else ""
+    negation_present = bool(NEGATION_CUE.search(user_message) or ADD_CONSTRAINT_PATTERN.search(user_message))
+    negation_unresolved = False
+    if negation_present:
+        cv = ""
+        subordinate = _ADD_SUBORDINATE_VALUE.search(user_message)
+        if subordinate:
+            cv = _clean_value(subordinate.group(1))
+        if not cv:
+            direct = _ADD_DIRECT_VALUE.search(user_message)
+            if direct:
+                cv = _clean_value(direct.group(1))
         if cv:
             return {"needs_history": True, "method": "deterministic_add_constraint",
                     "action": "add_constraint",
                     "args": {"constraint_type": "exclude", "constraint_value": cv}}
-        # extraction failed to produce anything usable -- don't guess, fall through
+        # Negation language is present but we couldn't cleanly isolate an
+        # object -- don't guess and don't silently drop it either. Flag it
+        # so Stage 2 gets an explicit nudge instead of treating this as a
+        # plain topic change.
+        negation_unresolved = True
 
     # Remove constraint
     if REMOVE_CONSTRAINT_PATTERN.search(user_message):
@@ -284,6 +346,15 @@ def check_needs_history_and_action(
             "add_constraint, remove_constraint, targeted_refetch, run_new_request), and args (dict).\n"
             "Do NOT resolve exact post numbers — only output the intent and the raw instruction."
         )
+        if negation_unresolved:
+            system_prompt += (
+                "\nNote: the message contains negation language ('don't', 'avoid', 'never', etc.) "
+                "that could not be automatically parsed into a clean excluded item. If the user is "
+                "asking to exclude, avoid, or stop seeing something in future content, classify this "
+                "as add_constraint with args = {\"constraint_type\": \"exclude\", \"constraint_value\": "
+                "<the excluded thing, a short phrase>}. Only use run_new_request if the message is "
+                "genuinely an unrelated new topic rather than a constraint on the current one."
+            )
         user_prompt = f"""Context:
 - Topic: {last_topic}
 - Numbered posts:

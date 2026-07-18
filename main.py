@@ -14,7 +14,11 @@ import sys, os, uuid, time, argparse, re
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import CONFIG, SUPPORTED_PLATFORMS
-from core.state import create_initial_state, get_total_tokens, add_log
+from core.state import create_initial_state, get_total_tokens, add_log, add_tokens
+
+# ── Phase 2: conversation-level session growth caps ────────────────
+MAX_ACTIVE_CONSTRAINTS = 20
+MAX_RECENT_MESSAGES = 5
 
 
 # ─────────────────────────────────────────────
@@ -126,10 +130,6 @@ def run(prompt: str, platform: str = None, post_count: int = 5, verbose: bool = 
         print(f"        ⚠️  Fetch error: {e} — continuing without live data")
 
     # ── ALREADY-COVERED LOOKUP ───────────────────────────────
-    # Pulls previously-generated post titles/links for this topic+platform
-    # from session history, so the generator can be told to avoid repeating
-    # them. Wrapped defensively — a lookup failure should never block
-    # generation, it should just mean this run has no "avoid" context.
     try:
         from memory.session_store import get_already_covered
         state["already_covered"] = get_already_covered(state["core_topic"], state["platform"])
@@ -156,31 +156,24 @@ def run(prompt: str, platform: str = None, post_count: int = 5, verbose: bool = 
     state = format_output(state)
     saved_path = save_output(state)
 
-    # Save to memory
     try:
         from memory.session_store import save_session
         save_session(state)
     except Exception as e:
-        # Previously swallowed silently — a failed history save now leaves
-        # a trace in the session's own log instead of vanishing with no
-        # indication anywhere that history stopped saving.
         add_log(state, f"[Main] Session history save failed: {e}")
 
     elapsed = time.time() - start
 
-    # Print final output
     print(state["final_output"])
     print(f"\n  ⏱  Completed in {elapsed:.1f}s")
     if saved_path:
         print(f"  💾 Saved to: {saved_path}")
 
-    # Verbose: show agent logs
     if verbose and state.get("logs"):
         print("\n  📋 AGENT LOGS:")
         for log in state["logs"]:
             print(f"     {log}")
 
-    # Non-fatal errors
     if state["errors"]:
         print("\n  ⚠️  Warnings:")
         for e in state["errors"]:
@@ -204,14 +197,6 @@ def run(prompt: str, platform: str = None, post_count: int = 5, verbose: bool = 
 # ─────────────────────────────────────────────
 
 def _extract_flags(prompt: str):
-    """
-    Pulls --platform and --posts out of the prompt independently of each
-    other and independently of order. The previous implementation chained
-    sequential str.split() calls, so combining both flags in one line
-    silently dropped whichever flag was written second (its value ended up
-    inside the discarded half of an earlier split) depending purely on
-    which flag appeared first in the text.
-    """
     platform = None
     posts = 5
 
@@ -228,28 +213,230 @@ def _extract_flags(prompt: str):
     return prompt.strip(), platform, posts
 
 
+# ─────────────────────────────────────────────
+# PHASE 2: ACTION DISPATCH HANDLERS
+# ─────────────────────────────────────────────
+
+def _handle_run_new_request(prompt: str, platform, posts: int, verbose: bool, conversation: dict):
+    """Unchanged existing behavior — the gate decided this is a fresh,
+    unrelated request, so it goes through the normal full pipeline.
+
+    KNOWN GAP: active_constraints is NOT threaded into this path yet.
+    """
+    if verbose:
+        print(f"  [Gate] -> run_new_request (full pipeline, unchanged)")
+    result = run(prompt, platform=platform, post_count=posts, verbose=verbose)
+    conversation["last_topic"] = result.get("topic")
+    conversation["last_platform"] = result.get("platform")
+    conversation["last_content_intent"] = result.get("content_intent")
+    conversation["last_generated_posts"] = result.get("posts", [])
+    conversation["last_output"] = result.get("output")
+
+
+def _handle_edit_existing(args: dict, conversation: dict, verbose: bool):
+    from conversation.actions import edit_existing
+    from generation.formatter import format_output, save_output
+    import uuid as _uuid
+
+    target_posts = args.get("target_posts", "all")
+    instruction = args.get("instruction", "")
+    if verbose:
+        print(f"  [Gate] -> edit_existing(target_posts={target_posts!r}, instruction={instruction!r})")
+
+    result = edit_existing(target_posts, instruction, conversation.get("last_generated_posts", []))
+    conversation["last_generated_posts"] = result["edited_posts"]
+    if verbose:
+        print(f"  [Gate] edit_existing used {result['tokens_used']} tokens")
+
+    state = create_initial_state(raw_prompt=instruction, session_id=str(_uuid.uuid4())[:8])
+    state["core_topic"] = conversation.get("last_topic") or ""
+    state["platform"] = conversation.get("last_platform") or "instagram"
+    state["generated_posts"] = conversation["last_generated_posts"]
+    state["sources_used"] = []
+    add_tokens(state, "content_generation", result["tokens_used"])
+
+    state = format_output(state)
+    saved_path = save_output(state)
+    print(state["final_output"])
+    if saved_path:
+        print(f"  💾 Saved to: {saved_path}")
+
+    conversation["last_output"] = state["final_output"]
+
+
+def _handle_add_constraint(args: dict, conversation: dict, verbose: bool):
+    from conversation.actions import add_constraint
+
+    ctype = args.get("constraint_type", "exclude")
+    cvalue = args.get("constraint_value", "")
+    if verbose:
+        print(f"  [Gate] -> add_constraint(type={ctype!r}, value={cvalue!r})")
+
+    result = add_constraint(ctype, cvalue, conversation.get("active_constraints", []))
+    conversation["active_constraints"] = result["active_constraints"][-MAX_ACTIVE_CONSTRAINTS:]
+
+    confirmation = f"✅ Got it — will {ctype} '{cvalue}' going forward."
+    print(f"\n  {confirmation}")
+    if verbose:
+        print(f"  [Gate] active_constraints now: {conversation['active_constraints']}")
+    print()
+
+    # NEW: any caller (CLI or web) can now read "what should the user see"
+    # uniformly from conversation['last_output'], regardless of which
+    # action fired -- previously only edit_existing/run_new_request/
+    # targeted_refetch set this, so a web layer had no way to retrieve
+    # this confirmation message after the fact.
+    conversation["last_output"] = confirmation
+
+
+def _handle_remove_constraint(args: dict, conversation: dict, verbose: bool):
+    from conversation.actions import remove_constraint
+
+    cvalue = args.get("constraint_value", "")
+    if verbose:
+        print(f"  [Gate] -> remove_constraint(value={cvalue!r})")
+
+    before = len(conversation.get("active_constraints", []))
+    result = remove_constraint(cvalue, conversation.get("active_constraints", []))
+    conversation["active_constraints"] = result["active_constraints"]
+    after = len(conversation["active_constraints"])
+
+    if after < before:
+        confirmation = f"✅ Removed constraint on '{cvalue}'."
+    else:
+        confirmation = f"ℹ️  No active constraint matching '{cvalue}' was found — nothing changed."
+    print(f"\n  {confirmation}")
+    if verbose:
+        print(f"  [Gate] active_constraints now: {conversation['active_constraints']}")
+    print()
+
+    # NEW: same reasoning as _handle_add_constraint above.
+    conversation["last_output"] = confirmation
+
+
+def _handle_targeted_refetch(args: dict, conversation: dict, verbose: bool):
+    from conversation.actions import targeted_refetch
+    from generation.content_generator import ContentGenerator
+    from generation.formatter import format_output, save_output
+    import uuid as _uuid
+
+    topic_delta = args.get("topic_delta", "")
+    current_topic = conversation.get("last_topic") or ""
+    if verbose:
+        print(f"  [Gate] -> targeted_refetch(topic_delta={topic_delta!r}, current_topic={current_topic!r})")
+
+    refetch_result = targeted_refetch(
+        topic_delta, current_topic,
+        conversation.get("leftover_fetch_pool", []),
+        conversation.get("active_constraints", []),
+    )
+    if verbose:
+        print(f"  [Gate] used_leftover_pool={refetch_result['used_leftover_pool']}")
+
+    state = create_initial_state(raw_prompt=f"{current_topic} {topic_delta}".strip(),
+                                  session_id=str(_uuid.uuid4())[:8])
+    state["core_topic"] = f"{current_topic} ({topic_delta})".strip()
+    state["platform"] = conversation.get("last_platform") or "instagram"
+    state["content_intent"] = conversation.get("last_content_intent") or "showcase"
+    state["fetched_data"] = refetch_result["fetched_data"]
+    state["total_items_fetched"] = sum(len(v) for v in refetch_result["fetched_data"].values())
+    state["sources_used"] = list(refetch_result["fetched_data"].keys())
+    state["active_constraints"] = conversation.get("active_constraints", [])
+
+    if verbose:
+        print(f"  [Gate] Generating content from {'leftover pool' if refetch_result['used_leftover_pool'] else 'new fetch'}...")
+    state = ContentGenerator().generate(state)
+    if verbose:
+        print(f"  [Gate] {len(state['generated_posts'])} posts generated | tokens={state['tokens']['content_generation']}")
+
+    state = format_output(state)
+    saved_path = save_output(state)
+    print(state["final_output"])
+    if saved_path:
+        print(f"  💾 Saved to: {saved_path}")
+
+    conversation["last_topic"] = state["core_topic"]
+    conversation["last_generated_posts"] = state["generated_posts"]
+    conversation["last_output"] = state["final_output"]
+    conversation["leftover_fetch_pool"] = state.get("leftover_fetch_pool", [])
+
+
+# ─────────────────────────────────────────────
+# NEW: shared gate-resolution step
+# ─────────────────────────────────────────────
+# Previously this logic (has_active_session computation, the gate call,
+# verbose printing, recent_messages bookkeeping) was inlined directly in
+# interactive_mode()'s while loop. Pulled out unchanged so a web request
+# handler can call the exact same decision logic the CLI uses, instead of
+# re-implementing or duplicating it. interactive_mode() below calls this
+# and is otherwise identical to before.
+
+def resolve_turn(prompt: str, conversation: dict, verbose: bool = False) -> dict:
+    """Runs the gate against one message + the given conversation state.
+    Mutates conversation['recent_messages'] as a side effect (unchanged
+    behavior). Returns the raw gate result dict."""
+    has_active_session = bool(conversation.get("last_generated_posts"))
+    if verbose:
+        print(f"  [Gate] has_active_session={has_active_session}")
+
+    from conversation.gate import check_needs_history_and_action
+    gate_result = check_needs_history_and_action(
+        user_message=prompt,
+        has_active_session=has_active_session,
+        last_topic=conversation.get("last_topic") or "",
+        recent_messages=conversation.get("recent_messages", []),
+        last_generated_posts=conversation.get("last_generated_posts", []),
+        active_constraints=conversation.get("active_constraints", []),
+    )
+    if verbose:
+        print(f"  [Gate] needs_history={gate_result['needs_history']} "
+              f"method={gate_result['method']} action={gate_result['action']} "
+              f"args={gate_result['args']}")
+
+    conversation.setdefault("recent_messages", [])
+    conversation["recent_messages"].append(prompt)
+    conversation["recent_messages"] = conversation["recent_messages"][-MAX_RECENT_MESSAGES:]
+
+    return gate_result
+
+
+def dispatch_action(action: str, args: dict, conversation: dict, verbose: bool,
+                     prompt: str = "", platform=None, posts: int = 5):
+    """Runs the handler for an already-resolved action. Split out from
+    resolve_turn so the web layer can enqueue the slow actions
+    (run_new_request/edit_existing/targeted_refetch) as background jobs
+    while still calling the cheap ones (add/remove_constraint) inline --
+    see web/jobs.py."""
+    if action == "run_new_request":
+        _handle_run_new_request(prompt, platform, posts, verbose, conversation)
+    elif action == "edit_existing":
+        _handle_edit_existing(args, conversation, verbose)
+    elif action == "add_constraint":
+        _handle_add_constraint(args, conversation, verbose)
+    elif action == "remove_constraint":
+        _handle_remove_constraint(args, conversation, verbose)
+    elif action == "targeted_refetch":
+        _handle_targeted_refetch(args, conversation, verbose)
+    else:
+        print(f"  ⚠️  Unknown action '{action}' from gate — falling back to a fresh request.")
+        _handle_run_new_request(prompt, platform, posts, verbose, conversation)
+
+
 def interactive_mode(verbose: bool = False):
     print_banner()
     print_status()
     print("  Interactive Mode — type anything, any length, any topic.")
     print("  Commands: status | history | last | verbose | quit\n")
 
-    # In-session conversation memory — separate from the per-run
-    # TrendForgeState created fresh inside run() on every call. This is
-    # what previously did not exist at all: every interactive line got a
-    # brand-new session_id and state, so generated_posts from the last
-    # turn was discarded the moment the next line was typed. This dict
-    # survives across turns within the same interactive session (it does
-    # NOT persist across separate program runs — that's session_store.py's
-    # job). Scope note: this only tracks the last turn's result, it does
-    # not yet support addressing individual posts ("post 3") — that needs
-    # the classifier/edit-path work, deliberately deferred.
     conversation = {
         "last_topic": None,
         "last_platform": None,
         "last_content_intent": None,
         "last_generated_posts": [],
         "last_output": None,
+        "active_constraints": [],
+        "leftover_fetch_pool": [],
+        "recent_messages": [],
     }
 
     while True:
@@ -278,28 +465,20 @@ def interactive_mode(verbose: bool = False):
                 continue
 
             prompt, platform, posts = _extract_flags(prompt)
-            # If the user didn't specify --platform this turn, default to
-            # whatever platform they last used instead of always falling
-            # back to run()'s hardcoded "instagram" default — a small,
-            # safe improvement that needs no classifier.
             if platform is None and conversation["last_platform"]:
                 platform = conversation["last_platform"]
 
-            result = run(prompt, platform=platform, post_count=posts, verbose=verbose)
+            gate_result = resolve_turn(prompt, conversation, verbose)
+            action = gate_result.get("action", "run_new_request")
+            args = gate_result.get("args", {})
 
-            conversation["last_topic"] = result.get("topic")
-            conversation["last_platform"] = result.get("platform")
-            conversation["last_content_intent"] = result.get("content_intent")
-            conversation["last_generated_posts"] = result.get("posts", [])
-            conversation["last_output"] = result.get("output")
+            dispatch_action(action, args, conversation, verbose,
+                             prompt=prompt, platform=platform, posts=posts)
 
         except KeyboardInterrupt:
             print("\n  Goodbye!")
             break
         except Exception as e:
-            # Kept consistent with the graceful-degradation pattern used
-            # throughout run() — a short message rather than a raw
-            # traceback dump straight to the user.
             print(f"  Error: {e}")
 
 

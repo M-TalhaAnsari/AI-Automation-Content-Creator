@@ -1082,6 +1082,195 @@
           "link": "https://www.taskade.com/blog/open-source-llms"
         }
       ]
+    },
+    {
+      "session_id": "ecaa06fa",
+      "timestamp": "2026-07-18T11:34:52.302142",
+      "prompt": "top 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3302,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "InstaStyle Transfer: AI\u2011Driven Fashion Filter",
+          "link": "https://github.com/tensorflow/tensorflow"
+        },
+        {
+          "title": "CaptionCraft: GPT\u2011style Instagram Caption Engine",
+          "link": "https://github.com/huggingface/transformers"
+        },
+        {
+          "title": "EngagePulse: Predicting Story Swipe\u2011Up Rates",
+          "link": "https://github.com/microsoft/ML-For-Beginners"
+        },
+        {
+          "title": "CarouselMatch: AI\u2011Curated Multi\u2011Image Carousel Builder",
+          "link": "https://github.com/d2l-ai/d2l-zh"
+        },
+        {
+          "title": "MoodLens: Emotion\u2011Aware Instagram Filter Selector",
+          "link": "https://github.com/tensorflow/tensorflow"
+        }
+      ]
+    },
+    {
+      "session_id": "920381e9",
+      "timestamp": "2026-07-18T11:36:11.835594",
+      "prompt": "instead of ML give me ai automations projects",
+      "topic": "instead of ml ai automations projects",
+      "platform": "instagram",
+      "sources_used": [
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 4132,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI\u2011Powered Lead Scoring Engine (Zero ML Code)",
+          "link": "https://www.sotatek.com/blogs/ai-and-machine-learning/ai-automation-example"
+        },
+        {
+          "title": "AutoGen Multi\u2011Agent Personal Assistant",
+          "link": "https://www.projectpro.io/article/artificial-intelligence-project-ideas/461"
+        },
+        {
+          "title": "LLM\u2011Driven Email & SharePoint Automation Blueprint",
+          "link": "https://www.youtube.com/watch?v=aIi4ehYFtls"
+        },
+        {
+          "title": "AI Automation vs RPA Showdown Dashboard",
+          "link": "https://redmarker.ai/en-us/posts/automation-vs-ai-vs-machine-learning-vs-nlp-what-they-mean-for-compliance-and-marketing"
+        },
+        {
+          "title": "End\u2011to\u2011End AI Automation Portfolio (Hire\u2011Ready)",
+          "link": "https://www.youtube.com/watch?v=MFSFcPsMsuE"
+        }
+      ]
+    },
+    {
+      "session_id": "95c7d8fb",
+      "timestamp": "2026-07-18T11:38:30.919785",
+      "prompt": "Don't give me those projects of ML that include tensorflow",
+      "topic": "TensorFlow ML projects",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3341,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Scalable Distributed Training Engine with Ray",
+          "link": "https://github.com/ray-project/ray"
+        },
+        {
+          "title": "TensorFlow Model Visualizer with Netron",
+          "link": "https://github.com/lutzroeder/netron"
+        },
+        {
+          "title": "Cross\u2011Framework Model Exporter using ONNX",
+          "link": "https://github.com/onnx/onnx"
+        },
+        {
+          "title": "Curated ML Library Stack for Production",
+          "link": "https://github.com/lukasmasuch/best-of-ml-python"
+        },
+        {
+          "title": "Hands\u2011On ML Notebooks \u2013 Legacy Edition",
+          "link": "https://github.com/ageron/handson-ml"
+        }
+      ]
+    },
+    {
+      "session_id": "058f30d6",
+      "timestamp": "2026-07-18T11:51:21.573152",
+      "prompt": "Give me 5 ML projects, but don't include those projects that have tensorflow as a tech stack",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3643,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'service': 'generativelanguage.googleapis.com', 'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI\u2011Powered Resume Screener with Hugging Face Transformers",
+          "link": "https://github.com/huggingface/transformers"
+        },
+        {
+          "title": "Zero\u2011Shot Multilingual News Summarizer",
+          "link": "https://github.com/huggingface/transformers"
+        },
+        {
+          "title": "Beginner\u2019s Visual Regression Tester",
+          "link": "https://github.com/microsoft/ML-For-Beginners"
+        },
+        {
+          "title": "Deep Learning Chinese Handwriting Recognizer",
+          "link": "https://github.com/d2l-ai/d2l-zh"
+        },
+        {
+          "title": "Time\u2011Series Sales Forecast Dashboard",
+          "link": "https://www.coursera.org/articles/machine-learning-projects"
+        }
+      ]
+    },
+    {
+      "session_id": "2993fef0",
+      "timestamp": "2026-07-18T11:54:08.054826",
+      "prompt": "Give mea?",
+      "topic": "give mea?",
+      "platform": "instagram",
+      "sources_used": [
+        "google_trends",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3423,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Random Word Generator CLI powered by OpenAI",
+          "link": "https://www.google.com/search?q=give+me+a+random+word"
+        },
+        {
+          "title": "Instant Joke Bot for Slack",
+          "link": "https://www.google.com/search?q=give+me+a+joke"
+        },
+        {
+          "title": "Riddle Solver AI Chat",
+          "link": "https://www.google.com/search?q=give+me+a+riddle"
+        },
+        {
+          "title": "Autocomplete Service for \"Give Me A\"",
+          "link": "https://www.google.com/search?q=give+me+a"
+        },
+        {
+          "title": "Break Reminder Chrome Extension",
+          "link": "https://www.google.com/search?q=give+me+a+break"
+        }
+      ]
     }
   ]
 }
