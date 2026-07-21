@@ -32,7 +32,7 @@ SESSION_COOKIE_NAME = "tf_session_id"
 # inline in the request. Everything else is genuinely slow (per the
 # 20-96s pipeline runs in the CLI logs) and must be a background job --
 # an HTTP request cannot responsibly block that long.
-INLINE_ACTIONS = {"add_constraint", "remove_constraint"}
+INLINE_ACTIONS = {"add_constraint", "remove_constraint", "clarify"}
 
 
 class ChatRequest(BaseModel):

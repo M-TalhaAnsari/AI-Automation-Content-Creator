@@ -1,10 +1,6 @@
 """
 routing/llm_router.py — LLM-Based Source Router (~50-100 tokens)
-
-Used as a fallback when RuleRouter cannot confidently decide
-(i.e. category came back as "unknown"). Uses Groq's small model —
-fast and cheap, since this is just a classification/selection task,
-not a creative one.
+(patched: see FIX comment for exactly what changed and why)
 """
 
 import json, re, sys, os
@@ -55,7 +51,17 @@ class LLMRouter(BaseRouter):
             response = client.chat.completions.create(
                 model=CONFIG.models.groq_model_small,
                 temperature=0.1,
-                max_tokens=60,
+                # FIX: same bug as intent_extractor.py, same model
+                # (openai/gpt-oss-20b, a reasoning model). max_tokens=60
+                # was even tighter than intent_extractor's original 800 --
+                # default "medium" reasoning_effort could plausibly consume
+                # the entire budget before the model ever writes its JSON
+                # array, silently landing on the hardcoded fallback list
+                # (which is why that list never contains github: it's a
+                # deliberately generic safety net, reached far more often
+                # than intended if this call keeps getting starved).
+                max_tokens=300,
+                reasoning_effort="low",
                 messages=[
                     {"role": "system", "content": ROUTER_SYSTEM},
                     {"role": "user", "content": _build_prompt(state, available)},

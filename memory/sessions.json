@@ -1271,6 +1271,345 @@
           "link": "https://www.google.com/search?q=give+me+a+break"
         }
       ]
+    },
+    {
+      "session_id": "92196d80",
+      "timestamp": "2026-07-19T07:20:00.259434",
+      "prompt": "I need 5 machine learning projects for my instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3451,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Real\u2011Time Plant Disease Detector (TensorFlow Lite)",
+          "link": "https://github.com/tensorflow/tensorflow"
+        },
+        {
+          "title": "Multilingual Voice\u2011Activated Travel Guide",
+          "link": "https://github.com/huggingface/transformers"
+        },
+        {
+          "title": "AI\u2011Powered Stock Trend Visualizer",
+          "link": "https://github.com/microsoft/ML-For-Beginners"
+        },
+        {
+          "title": "Dynamic Handwriting Style Transfer for Chinese Calligraphy",
+          "link": "https://github.com/d2l-ai/d2l-zh"
+        },
+        {
+          "title": "AI\u2011Curated Instagram Reel Idea Generator",
+          "link": "https://www.instagram.com/reel/DPf75oGCUJw"
+        }
+      ]
+    },
+    {
+      "session_id": "3b16167a",
+      "timestamp": "2026-07-19T07:22:26.973009",
+      "prompt": "So again give me 5 ml projects",
+      "topic": "so again 5 ml projects",
+      "platform": "instagram",
+      "sources_used": [
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3728,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'service': 'generativelanguage.googleapis.com', 'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "MovieLens Recommendation Engine with Real\u2011Time API",
+          "link": "https://hackernoon.com/top-5-machine-learning-projects-for-beginners-47b184e7837f"
+        },
+        {
+          "title": "Twitter Sentiment Dashboard for Brand Monitoring",
+          "link": "https://dilshansenarath.medium.com/5-beginner-friendly-machine-learning-projects-that-taught-me-a-lot-70c790685eb4"
+        },
+        {
+          "title": "CIFAR\u201110 Image Classification API with Docker & CI/CD",
+          "link": "https://dev.to/thearjun/the-5-levels-of-machine-learning-projects-from-kaggle-to-cutting-edge-ai-4eaf"
+        },
+        {
+          "title": "Retail Sales Time\u2011Series Forecast with Prophet & Cloud Functions",
+          "link": "https://www.dataquest.io/blog/machine-learning-projects-for-beginners-to-advanced"
+        },
+        {
+          "title": "IoT Sensor Anomaly Detection with Autoencoders",
+          "link": "https://fullstackdeeplearning.com/spring2021/lecture-5"
+        }
+      ]
+    },
+    {
+      "session_id": "ca5f87bd",
+      "timestamp": "2026-07-19T14:53:25.490107",
+      "prompt": "I need 5 machine learning projects for my instagram posts",
+      "topic": "5 machine learning projects posts",
+      "platform": "instagram",
+      "sources_used": [
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 2020,
+      "errors": [
+        "[IntentExtractor] LLM call failed: Connection error. \u2014 using rule fallback.",
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'service': 'generativelanguage.googleapis.com', 'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Uber Ride Demand Forecasting Dashboard",
+          "link": "https://data-flair.training/blogs/machine-learning-project-ideas/amp"
+        },
+        {
+          "title": "Myers\u2011Briggs Personality Predictor",
+          "link": "https://data-flair.training/blogs/machine-learning-project-ideas"
+        },
+        {
+          "title": "Crypto Sentiment Trading Bot",
+          "link": "https://hackernoon.com/top-5-machine-learning-projects-for-beginners-47b184e7837f"
+        },
+        {
+          "title": "Early Parkinson\u2019s Disease Detector",
+          "link": "https://github.com/data-flair/machine-learning-projects"
+        },
+        {
+          "title": "AI\u2011Powered Fake News Detector",
+          "link": "https://www.geeksforgeeks.org/machine-learning/machine-learning-projects"
+        }
+      ]
+    },
+    {
+      "session_id": "8f4d2011",
+      "timestamp": "2026-07-19T14:56:49.975354",
+      "prompt": "i need 5 machine learning projects for instagram",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3371,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI\u2011Powered Fashion Outfit Recommender",
+          "link": "https://github.com/tensorflow/tensorflow"
+        },
+        {
+          "title": "Multimodal Sentiment Analyzer for Video Reviews",
+          "link": "https://github.com/huggingface/transformers"
+        },
+        {
+          "title": "Personalized Learning Path Generator",
+          "link": "https://github.com/microsoft/ML-For-Beginners"
+        },
+        {
+          "title": "Real\u2011Time Hand Gesture Recognition for AR Gaming",
+          "link": "https://github.com/d2l-ai/d2l-zh"
+        },
+        {
+          "title": "Future Trend Forecast Dashboard for Emerging Tech",
+          "link": "https://blog.huebits.in/10-machine-learning-projects-for-2025-build-learn-boost-your-portfolio-with-code"
+        }
+      ]
+    },
+    {
+      "session_id": "b2843fbd",
+      "timestamp": "2026-07-19T15:05:29.469617",
+      "prompt": "above topics was ML i need something like AI automation projects that are trending now a days and help Ai aspiring engineer to find jobs",
+      "topic": "AI automation projects",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily",
+        "google_trends"
+      ],
+      "posts_count": 5,
+      "total_tokens": 4645,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI\u2011Powered Workflow Automation with n8n Templates",
+          "link": "https://github.com/enescingoz/awesome-n8n-templates"
+        },
+        {
+          "title": "Building Multi\u2011Agent AI Assistants with Agenta",
+          "link": "https://github.com/Agenta-AI/agenta"
+        },
+        {
+          "title": "Retrieval\u2011Augmented Generation (RAG) for Real\u2011World AI Projects",
+          "link": "https://everyonewhocode.com/real-world-ai-projects-that-get-you-hired"
+        },
+        {
+          "title": "AI\u2011Driven Edge Camera for Real\u2011Time Surveillance",
+          "link": "https://www.electronicsforu.com/electronics-projects/ai-engineering-projects"
+        },
+        {
+          "title": "Career\u2011Boosting AI Automation Project Portfolio",
+          "link": "https://codebasics.io/blog/5-production-ready-ai-projects-to-build-in-2026"
+        }
+      ]
+    },
+    {
+      "session_id": "8f963f5a",
+      "timestamp": "2026-07-19T15:07:32.582464",
+      "prompt": "i don't want with n8n i want with using langchain, langgraph, other tools",
+      "topic": "n8n LangChain integration",
+      "platform": "instagram",
+      "sources_used": [
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3657,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "LangGraph Makes LangChain the Only Real Multi\u2011Agent Powerhouse",
+          "link": "https://prepzee.com/blog/building-ai-workflows-with-langchain-langgraph-n8n-and-autogen"
+        },
+        {
+          "title": "RAG Pipelines: LangChain Beats n8n\u2019s Simple Summaries Every Time",
+          "link": "https://appforge.hu/en/blog/n8n-vs-langchain-which-to-choose"
+        },
+        {
+          "title": "70+ AI Nodes in n8n: A Low\u2011Code Shortcut, Not a Replacement for LangChain",
+          "link": "https://www.digitalapplied.com/blog/n8n-70-ai-nodes-langchain-agent-workflows-open-source"
+        },
+        {
+          "title": "LangChain Remains the King of LLM Frameworks in 2026",
+          "link": "https://serenitiesai.com/articles/n8n-vs-langchain-2026"
+        },
+        {
+          "title": "n8n\u2019s 2026 Error\u2011Handling Upgrade: Nice, Yet Still Behind LangChain\u2019s Observability",
+          "link": "https://www.softomatesolutions.com/blog/n8n-updates-2026-whats-new"
+        }
+      ]
+    },
+    {
+      "session_id": "547e0e52",
+      "timestamp": "2026-07-20T09:20:06.544336",
+      "prompt": "I want 5 machine learning projects for my instagram posts",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3352,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI-Powered Urban Traffic Flow Optimizer",
+          "link": "https://github.com/tensorflow/tensorflow"
+        },
+        {
+          "title": "Global Brand Sentiment Pulse \u2013 Multilingual NLP Dashboard",
+          "link": "https://github.com/huggingface/transformers"
+        },
+        {
+          "title": "Smart Crop Yield Predictor for Smallholder Farmers",
+          "link": "https://github.com/microsoft/ML-For-Beginners"
+        },
+        {
+          "title": "Interactive Deep Learning Art Generator \u2013 Learn by Creating",
+          "link": "https://github.com/d2l-ai/d2l-zh"
+        },
+        {
+          "title": "Audio Emotion Detector for Podcast Hosts",
+          "link": "https://github.com/tensorflow/tensorflow"
+        }
+      ]
+    },
+    {
+      "session_id": "cd0c4453",
+      "timestamp": "2026-07-20T09:21:55.081201",
+      "prompt": "Generate a list of 5 compelling machine learning project ideas that do NOT use TensorFlow, are suitable for showcasing on Instagram, and are designed to help AI engineers boost their career growth and improve job prospects. For each project, include a catchy title, a brief description (2-3 sentences), the primary tools/libraries (e.g., PyTorch, scikit-learn, XGBoost, etc.), and a highlight of the career-relevant skill or outcome the project demonstrates.",
+      "topic": "a list of 5 compelling machine",
+      "platform": "instagram",
+      "sources_used": [
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 4075,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "GutterVision: Real\u2011Time Defect Detector for Portable Gutter Machines",
+          "link": "https://newtechmachinery.com/learning-center/5-compelling-reasons-to-invest-in-a-portable-gutter-machine"
+        },
+        {
+          "title": "ToolGuard: Predictive Maintenance Dashboard for CNC Machines",
+          "link": "https://my.avnet.com/integrated/resources/article/five-best-ai-use-cases"
+        },
+        {
+          "title": "AI\u2011Case: Smart Use\u2011Case Recommender for Emerging AI Projects",
+          "link": "https://en.weidamc.com/blog/top-machine-tools-every-manufacturer-should-know"
+        },
+        {
+          "title": "SummarAI: Self\u2011Supervised Article Summarizer for AI News",
+          "link": "https://lumenalta.com/insights/5-types-of-machine-learning"
+        },
+        {
+          "title": "LineOpt: Reinforcement Learning Scheduler for Production Lines",
+          "link": "https://www.ibm.com/think/topics/machine-learning-types"
+        }
+      ]
+    },
+    {
+      "session_id": "d9e1c5d1",
+      "timestamp": "2026-07-20T09:24:19.273736",
+      "prompt": "Create a list of 5 broader, industry-focused machine learning project ideas (not using TensorFlow) suitable for Instagram posts, aimed at helping AI engineers boost their career growth and job prospects. For each project, provide:\n- A catchy title\n- A brief 2-3 sentence description\n- Primary tools/libraries (e.g., PyTorch, scikit-learn, XGBoost, LightGBM, etc.)\n- The specific industry it targets (e.g., healthcare, finance, manufacturing, e\u2011commerce, energy)\n- The career\u2011relevant skill or outcome the project demonstrates.",
+      "topic": "a list of 5 broader, industry-focused",
+      "platform": "instagram",
+      "sources_used": [
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3938,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI\u2011Powered Crop Yield Predictor for Precision Agriculture",
+          "link": "https://magneticmarketing.com/blog/20-types-of-business-industries-the-complete-list"
+        },
+        {
+          "title": "Readmission Risk Engine for Hospital Networks",
+          "link": "https://www.strunkmedia.com/complete-list-business-verticals-industries-sectors?amp="
+        },
+        {
+          "title": "Real\u2011Time Fraud Detection Graph for FinTech Payments",
+          "link": "https://magneticmarketing.com/blog/20-types-of-business-industries-the-complete-list"
+        },
+        {
+          "title": "Visual Search & Style Matcher for Luxury E\u2011Commerce",
+          "link": "https://www.strunkmedia.com/complete-list-business-verticals-industries-sectors?amp="
+        },
+        {
+          "title": "Predictive Maintenance Dashboard for Wind Farms",
+          "link": "https://magneticmarketing.com/blog/20-types-of-business-industries-the-complete-list"
+        }
+      ]
     }
   ]
 }
