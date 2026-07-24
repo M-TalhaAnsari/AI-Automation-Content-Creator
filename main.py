@@ -1,6 +1,6 @@
 """
 main.py — TrendForge Interactive Runner
-(patched: see FIX comments for exactly what changed and why)
+(patched: workflow/gates.py wired into run() for real -- see FIX comments)
 """
 
 import sys, os, uuid, re
@@ -52,11 +52,69 @@ def run(prompt: str, platform: str = None, post_count: int = 5, verbose: bool = 
         print(f"        ⚠️  Router error: {e} — using defaults")
         state["selected_sources"] = ["google_trends", "hackernews"]
 
+    # ── STEP 3: DATA FETCHERS + QUALITY GATE ─────────────────
+    # FIX: workflow/gates.py existed, was unit-solid, and was never wired
+    # into anything ("Not wired into any graph yet" per its own header).
+    # data_starved never got set anywhere in the real pipeline, which is
+    # why generation/prompts.py's honest-concept-pitch branch (built
+    # specifically to avoid promising a repo link that doesn't exist)
+    # never activated even in a real forced-failure run with only 2
+    # items surviving the topic filter.
     print("  [3/5] 🌐 Fetching live data...")
     try:
         from fetchers.fetcher_orchestrator import FetcherOrchestrator
-        state = FetcherOrchestrator().fetch(state)
-        print(f"        ✅ {state['total_items_fetched']} items from {state['sources_used']}")
+        from workflow.gates import evaluate_fetch_quality, MAX_FETCH_RETRIES
+
+        fetcher = FetcherOrchestrator()
+        state = fetcher.fetch(state)
+        quality = evaluate_fetch_quality(state)
+        print(f"        ✅ {state['total_items_fetched']} items from {state['sources_used']} — {quality['reason']}")
+
+        while not quality["sufficient"] and quality["should_retry"]:
+            state["fetch_retry_count"] = state.get("fetch_retry_count", 0) + 1
+            next_query = quality.get("next_query")
+            print(f"        🔁 Retry {state['fetch_retry_count']}/{MAX_FETCH_RETRIES}: {quality['reason']}")
+
+            if next_query:
+                # ASSUMPTION, isolated to these two lines: fetcher_orchestrator.py
+                # passes the whole state through as a SimpleNamespace and
+                # delegates entirely to per-fetcher getattr() reads (pattern
+                # lives in e.g. tavily_fetcher.py, which I haven't seen) --
+                # so I can't confirm every fetcher reads fetch_summary
+                # specifically rather than core_topic or search_queries[0].
+                # core/state.py documents fetch_summary as "primary search
+                # query used", so it's updated here; search_queries is also
+                # reordered to promote next_query to front, covering a
+                # fetcher that iterates the list instead. If sources still
+                # don't change on retry in a real run, this is the first
+                # place to check.
+                state["fetch_summary"] = next_query
+                queries = state.get("search_queries", [])
+                state["search_queries"] = [next_query] + [q for q in queries if q != next_query]
+
+            # fetcher.fetch() fully replaces fetched_data/sources_used/
+            # total_items_fetched each call -- merge with the previous
+            # attempt's results instead of losing them.
+            prev_fetched = state.get("fetched_data", {})
+            prev_sources = set(state.get("sources_used", []))
+
+            state = fetcher.fetch(state)
+
+            merged = dict(prev_fetched)
+            for src, items in state.get("fetched_data", {}).items():
+                merged[src] = merged.get(src, []) + items
+            state["fetched_data"] = merged
+            state["sources_used"] = list(prev_sources | set(state.get("sources_used", [])))
+            state["total_items_fetched"] = sum(len(v) for v in merged.values())
+
+            quality = evaluate_fetch_quality(state)
+            print(f"        ✅ {state['total_items_fetched']} items from {state['sources_used']} — {quality['reason']}")
+
+        if not quality["sufficient"]:
+            state["data_starved"] = True
+            print(f"        ⚠️  Data-starved after {state['fetch_retry_count']} retries — "
+                  f"proceeding with honest concept-pitch framing instead of fake repo links")
+
     except Exception as e:
         state["fetched_data"], state["total_items_fetched"], state["sources_used"] = {}, 0, []
         print(f"        ⚠️  Fetch error: {e} — continuing without live data")
@@ -68,11 +126,51 @@ def run(prompt: str, platform: str = None, post_count: int = 5, verbose: bool = 
         state["already_covered"] = []
         add_log(state, f"[Main] Already-covered lookup skipped: {e}")
 
+    # ── STEP 4: CONTENT GENERATOR + VALIDATION GATE ──────────
+    # FIX: same story as the fetch gate -- evaluate_post_validation existed,
+    # was never called, and generation_validation_errors never got
+    # populated anywhere real. Calling ContentGenerator().generate(state)
+    # again is safe for a retry: its own topic-filter and Pass-1-selection
+    # steps are idempotent against an already-narrowed fetched_data (Pass 1
+    # only fires when len(items) > target_count, which is false after the
+    # first narrowing), so a second call effectively just regenerates the
+    # creative step from the same selected data -- exactly what a
+    # validation-triggered retry should do.
     print("  [4/5] ✨ Generating content...")
     try:
         from generation.content_generator import ContentGenerator
-        state = ContentGenerator().generate(state)
+        from workflow.gates import evaluate_post_validation, evaluate_item_kind_match, MAX_GENERATION_RETRIES
+
+        def _validate(state):
+            v1 = evaluate_post_validation(state)
+            v2 = evaluate_item_kind_match(state)
+            return {
+                "valid": v1["valid"] and v2["valid"],
+                "errors": v1["errors"] + v2["errors"],
+                "should_retry": v1["should_retry"] or v2["should_retry"],
+            }
+
+        generator = ContentGenerator()
+        state = generator.generate(state)
+        validation = _validate(state)
         print(f"        ✅ {len(state['generated_posts'])} posts | tokens={state['tokens']['content_generation']}")
+
+        while not validation["valid"] and validation["should_retry"]:
+            state["generation_retry_count"] = state.get("generation_retry_count", 0) + 1
+            state["generation_validation_errors"] = validation["errors"]
+            print(f"        🔁 Retry {state['generation_retry_count']}/{MAX_GENERATION_RETRIES}: "
+                  f"{len(validation['errors'])} validation issue(s)")
+            for err in validation["errors"][:5]:
+                print(f"           - {err}")
+
+            state = generator.generate(state)
+            validation = _validate(state)
+            print(f"        ✅ {len(state['generated_posts'])} posts | tokens={state['tokens']['content_generation']}")
+
+        if not validation["valid"]:
+            print(f"        ⚠️  Still has validation issues after {state['generation_retry_count']} "
+                  f"retries — proceeding with best available output")
+
     except Exception as e:
         print(f"        ❌ Generation failed: {e}")
         state["generated_posts"] = []
@@ -123,13 +221,6 @@ def _extract_flags(prompt: str):
 
 
 def _handle_run_new_request(args, prompt, platform, posts, verbose, conversation):
-    # FIX: this previously ignored `args` entirely and always used the
-    # raw closure `prompt`/`platform` -- meaning the orchestrator's
-    # resolved, context-aware instruction (which correctly folds in the
-    # conversation history) was thrown away, and the pipeline ran on
-    # whatever the user literally typed this turn instead. This is the
-    # bug that produced the n8n/LangChain mismatch in the logs: the
-    # orchestrator wrote the right prompt, it just never got used.
     resolved_prompt = args.get("prompt") or prompt
     resolved_platform = args.get("platform") or platform
     if verbose and resolved_prompt != prompt:
@@ -151,10 +242,6 @@ def _handle_edit_existing(args, conversation, verbose):
         print(f"  [Action] edit_existing(target_posts={target_posts!r}, instruction={instruction!r})")
     result = edit_existing(target_posts, instruction, conversation.get("last_generated_posts", []))
 
-    # FIX: edit_existing can now report a real failure via result["error"]
-    # instead of silently returning the same posts unchanged with no
-    # signal at all -- surface it honestly rather than showing identical
-    # output and letting the user think their edit was applied.
     if result.get("error"):
         print(f"\n  ⚠️  Couldn't apply that edit ({result['error']}) — posts are unchanged.\n")
         conversation["last_output"] = f"Edit failed: {result['error']}"
@@ -237,7 +324,6 @@ def _handle_targeted_refetch(args, conversation, verbose):
 
 def dispatch_action(action, args, conversation, verbose, prompt="", platform=None, posts=5):
     handlers = {
-        # FIX: now passes args through instead of discarding it.
         "run_new_request": lambda: _handle_run_new_request(args, prompt, platform, posts, verbose, conversation),
         "edit_existing": lambda: _handle_edit_existing(args, conversation, verbose),
         "add_constraint": lambda: _handle_add_constraint(args, conversation, verbose),
@@ -296,15 +382,7 @@ def interactive_mode(verbose: bool = False):
             dispatch_action(result["action"], result["args"], conversation, verbose,
                              prompt=prompt, platform=platform, posts=posts)
 
-            # FIX: previously the tool-call's recorded outcome in
-            # message_history was just the literal string
-            # "dispatched:{action_name}" -- content-free. This replaces
-            # it with what actually happened (conversation["last_output"]
-            # is already set by every handler above), so later turns'
-            # sliding-window/summary context reflects real state instead
-            # of a placeholder.
             update_last_tool_result(conversation, conversation.get("last_output") or "")
-
             maybe_summarize(conversation)
 
         except KeyboardInterrupt:

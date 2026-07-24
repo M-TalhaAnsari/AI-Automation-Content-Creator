@@ -1,30 +1,11 @@
-"""
-workflow/gates.py — Phase 1 evaluation gates
-
-Pure, deterministic functions. Neither function mutates state or calls
-any fetcher/LLM. Both are cheap pre-filters (per the project's standing
-rule against hardcoded judgment logic replacing real judgment) — these
-gates only check structural sufficiency, not content quality. Tier 2
-(LLM-based qualitative critique) is explicitly out of scope this phase.
-
-Not wired into any graph yet — workflow/graph.py imports and attaches
-these in the integration step.
-"""
-
 from typing import Dict, Any
 from core.state import TrendForgeState
 from config import PLATFORM_SETTINGS
 
-MIN_ITEMS_FLOOR = 3          # total_items_fetched below this = insufficient
+MIN_ITEMS_FLOOR = 3
 MAX_FETCH_RETRIES = 2
 MAX_GENERATION_RETRIES = 2
 
-# Structural pattern check, not a content-quality judgment call — a link
-# pointing at a search engine's results page is never "a specific source,"
-# regardless of what content_intent or topic is involved. Found via a real
-# run: when fallback sources (google_trends/hackernews) return a
-# constructed search-query URL as their "link" field, the non-empty check
-# alone waves it through as if it were a genuine source.
 GENERIC_SEARCH_URL_PATTERNS = ("google.com/search", "bing.com/search", "duckduckgo.com/?q=")
 
 
@@ -33,25 +14,10 @@ def _is_generic_search_url(link: str) -> bool:
     return any(p in link_l for p in GENERIC_SEARCH_URL_PATTERNS)
 
 
-# Intents that require a real link downstream (see generation/prompts.py's
-# link_guide per branch) — only these are worth checking link quality for
-# at the fetch stage. educate/inspire allow empty links, so garbage links
-# there don't block anything.
 LINK_REQUIRED_INTENTS = {"showcase", "news", "review"}
 
 
 def evaluate_fetch_quality(state: TrendForgeState) -> Dict[str, Any]:
-    """
-    Checks whether fetched data is sufficient to proceed to generation.
-
-    Returns:
-        {
-            "sufficient": bool,
-            "reason": str,
-            "should_retry": bool,             # False once retry cap is hit
-            "next_query": str | None,         # next unused search_queries variant
-        }
-    """
     total_items = state.get("total_items_fetched", 0)
     sources_used = state.get("sources_used", [])
     retry_count = state.get("fetch_retry_count", 0)
@@ -60,16 +26,6 @@ def evaluate_fetch_quality(state: TrendForgeState) -> Dict[str, Any]:
     has_returning_source = len(sources_used) > 0
     count_sufficient = total_items >= MIN_ITEMS_FLOOR and has_returning_source
 
-    # Link-quality check — found via a real forced-failure run: fallback
-    # sources (e.g. google_trends/hackernews) can return enough ITEMS to
-    # pass the count check while every "link" field is a generic
-    # search-engine URL. That data would then fail evaluate_post_validation
-    # on every single generation retry for the identical reason, since
-    # content_generator.py's Pass 1 selection only narrows fetched_data
-    # once — retries regenerate from the SAME already-selected items, so
-    # regenerating can't invent a real link from data that structurally
-    # lacks one. Catching it here instead sends the retry to fetch new
-    # data, not wasted generation attempts.
     link_quality_ok = True
     if content_intent in LINK_REQUIRED_INTENTS:
         fetched_data = state.get("fetched_data", {})
@@ -104,15 +60,12 @@ def evaluate_fetch_quality(state: TrendForgeState) -> Dict[str, Any]:
     next_query = None
     if retry_available:
         queries = state.get("search_queries", [])
-        # Cycle to the next unused variant rather than repeating the same
-        # query — intent_extractor.py already generates up to 3 angles,
-        # reuse that instead of a new LLM call for retry-query generation.
         if queries:
             next_index = retry_count + 1
             if next_index < len(queries):
                 next_query = queries[next_index]
             else:
-                next_query = queries[-1]  # exhausted variants, reuse last rather than error
+                next_query = queries[-1]
 
     return {
         "sufficient": False,
@@ -122,19 +75,94 @@ def evaluate_fetch_quality(state: TrendForgeState) -> Dict[str, Any]:
     }
 
 
-def evaluate_post_validation(state: TrendForgeState) -> Dict[str, Any]:
+def evaluate_item_kind_match(state: TrendForgeState) -> Dict[str, Any]:
     """
-    Tier 1 (deterministic) validation only. Tier 2 (LLM qualitative
-    critique) is explicitly out of scope for this phase — no trigger
-    condition has been defined for it yet.
+    Tier 2 (semantic) check — deliberately separate from evaluate_post_validation,
+    which is Tier-1/deterministic only by design (see its docstring). Whether
+    "Prompt Engineering" counts as "a named API or protocol" requires actual
+    judgment, not a keyword rule -- that's exactly the ReAct-style
+    generate -> observe -> correct loop this function feeds into, reusing
+    the same generation_validation_errors/correction_block mechanism
+    evaluate_post_validation already uses.
 
-    Returns:
-        {
-            "valid": bool,
-            "errors": List[str],   # one entry per failed check, human-readable
-            "should_retry": bool,
-        }
+    Only runs at all when state["item_kind"] is non-empty (set by
+    intent_extractor.py only when the request asked for N discrete named
+    things). Returns the same {valid, errors, should_retry} shape as
+    evaluate_post_validation so main.py's retry loop can treat them
+    identically.
     """
+    item_kind = state.get("item_kind", "")
+    posts = state.get("generated_posts", [])
+    retry_count = state.get("generation_retry_count", 0)
+
+    if not item_kind or not posts:
+        return {"valid": True, "errors": [], "should_retry": False}
+
+    titles = [p.get("title", "") for p in posts]
+    prompt = f"""Requested item kind: "{item_kind}"
+
+Titles generated:
+{chr(10).join(f"{i+1}. {t}" for i, t in enumerate(titles))}
+
+For each title, decide whether it genuinely names a specific instance of "{item_kind}"
+(not a related practice, technique, or adjacent concept)."""
+
+    try:
+        from groq import Groq
+        from config import CONFIG
+        client = Groq(api_key=CONFIG.models.groq_api_key)
+        response = client.chat.completions.create(
+            model=CONFIG.models.groq_model_small,
+            temperature=0.0,
+            max_tokens=500,
+            reasoning_effort="low",
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "item_kind_check",
+                    "strict": True,
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "mismatched_indices": {"type": "array", "items": {"type": "integer"}},
+                            "reason": {"type": "string"},
+                        },
+                        "required": ["mismatched_indices", "reason"],
+                        "additionalProperties": False,
+                    },
+                },
+            },
+            messages=[
+                {"role": "system", "content": "You check whether generated titles match a requested category. "
+                                               "Return ONLY the JSON schema requested."},
+                {"role": "user", "content": prompt},
+            ],
+        )
+        import json
+        result = json.loads(response.choices[0].message.content)
+        mismatched = result.get("mismatched_indices", [])
+    except Exception:
+        # Verification call itself failing shouldn't block the pipeline --
+        # degrade to "assume valid" rather than retry forever on a check
+        # that can't run.
+        return {"valid": True, "errors": [], "should_retry": False}
+
+    if not mismatched:
+        return {"valid": True, "errors": [], "should_retry": False}
+
+    mismatched_valid = [i for i in mismatched if 1 <= i <= len(titles)]
+    if not mismatched_valid:
+        return {"valid": True, "errors": [], "should_retry": False}
+
+    errors = [f"post {i}: title '{titles[i-1]}' doesn't actually name {item_kind}" for i in mismatched_valid]
+    return {
+        "valid": False,
+        "errors": errors,
+        "should_retry": retry_count < MAX_GENERATION_RETRIES,
+    }
+
+
+def evaluate_post_validation(state: TrendForgeState) -> Dict[str, Any]:
     posts = state.get("generated_posts", [])
     platform = state.get("platform", "instagram")
     content_intent = state.get("content_intent", "showcase")
@@ -147,17 +175,11 @@ def evaluate_post_validation(state: TrendForgeState) -> Dict[str, Any]:
         errors.append("generated_posts is empty")
     else:
         max_caption_chars = PLATFORM_SETTINGS.get(platform, {}).get("max_caption_chars", 2200)
-
-        # Per generation/prompts.py's link_guide per intent — read from
-        # there, not redefined independently here.
         link_required_intents = {"showcase", "news", "review"}
-        link_optional_intents = {"educate", "inspire"}
-
         seen_titles = set()
 
         for i, post in enumerate(posts):
             label = f"post {i + 1}"
-
             for field in ("title", "hook", "caption"):
                 if not post.get(field):
                     errors.append(f"{label}: missing or empty '{field}'")
@@ -170,8 +192,6 @@ def evaluate_post_validation(state: TrendForgeState) -> Dict[str, Any]:
             if not isinstance(hashtags, list) or not hashtags:
                 errors.append(f"{label}: 'hashtags' must be a non-empty list")
 
-            # Link rule — data_starved overrides the normal per-intent
-            # requirement regardless of what content_intent says.
             link = post.get("link", "")
             if not data_starved and content_intent in link_required_intents:
                 if not link:
@@ -180,10 +200,6 @@ def evaluate_post_validation(state: TrendForgeState) -> Dict[str, Any]:
                     errors.append(
                         f"{label}: link is a generic search-engine results page, not a specific source — {link}"
                     )
-            # link_optional_intents and data_starved=True: no check needed, empty is fine.
-            # (A generic search URL is still low-value for optional-link intents too, but
-            # since those don't require a link at all, an empty string is preferable to a
-            # fake one there — not flagged as an error in that branch.)
 
             caption = post.get("caption", "")
             if isinstance(caption, str) and len(caption) > max_caption_chars:

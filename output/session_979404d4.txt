@@ -1,0 +1,151 @@
+
+╔══════════════════════════════════════════════════════════╗
+║  🔥 TRENDFORGE — INSTAGRAM CONTENT SERIES                             ║
+║  Topic: generative AI interview questions                ║
+║  Sources: tavily                                         ║
+╚══════════════════════════════════════════════════════════╝
+
+────────────────────────────────────────────────────────────
+  POST 1/5 — What Is Retrieval‑Augmented Generation (RAG)?
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  🚀 Want to ace the interview question that separates novices from experts? Master RAG now!
+
+  📌 SUMMARY
+  Core Concept: combining external knowledge with LLMs
+  Mechanism: retrieve → augment → generate
+  Pitfall: treating retrieved text as ground truth without validation
+
+  🔗 LINK
+  https://amquesteducation.com/blog/top-generative-ai-interview-questions-and-answers
+
+  ✍️  CAPTION
+  Retrieval‑Augmented Generation (RAG) is the go‑to strategy when a language model needs up‑to‑date or domain‑specific facts. First, a vector store indexes documents with embeddings. When a query arrives, the system performs a nearest‑neighbor search, pulls the most relevant passages, and injects them into the prompt as context. The LLM then generates an answer grounded in that retrieved text. Interviewers love this question because it tests your understanding of both information retrieval pipelines and prompt engineering. 🎯
+  
+  Common mistake: assuming the retrieved snippet is always correct. Always mention validation steps—like cross‑checking with multiple sources or using confidence scoring. 
+  
+  💡 Save this post if you’ll need RAG in your next interview, and drop your toughest RAG scenario in the comments!
+
+  🏷️  HASHTAGS
+  #GenerativeAI #InterviewPrep #RAG #LLM #AIEngineer
+
+────────────────────────────────────────────────────────────
+  POST 2/5 — How Do Foundation Models Differ From Fine‑Tuned LLMs?
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  🔍 Interviewers ask this to gauge if you can separate theory from practice—don’t get caught off‑guard!
+
+  📌 SUMMARY
+  Concept: pre‑training on massive corpora
+  Process: task‑specific fine‑tuning
+  Misconception: fine‑tuned models are completely new architectures
+
+  🔗 LINK
+  https://amquesteducation.com/blog/top-generative-ai-interview-questions-and-answers
+
+  ✍️  CAPTION
+  Foundation models are massive, transformer‑based networks trained on broad, heterogeneous data—think GPT‑4 or LLaMA. Their weights capture general language patterns but lack specialization. Fine‑tuning adapts these weights on a narrower dataset (e.g., medical notes) using supervised or reinforcement learning, allowing the model to excel at a specific task while retaining its broad knowledge.
+  
+  In an interview, explain the trade‑off: fine‑tuning improves performance on a niche task but can introduce catastrophic forgetting if not done carefully. Mention techniques like LoRA or adapters that keep the base model frozen while adding lightweight task‑specific layers. 🎓
+  
+  👍 Like, save, and comment with a fine‑tuning challenge you’ve faced!
+
+  🏷️  HASHTAGS
+  #FoundationModel #FineTuning #AIInterview #MachineLearning #TechCareer
+
+────────────────────────────────────────────────────────────
+  POST 3/5 — Agentic Workflows vs. Standard Chatbots
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  🤖 The interview question that reveals if you understand next‑gen AI orchestration—master it today!
+
+  📌 SUMMARY
+  Definition: autonomous agents with tool use
+  Contrast: static response generation
+  Pitfall: assuming agents are just smarter chatbots
+
+  🔗 LINK
+  https://www.datacamp.com/blog/genai-interview-questions
+
+  ✍️  CAPTION
+  An agentic workflow couples an LLM with external tools (APIs, databases, code executors) to perform multi‑step tasks autonomously. The model decides which tool to call, parses the result, and iterates until a goal is met. A standard chatbot, by contrast, generates a single response based solely on the conversation history.
+  
+  Key interview talking points: planning loops, tool‑calling APIs, and state management. Highlight safety concerns—like preventing infinite loops or unauthorized tool access. 🛡️
+  
+  💬 Share your favorite agentic framework in the comments and save this for your next interview prep!
+
+  🏷️  HASHTAGS
+  #AgenticAI #Chatbot #GenAI #AIEngineering #CareerGrowth
+
+────────────────────────────────────────────────────────────
+  POST 4/5 — Evaluating Generative Model Outputs Without a Ground Truth
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  📊 How do you measure success when there’s no single correct answer? Nail this interview question!
+
+  📌 SUMMARY
+  Metric: human‑in‑the‑loop evaluation
+  Technique: BLEU, ROUGE, and newer embeddings‑based scores
+  Pitfall: over‑reliance on automatic metrics
+
+  🔗 LINK
+  https://www.kore1.com/generative-ai-engineer-interview-questions
+
+  ✍️  CAPTION
+  Because generative AI often produces creative, non‑deterministic results, traditional accuracy metrics fall short. Interviewers expect you to discuss human evaluation pipelines (e.g., Likert scales, pairwise preference testing) and advanced automatic metrics like BERTScore or MTEB that compare semantic similarity via embeddings.
+  
+  Emphasize the importance of diversity and relevance metrics, and warn against trusting BLEU/ROUGE alone for open‑ended generation. Mention post‑hoc analysis such as error taxonomy and failure mode identification.
+  
+  🔖 Save this guide, and comment with the metric you trust most for your projects!
+
+  🏷️  HASHTAGS
+  #ModelEvaluation #GenAI #AIInterview #Metrics #DataScience
+
+────────────────────────────────────────────────────────────
+  POST 5/5 — Ethics & Governance Questions Every GenAI Engineer Must Answer
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  ⚖️ The toughest interview curveball—prove you can build responsible AI!
+
+  📌 SUMMARY
+  Principle: bias detection & mitigation
+  Framework: model cards & data sheets
+  Misstep: ignoring downstream misuse scenarios
+
+  🔗 LINK
+  https://claveprep.com/blog/generative-ai-interview-questions-2026
+
+  ✍️  CAPTION
+  Ethical considerations are now a core interview topic. Be ready to discuss bias audits (e.g., demographic parity, equalized odds), the creation of model cards that document intended use, limitations, and mitigation strategies, and governance practices like continuous monitoring for harmful outputs.
+  
+  Highlight real‑world examples—such as image generation models producing stereotypical depictions—and how you’d implement safety layers (content filters, human‑in‑the‑loop review). Demonstrating a proactive stance shows maturity beyond pure technical skill.
+  
+  🚀 If you found this useful, hit save and tag a fellow AI engineer who needs to brush up on AI ethics!
+
+  🏷️  HASHTAGS
+  #AIethics #GenAI #ResponsibleAI #TechInterview #AIEngineer
+
+────────────────────────────────────────────────────────────
+  📊 TREND INSIGHT
+────────────────────────────────────────────────────────────
+  With GenAI roles exploding in 2026, candidates scramble for concise, interview‑ready knowledge. Posts that break down complex concepts into bite‑size, actionable insights see high saves as engineers build quick reference decks for upcoming interviews.
+
+════════════════════════════════════════════════════
+                TOKEN USAGE REPORT
+                ════════════════════════════════════════════════════
+                Prompt parsing:        1345 tokens  (Groq — openai/gpt-oss-20b)
+                Source routing:           0 tokens  (rules + Groq fallback)
+                Data fetching:            0 tokens  (HTTP APIs — free)
+                Content generation:    2561 tokens  (openai/gpt-oss-120b)
+                ────────────────────────────────────────────────
+                TOTAL:                 3906 tokens
+                ESTIMATED COST:      $0.0016 USD
+                ────────────────────────────────────────────────
+                Models used:    openai/gpt-oss-20b (Groq), openai/gpt-oss-120b (Groq)
+                Sources used:   tavily
+                ════════════════════════════════════════════════════

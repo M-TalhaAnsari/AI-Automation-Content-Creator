@@ -1,0 +1,8 @@
+
+╔══════════════════════════════════════════════════════════╗
+║  🔥 TRENDFORGE — INSTAGRAM CONTENT SERIES                             ║
+║  Topic: machine learning projects                        ║
+║  Sources: github, tavily                                 ║
+╚══════════════════════════════════════════════════════════╝
+
+  ⚠️  No posts generated. Check your API keys and fetched data.

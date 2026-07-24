@@ -1,10 +1,12 @@
 """
-web/jobs.py -- background job that a worker process (worker.py) actually
-executes. This is where the 20-96s pipeline runs, off the request thread.
+web/jobs.py -- background job that a worker process (web/worker.py)
+actually executes. This is where the 20-96s pipeline runs, off the
+request thread.
 
-Note the import of main.dispatch_action happens INSIDE the job function,
-not at module load time -- keeps worker startup fast and avoids importing
-the whole pipeline in the web process that only enqueues jobs.
+Imports of main/orchestrator happen inside the function, not at module
+load time, so a worker process that only ever runs this one job doesn't
+pay the import cost of the whole pipeline until a job actually arrives
+(and so `rq worker` can import this module cheaply to register it).
 """
 from typing import Any, Dict, Optional
 
@@ -18,21 +20,18 @@ def run_slow_action(
     posts: int = 5,
     verbose: bool = False,
 ) -> Dict[str, Any]:
-    from web.redis_store import get_conversation, save_conversation
-    import main
+    from memory.redis_session_store import load_conversation, save_conversation
+    from web.handlers import finalize_turn
 
-    conversation = get_conversation(session_id)
+    conversation = load_conversation(session_id)
 
-    main.dispatch_action(
-        action, args, conversation, verbose,
-        prompt=prompt, platform=platform, posts=posts,
-    )
+    reply = finalize_turn(action, args, conversation, verbose, prompt=prompt, platform=platform, posts=posts)
 
     save_conversation(session_id, conversation)
 
     return {
         "action": action,
-        "reply": conversation.get("last_output", ""),
+        "reply": reply,
         "topic": conversation.get("last_topic"),
         "platform": conversation.get("last_platform"),
     }

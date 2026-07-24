@@ -1,0 +1,206 @@
+
+╔══════════════════════════════════════════════════════════╗
+║  🔥 TRENDFORGE — INSTAGRAM CONTENT SERIES                             ║
+║  Topic: AI projects                                      ║
+║  Sources: github, tavily                                 ║
+╚══════════════════════════════════════════════════════════╝
+
+────────────────────────────────────────────────────────────
+  POST 1/5 — AI-Powered Resume Screener 🤖✨
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  What if your AI could instantly rank every resume like a hiring manager on steroids?
+
+  📌 SUMMARY
+  Fine‑tuned BERT for semantic matching
+  MongoDB vector store for fast similarity search
+  Deployed on AWS Lambda with API Gateway
+
+  🔗 LINK
+  https://www.linkedin.com/posts/madhur-m_if-you-want-to-build-a-career-in-ai-in-2026-activity-7428105761316294656-1oPS
+
+  ✍️  CAPTION
+  Project Overview:
+  Build a production‑ready resume screening engine that ingests PDFs, extracts text, encodes each candidate with a BERT‑based encoder, and returns a relevance score against a job description. 🎯
+  
+  Tech Stack:
+  - Python 3.11, PyTorch, HuggingFace Transformers
+  - LangChain for prompt orchestration
+  - MongoDB Atlas (vector search) & S3 for storage
+  - FastAPI + Docker, served via AWS Lambda
+  
+  Core System Architecture:
+  1️⃣ PDF ingestion → OCR (Tesseract) → text cleaning
+  2️⃣ Embedding generation (distilbert‑base‑uncased) → vector store
+  3️⃣ Real‑time similarity query + ranking algorithm
+  4️⃣ Results returned via a sleek FastAPI endpoint, ready for integration with ATS tools.
+  
+  🚀 Ready to impress recruiters? Comment **"RESUME"** below and I’ll DM you the full GitHub repo with deployment scripts! 🎁
+
+  🏷️  HASHTAGS
+  #AI #ResumeScreening #CareerGrowth
+
+────────────────────────────────────────────────────────────
+  POST 2/5 — Smart Invoice Processor 📄💡
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Turn chaotic invoices into clean data in seconds—no manual entry required!
+
+  📌 SUMMARY
+  LayoutLMv3 for document understanding
+  PostgreSQL for structured storage
+  Docker‑Compose on GCP Cloud Run
+
+  🔗 LINK
+  https://codebasics.io/blog/5-production-ready-ai-projects-to-build-in-2026
+
+  ✍️  CAPTION
+  Project Overview:
+  An end‑to‑end pipeline that reads scanned invoices, extracts line items, totals, and vendor info, then stores them in a relational DB for analytics.
+  
+  Tech Stack:
+  - LayoutLMv3 (Microsoft) for table detection
+  - PyMuPDF for PDF handling
+  - SQLAlchemy + PostgreSQL
+  - Docker‑Compose, CI/CD with GitHub Actions, deployed on GCP Cloud Run
+  
+  Core System Architecture:
+  🔹 Ingestion Service → OCR → LayoutLMv3 model → Entity extraction
+  🔹 Validation microservice (rules engine) → Normalization
+  🔹 Persistence layer writes to PostgreSQL, triggers a webhook for downstream ERP.
+  
+  💬 Want the code? Drop **"INVOICE"** in the comments and I’ll slide the repo link straight to your DMs! 📥
+
+  🏷️  HASHTAGS
+  #AI #InvoiceAutomation #DataEngineering
+
+────────────────────────────────────────────────────────────
+  POST 3/5 — AI Job‑Search Assistant 🤝🚀
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Imagine an AI that writes, tailors, and submits your applications while you sip coffee.
+
+  📌 SUMMARY
+  GPT‑4o for cover‑letter generation
+  ElasticSearch for job matching
+  Hosted on Azure App Service
+
+  🔗 LINK
+  https://www.kdnuggets.com/7-real-world-ai-projects-to-build-in-2026-with-guides
+
+  ✍️  CAPTION
+  Project Overview:
+  A personal job‑search bot that scrapes listings, matches your skill vector, drafts customized cover letters, and auto‑fills application forms.
+  
+  Tech Stack:
+  - OpenAI GPT‑4o via Azure OpenAI Service
+  - ElasticSearch for semantic job search
+  - Selenium for form automation
+  - Streamlit UI, containerized with Docker, deployed on Azure App Service
+  
+  Core System Architecture:
+  1️⃣ Skill profile → embedding (OpenAI embeddings)
+  2️⃣ ElasticSearch query → top‑10 matches
+  3️⃣ Prompt engineering creates role‑specific cover letters
+  4️⃣ Selenium bots submit applications, logging status in a PostgreSQL dashboard.
+  
+  🔥 Curious to try it? Comment **"JOBBOT"** and I’ll DM you the full repo with step‑by‑step deployment guide! 🎉
+
+  🏷️  HASHTAGS
+  #AI #JobSearch #Automation
+
+────────────────────────────────────────────────────────────
+  POST 4/5 — Real‑Time Market Sentiment Analyzer 📈🧠
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Can your AI predict market moves before the news hits the ticker?
+
+  📌 SUMMARY
+  FinBERT fine‑tuned on Twitter data
+  Kafka streaming pipeline
+  Kubernetes deployment on GKE
+
+  🔗 LINK
+  https://www.datacamp.com/blog/7-ai-projects-for-all-levels
+
+  ✍️  CAPTION
+  Project Overview:
+  A streaming system that ingests financial tweets, scores sentiment with a FinBERT model, and feeds live sentiment scores into a dashboard for traders.
+  
+  Tech Stack:
+  - FinBERT (HuggingFace) fine‑tuned on 2025‑2026 crypto & stock tweets
+  - Apache Kafka for real‑time ingestion
+  - Spark Structured Streaming for processing
+  - Grafana + Prometheus for visualization
+  - Kubernetes (GKE) for scalable deployment
+  
+  Core System Architecture:
+  🔸 Kafka producers pull from Twitter API → topic "tweets"
+  🔸 Spark job reads, cleans, runs FinBERT inference → sentiment score
+  🔸 Scores written to InfluxDB, visualized in Grafana dashboards.
+  
+  💡 Want the codebase? Drop **"SENTIMENT"** below and I’ll send the repo link straight to your inbox! 📬
+
+  🏷️  HASHTAGS
+  #AI #Finance #Streaming
+
+────────────────────────────────────────────────────────────
+  POST 5/5 — Personalized AI Research Assistant 📚🤓
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Stop scrolling endless papers—let an AI fetch, summarize, and cite the perfect article for you.
+
+  📌 SUMMARY
+  RAG pipeline with Llama‑3
+  Pinecone vector DB
+  Serverless deployment on Vercel
+
+  🔗 LINK
+  https://www.linkedin.com/posts/madhur-m_if-you-want-to-build-a-career-in-ai-in-2026-activity-7428105761316294656-1oPS
+
+  ✍️  CAPTION
+  Project Overview:
+  A Retrieval‑Augmented Generation (RAG) tool that queries scholarly databases, pulls PDFs, creates embeddings, and generates concise summaries with citations.
+  
+  Tech Stack:
+  - Llama‑3 (Meta) for generation
+  - Pinecone vector store for semantic retrieval
+  - PyPDF2 for PDF parsing
+  - FastAPI backend, front‑end in Next.js, deployed serverless on Vercel
+  
+  Core System Architecture:
+  1️⃣ User query → FastAPI endpoint
+  2️⃣ Pinecone similarity search returns top‑5 papers
+  3️⃣ PDFs parsed, chunked, re‑embedded
+  4️⃣ Llama‑3 generates answer with inline citations
+  5️⃣ Response displayed in a clean UI, exportable as markdown.
+  
+  🚀 Ready to level up your research workflow? Comment **"RESEARCH"** and I’ll DM you the complete repo and API keys! 📖
+
+  🏷️  HASHTAGS
+  #AI #ResearchAssistant #RAG
+
+────────────────────────────────────────────────────────────
+  📊 TREND INSIGHT
+────────────────────────────────────────────────────────────
+  AI‑driven automation projects are exploding on LinkedIn and Reddit, driving massive saves as engineers hunt portfolio pieces that prove real‑world impact. Showcasing end‑to‑end pipelines with deployment details taps into the current demand for hire‑ready, production‑grade work.
+
+════════════════════════════════════════════════════
+                TOKEN USAGE REPORT
+                ════════════════════════════════════════════════════
+                Prompt parsing:        1341 tokens  (Groq — openai/gpt-oss-20b)
+                Source routing:           0 tokens  (rules + Groq fallback)
+                Data fetching:            0 tokens  (HTTP APIs — free)
+                Content generation:    1911 tokens  (openai/gpt-oss-120b)
+                ────────────────────────────────────────────────
+                TOTAL:                 3252 tokens
+                ESTIMATED COST:      $0.0012 USD
+                ────────────────────────────────────────────────
+                Models used:    openai/gpt-oss-20b (Groq), openai/gpt-oss-120b (Groq)
+                Sources used:   github, tavily
+                ════════════════════════════════════════════════════

@@ -1610,6 +1610,252 @@
           "link": "https://magneticmarketing.com/blog/20-types-of-business-industries-the-complete-list"
         }
       ]
+    },
+    {
+      "session_id": "b59e2fac",
+      "timestamp": "2026-07-22T11:41:28.846179",
+      "prompt": "I want 5 different api topic for my instagram post. We will simple explain the topic in every post. These topic should related to AI engineer path.",
+      "topic": "AI engineer APIs",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3903,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "LLM API Landscape 2026",
+          "link": "https://www.classicinformatics.com/blog/top-ai-apis-to-build-intelligent-products"
+        },
+        {
+          "title": "Prompt Engineering Foundations",
+          "link": ""
+        },
+        {
+          "title": "Building a FastAPI Wrapper for LLMs",
+          "link": ""
+        },
+        {
+          "title": "Vector Stores & Retrieval\u2011Augmented Generation",
+          "link": ""
+        },
+        {
+          "title": "Observability for LLM Pipelines",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "session_id": "67be9dda",
+      "timestamp": "2026-07-22T11:42:56.389139",
+      "prompt": "Provide five distinct API topics suitable for Instagram posts that explain each simply, focusing on the AI engineer career path. Include topics such as FastAPI, REST API, WebSocket, and other relevant API technologies or patterns used by AI engineers.",
+      "topic": "AI engineer API topics",
+      "platform": "instagram",
+      "sources_used": [
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3644,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'service': 'generativelanguage.googleapis.com', 'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "FastAPI: The AI Engineer\u2019s Secret Weapon",
+          "link": "https://callsphere.ai/blog/vw1c-fastapi-websocket-production-patterns-2026"
+        },
+        {
+          "title": "REST API Design for LLM\u2011Powered Services",
+          "link": "https://tech-insider.org/fastapi-tutorial-python-rest-api-13-steps-2026"
+        },
+        {
+          "title": "WebSockets: Real\u2011Time AI Agent Communication",
+          "link": "https://callsphere.ai/blog/vw1c-fastapi-websocket-production-patterns-2026"
+        },
+        {
+          "title": "Background Tasks: Fire\u2011and\u2011Forget for AI Pipelines",
+          "link": "https://tech-insider.org/fastapi-tutorial-python-rest-api-13-steps-2026"
+        },
+        {
+          "title": "OpenAPI & Schema\u2011First Design for LLM APIs",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "session_id": "9313000b",
+      "timestamp": "2026-07-23T05:44:33.280108",
+      "prompt": "I want top 5 machine learning projects for my instagram post. These should be awesome and good that help AI engineer to grow their career",
+      "topic": "machine learning projects",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 0,
+      "total_tokens": 5191,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: [Errno 11001] getaddrinfo failed",
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}",
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'service': 'generativelanguage.googleapis.com', 'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent'}}]}}",
+        "[ContentGenerator] Critical: Fallback engine failed: Error code: 400 - {'error': {'message': \"Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.\", 'type': 'invalid_request_error', 'code': 'json_validate_failed', 'failed_generation': 'I\u2019m sorry, but I can\u2019t fulfill this request as written because it requires real URLs that are not provided in the source data.'}}"
+      ],
+      "posts": []
+    },
+    {
+      "session_id": "0f2d9769",
+      "timestamp": "2026-07-23T12:19:27.492586",
+      "prompt": "I need 5 projects for my instagram post for AI engineers who want to grow their career.",
+      "topic": "AI projects",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3252,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'service': 'generativelanguage.googleapis.com', 'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI-Powered Resume Screener \ud83e\udd16\u2728",
+          "link": "https://www.linkedin.com/posts/madhur-m_if-you-want-to-build-a-career-in-ai-in-2026-activity-7428105761316294656-1oPS"
+        },
+        {
+          "title": "Smart Invoice Processor \ud83d\udcc4\ud83d\udca1",
+          "link": "https://codebasics.io/blog/5-production-ready-ai-projects-to-build-in-2026"
+        },
+        {
+          "title": "AI Job\u2011Search Assistant \ud83e\udd1d\ud83d\ude80",
+          "link": "https://www.kdnuggets.com/7-real-world-ai-projects-to-build-in-2026-with-guides"
+        },
+        {
+          "title": "Real\u2011Time Market Sentiment Analyzer \ud83d\udcc8\ud83e\udde0",
+          "link": "https://www.datacamp.com/blog/7-ai-projects-for-all-levels"
+        },
+        {
+          "title": "Personalized AI Research Assistant \ud83d\udcda\ud83e\udd13",
+          "link": "https://www.linkedin.com/posts/madhur-m_if-you-want-to-build-a-career-in-ai-in-2026-activity-7428105761316294656-1oPS"
+        }
+      ]
+    },
+    {
+      "session_id": "cd84ab33",
+      "timestamp": "2026-07-23T12:21:04.974878",
+      "prompt": "Provide 5 project ideas tailored for AI engineers aiming to advance their careers, suitable for Instagram posts.",
+      "topic": "AI project ideas",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3243,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI\u2011Powered Quant Research Engine with Qlib",
+          "link": "https://github.com/microsoft/qlib"
+        },
+        {
+          "title": "Kaggle Competition Mastery Kit",
+          "link": "https://github.com/faridrashidi/kaggle-solutions"
+        },
+        {
+          "title": "Full\u2011Stack Vibe Coding AI Tutor",
+          "link": "https://github.com/datawhalechina/vibe-vibe"
+        },
+        {
+          "title": "AI Research Assistant \u2013 Supervisor Skills",
+          "link": "https://github.com/HKUSTDial/Supervisor-Skills"
+        },
+        {
+          "title": "Multi\u2011Model RL Trading Bot with Qlib & RD\u2011Agent",
+          "link": "https://github.com/microsoft/qlib"
+        }
+      ]
+    },
+    {
+      "session_id": "979404d4",
+      "timestamp": "2026-07-24T05:40:43.990899",
+      "prompt": "I want some common interview question that would ask for Generative AI. I want to post this on instagram for AI engineer for their career growth in in interview.",
+      "topic": "generative AI interview questions",
+      "platform": "instagram",
+      "sources_used": [
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3906,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'service': 'generativelanguage.googleapis.com', 'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "What Is Retrieval\u2011Augmented Generation (RAG)?",
+          "link": "https://amquesteducation.com/blog/top-generative-ai-interview-questions-and-answers"
+        },
+        {
+          "title": "How Do Foundation Models Differ From Fine\u2011Tuned LLMs?",
+          "link": "https://amquesteducation.com/blog/top-generative-ai-interview-questions-and-answers"
+        },
+        {
+          "title": "Agentic Workflows vs. Standard Chatbots",
+          "link": "https://www.datacamp.com/blog/genai-interview-questions"
+        },
+        {
+          "title": "Evaluating Generative Model Outputs Without a Ground Truth",
+          "link": "https://www.kore1.com/generative-ai-engineer-interview-questions"
+        },
+        {
+          "title": "Ethics & Governance Questions Every GenAI Engineer Must Answer",
+          "link": "https://claveprep.com/blog/generative-ai-interview-questions-2026"
+        }
+      ]
+    },
+    {
+      "session_id": "f2d7f99e",
+      "timestamp": "2026-07-24T05:44:02.373792",
+      "prompt": "Provide a list of technical interview questions for AI engineer candidates focusing on generative AI, covering model design for specific projects, handling hallucinations, evaluation metrics, scalability, and deployment considerations.",
+      "topic": "AI engineer interview questions",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 4172,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Designing a Generative Model for a Specific Project",
+          "link": "https://github.com/amitshekhariitbhu/ai-engineering-interview-questions"
+        },
+        {
+          "title": "Mitigating Hallucinations in Generative AI",
+          "link": "https://amquesteducation.com/blog/top-generative-ai-interview-questions-and-answers"
+        },
+        {
+          "title": "Evaluation Metrics That Matter for Generative Models",
+          "link": ""
+        },
+        {
+          "title": "Scalability Strategies for Large\u2011Scale Generative Deployments",
+          "link": "https://www.kore1.com/generative-ai-engineer-interview-questions"
+        },
+        {
+          "title": "Deployment Considerations: Security, Monitoring, and Continuous Learning",
+          "link": ""
+        }
+      ]
     }
   ]
 }

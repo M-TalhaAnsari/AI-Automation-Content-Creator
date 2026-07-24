@@ -105,6 +105,16 @@ RULES:
    - "inspire" = motivate/inspire audience
    - "review" = give opinion on something
 
+5. item_kind: If the user asks for a specific COUNT of DISCRETE, INDIVIDUALLY NAMED things
+   (not sub-aspects of one broader topic), name what kind of thing each one should be, in a
+   few words. Otherwise return "".
+   Examples:
+   - "5 different APIs for AI engineers" → "a named API or protocol"
+   - "3 diet plans for weight loss" → "a named diet plan"
+   - "4 startup ideas" → "a named startup idea"
+   - "explain machine learning" → "" (sub-concepts of one topic, not discrete named things)
+   - "top 5 exercises for abs" → "a named exercise movement"
+
 USER PROMPT: "{cleaned_text}"{known_str}
 
 Return ONLY this JSON, nothing else:
@@ -116,6 +126,7 @@ Return ONLY this JSON, nothing else:
   "post_count": <1-10>,
   "content_type": "<posts|script|thread|carousel>",
   "special_requests": [<strings>],
+  "item_kind": "<see rule 5 above, or empty string>",
   "search_query": "<specific targeted search query with year>",
   "search_query_2": "<alternative search angle, different keywords>",
   "search_query_3": "<third angle, e.g. site:github.com or reddit.com>"
@@ -284,6 +295,13 @@ class IntentExtractor:
         add_log(state, f"[IntentExtractor] Search queries generated: {queries}")
 
         state["is_long_prompt"] = rules.get("is_long", len(state["raw_prompt"]) > 120)
+
+        # item_kind: generic, freshly inferred per-request -- no hardcoded
+        # domain examples here, that's the whole point. Empty string means
+        # "no discrete-named-items constraint applies", which is the
+        # correct default when the LLM call failed or the request is
+        # genuinely about sub-concepts of one topic.
+        state["item_kind"] = (llm.get("item_kind") or "").strip()
 
         return state
 

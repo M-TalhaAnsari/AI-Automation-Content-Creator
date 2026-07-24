@@ -1,21 +1,6 @@
 """
 generation/prompts.py — Dynamic Cross-Field Prompt Templates
-
-A completely domain-agnostic prompt builder. Automatically detects the niche,
-identifies the target audience, and shapes high-engagement, value-driven captions
-for any field.
-
-Implements all 5 content_intent values documented in core/state.py:
-showcase | educate | news | inspire | review — each with its own
-intent_instruction, item_instruction, and schema guidance (title/hook/
-summary/link/caption). Previously only educate + a showcase-flavored
-"else" existed; news/inspire/review silently fell through to showcase-
-style "comment for the repo link" framing regardless of actual intent.
-
-Also reads state["already_covered"] (populated in main.py via
-memory/session_store.py's get_already_covered()) and injects an
-avoid-repeating block into the prompt when prior sessions exist for this
-topic + platform. Empty list is the normal "no history" case, not an error.
+(patched: added correction_block — see FIX comment)
 """
 
 import html
@@ -33,7 +18,6 @@ def build_generation_prompt(state: dict) -> str:
     content_intent = state.get("content_intent", "showcase")
     already_covered = state.get("already_covered", [])
 
-    # Format data cleanly regardless of source type
     data_sections = []
     for source, items in fetched.items():
         if not items:
@@ -43,23 +27,16 @@ def build_generation_prompt(state: dict) -> str:
             title = item.get("title", item.get("name", ""))
             url = item.get("link", "")
             desc = item.get("summary", item.get("description", item.get("snippet", "")))
-
             title = html.unescape(str(title)).strip()
             desc = html.unescape(str(desc)).strip()
-
             if len(title) > 100:
                 title = title[:97].rstrip() + "..."
-
             stars = item.get("stars", "")
             star_str = f" (Rating/Stars: {stars})" if stars else ""
             lines.append(f"  - {title}{star_str}: {str(desc)[:500]} | {url}")
         data_sections.append("\n".join(lines))
 
     data_block = "\n\n".join(data_sections) if data_sections else f"Topic: {topic} (No live web data available — use your internal knowledge base)"
-
-    # ── content_intent → generation strategy ──────────────────────
-    # Each branch defines the same 7 variables so the schema-building
-    # code below never needs to know which intent it's dealing with.
 
     if content_intent == "educate":
         intent_instruction = (
@@ -81,8 +58,6 @@ def build_generation_prompt(state: dict) -> str:
         title_guide = "Clean, high-impact concept name relevant to the topic's own domain — not necessarily technical (e.g., 'How Docker Isolation Actually Works' for a tech topic, or 'Why Morning Light Resets Your Cortisol' for a lifestyle topic)"
         hook_guide = "A powerful, authority-driven hook sentence establishing why this concept matters. If the user explicitly requested a specific line, theme, or framing (like interview prep) in their raw prompt, you MUST adapt and use that exact sentiment as your hook — otherwise keep the hook general-audience, not assuming any specific professional context."
         summary_guide = '["Core Sub-Concept Breakdown 1", "Underlying Mechanism or Principle 2", "Common Misconception or Pitfall 3"]'
-        # Concept-first, not source-first — a given concept slot often has no
-        # single real-world URL it maps to. Link stays optional here.
         link_guide = (
             'OPTIONAL — include a real URL copied exactly from the source data above ONLY if one directly '
             'supports this specific concept slot. If no single source maps cleanly to this concept, use an '
@@ -171,16 +146,9 @@ def build_generation_prompt(state: dict) -> str:
         )
 
     else:
-        # Default / true fallback: showcase (also covers any unexpected value)
         data_starved = state.get("data_starved", False)
 
         if data_starved:
-            # No real project data survived fetching (even after retries) —
-            # the CTA "comment X and I'll DM you the repo link" would be a
-            # flat lie here, since there's no repo to send. Found via a real
-            # forced-failure run: the model kept the fake-repo CTA anyway,
-            # producing generic invented "project ideas" with a promise it
-            # can't keep. Shift framing to honest concept pitches instead.
             intent_instruction = (
                 "The user wants to showcase compelling PROJECT CONCEPTS related to the topic, but the fetched "
                 "source data was insufficient or low-quality even after retries — treat these as original concept "
@@ -221,7 +189,19 @@ def build_generation_prompt(state: dict) -> str:
         hook_guide = "Disruptive, curiosity-spiking hook sentence that grabs a developer's attention instantly"
         summary_guide = '["Core Technical Highlight 1", "Key System Asset 2", "Deployment Target 3"]'
 
-    # ── Dynamic schema template injecting the context-aware guides ──
+    # Generic, domain-agnostic constraint -- applies to whichever intent
+    # branch resolved above. item_kind is freshly inferred per-request by
+    # intent_extractor.py, so this works for "5 different APIs" just as
+    # well as "3 diet plans" or "4 startup ideas" without any hardcoded
+    # examples here.
+    item_kind = state.get("item_kind", "")
+    if item_kind:
+        item_instruction += (
+            f" Each of the {post_count} slots MUST be a distinct, individually-nameable "
+            f"{item_kind} — not a related practice, technique, or adjacent concept that merely "
+            f"relates to the topic."
+        )
+
     def _build_slot(n):
         return f"""    {{
         "number": {n},
@@ -244,6 +224,24 @@ def build_generation_prompt(state: dict) -> str:
     {covered_lines}
     Do not reuse these exact titles or angles — find distinct ones."""
 
+    # FIX: new. evaluate_post_validation (workflow/gates.py) was already
+    # populating state["generation_validation_errors"] on a failed attempt,
+    # but nothing ever read it back -- a generation retry just re-ran this
+    # exact same prompt again and hoped a different random sample fixed
+    # things. This surfaces the SPECIFIC prior failures (missing fields,
+    # a generic-search-URL link, a duplicate title, caption too long) so
+    # the retry can actually correct them instead of blindly re-rolling.
+    correction_block = ""
+    retry_count = state.get("generation_retry_count", 0)
+    validation_errors = state.get("generation_validation_errors", [])
+    if retry_count > 0 and validation_errors:
+        errors_text = "\n".join(f"  - {e}" for e in validation_errors[:8])
+        correction_block = f"""
+
+    **FIX THESE SPECIFIC ISSUES FROM YOUR PREVIOUS ATTEMPT (retry {retry_count}):**
+    {errors_text}
+    Correct every issue listed above in this new attempt — do not repeat the same mistakes."""
+
     return f"""You are an elite technical content strategist. Create {post_count} distinct {platform} posts based on the real data provided below.
 
     PLATFORM: {platform}
@@ -260,6 +258,7 @@ def build_generation_prompt(state: dict) -> str:
     **REAL SOURCE DATA:**
     {data_block}
     {avoid_block}
+    {correction_block}
 
     **CORE INSTRUCTIONS:**
     1. **Analyze User Intent:** Completely read the raw request above. If they asked to include specific lines like "This docker's concept will never fail you interview", build the post architecture specifically around that constraint.

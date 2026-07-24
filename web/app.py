@@ -1,6 +1,6 @@
 """
 web/app.py -- FastAPI layer wrapping the existing conversation/pipeline
-code. Nothing about gate.py, conversation/actions.py, or main.py's
+code. Nothing about orchestrator.py, conversation/actions.py, or main.py's
 pipeline logic changes here -- this is an adapter, not a rewrite.
 
 Run locally:
@@ -8,49 +8,51 @@ Run locally:
 Run a worker (separate process, required for run_new_request/
 edit_existing/targeted_refetch to ever complete):
     python -m web.worker
+
+Bugs fixed vs. the earlier draft (flagged, not silently patched):
+  - main.resolve_turn doesn't exist -- process_turn lives in
+    conversation/orchestrator.py, per main.py's own interactive_mode().
+    This was the exact stale-reference bug the Phase 3 master doc warned
+    about ("confirmed stale, calls main.resolve_turn which no longer
+    exists post-pivot") -- the new web layer re-introduced it.
+  - process_turn returns {action, args, tokens_used, error} -- there is
+    no "method" key. The draft read gate_result["method"] in both
+    response paths, which would KeyError on the very first request.
+  - update_last_tool_result / maybe_summarize were never called after
+    dispatch_action -- added in web/handlers.py, see that file's
+    docstring for why this matters.
 """
-import os
 import uuid
 from typing import Optional
 
-from fastapi import FastAPI, Request, Response
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Request, Response
 from redis import Redis
 from rq import Queue
 from rq.job import Job
 from rq.exceptions import NoSuchJobError
 
-from web.redis_store import get_conversation, save_conversation, REDIS_URL, ping as redis_ping
+from conversation.orchestrator import process_turn
+from memory.redis_session_store import (
+    REDIS_URL,
+    delete_conversation,
+    load_conversation,
+    ping as redis_ping,
+    save_conversation,
+)
+from web.deps import resolve_session_id
+from web.handlers import finalize_turn
+from web.schemas import ChatRequest, ChatResponse, JobStatusResponse, SessionView
 
 app = FastAPI(title="TrendForge Conversation API")
 
 _redis_conn = Redis.from_url(REDIS_URL)
 _queue = Queue("trendforge", connection=_redis_conn)
 
-SESSION_COOKIE_NAME = "tf_session_id"
-# Actions that are cheap (pure bookkeeping, no pipeline/API calls) run
-# inline in the request. Everything else is genuinely slow (per the
-# 20-96s pipeline runs in the CLI logs) and must be a background job --
-# an HTTP request cannot responsibly block that long.
+# Actions that are cheap (pure bookkeeping, no pipeline/LLM/network calls)
+# run inline in the request. Everything else is genuinely slow (20-96s
+# pipeline runs observed in CLI testing) and must be a background job --
+# an HTTP request has no business blocking that long.
 INLINE_ACTIONS = {"add_constraint", "remove_constraint", "clarify"}
-
-
-class ChatRequest(BaseModel):
-    message: str
-    platform: Optional[str] = None
-    posts: int = 5
-    verbose: bool = False
-
-
-def _get_or_create_session_id(request: Request, response: Response) -> str:
-    session_id = request.cookies.get(SESSION_COOKIE_NAME)
-    if not session_id:
-        session_id = uuid.uuid4().hex
-        response.set_cookie(
-            SESSION_COOKIE_NAME, session_id,
-            httponly=True, samesite="lax", max_age=60 * 60 * 48,
-        )
-    return session_id
 
 
 @app.get("/health")
@@ -58,58 +60,72 @@ def health():
     return {"ok": True, "redis": redis_ping()}
 
 
-@app.post("/chat")
+@app.post("/chat", response_model=ChatResponse)
 def chat(body: ChatRequest, request: Request, response: Response):
-    import main  # local import: keeps module import light for workers that don't need the web app
+    session_id = resolve_session_id(request, response, body.session_id)
+    conversation = load_conversation(session_id)
 
-    session_id = _get_or_create_session_id(request, response)
-    conversation = get_conversation(session_id)
+    platform = body.platform or conversation.get("last_platform")
 
-    platform = body.platform
-    if platform is None and conversation.get("last_platform"):
-        platform = conversation["last_platform"]
-
-    gate_result = main.resolve_turn(body.message, conversation, verbose=body.verbose)
-    # Persist immediately -- recent_messages was just updated by
-    # resolve_turn regardless of which action fires below, and if the
-    # slow path's job takes a while, we don't want that bookkeeping lost.
+    turn = process_turn(conversation, body.message)
+    # Persist immediately -- process_turn already appended to
+    # message_history regardless of which action fires next, and if the
+    # slow path's job takes a while, that bookkeeping shouldn't be lost
+    # if the process restarts in between.
     save_conversation(session_id, conversation)
 
-    action = gate_result["action"]
-    args = gate_result.get("args", {})
+    action = turn["action"]
+    args = turn.get("args", {})
 
     if action in INLINE_ACTIONS:
-        main.dispatch_action(action, args, conversation, body.verbose)
+        reply = finalize_turn(action, args, conversation, body.verbose, prompt=body.message, platform=platform, posts=body.posts)
         save_conversation(session_id, conversation)
-        return {
-            "status": "done",
-            "action": action,
-            "method": gate_result["method"],
-            "reply": conversation.get("last_output", ""),
-        }
+        return ChatResponse(
+            status="done",
+            session_id=session_id,
+            action=action,
+            reply=reply,
+            tokens_used=turn.get("tokens_used", 0),
+        )
 
     job = _queue.enqueue(
         "web.jobs.run_slow_action",
         session_id, action, args, body.message, platform, body.posts, body.verbose,
         job_timeout=180,  # generous vs. the ~96s worst case seen in testing
     )
-    return {
-        "status": "processing",
-        "action": action,
-        "method": gate_result["method"],
-        "job_id": job.id,
-    }
+    return ChatResponse(
+        status="processing",
+        session_id=session_id,
+        action=action,
+        job_id=job.id,
+        tokens_used=turn.get("tokens_used", 0),
+    )
 
 
-@app.get("/chat/status/{job_id}")
+@app.get("/chat/status/{job_id}", response_model=JobStatusResponse)
 def chat_status(job_id: str):
     try:
         job = Job.fetch(job_id, connection=_redis_conn)
     except NoSuchJobError:
-        return {"status": "error", "detail": "unknown or expired job_id"}
+        raise HTTPException(status_code=404, detail="unknown or expired job_id")
 
     if job.is_finished:
-        return {"status": "done", **(job.result or {})}
+        result = job.result or {}
+        return JobStatusResponse(status="done", action=result.get("action"), reply=result.get("reply"))
     if job.is_failed:
-        return {"status": "error", "detail": "job failed -- check worker logs"}
-    return {"status": "processing"}
+        return JobStatusResponse(status="error", detail="job failed -- check worker logs")
+    return JobStatusResponse(status="processing")
+
+
+@app.get("/session/{session_id}", response_model=SessionView)
+def get_session(session_id: str):
+    conversation = load_conversation(session_id)
+    return SessionView(session_id=session_id, **conversation)
+
+
+@app.delete("/session/{session_id}")
+def reset_session(session_id: str):
+    ok = delete_conversation(session_id)
+    if not ok:
+        raise HTTPException(status_code=503, detail="could not reach session store")
+    return {"status": "deleted", "session_id": session_id}

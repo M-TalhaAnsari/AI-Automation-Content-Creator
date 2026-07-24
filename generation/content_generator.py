@@ -188,7 +188,9 @@ Return this exact JSON object: {{"selected_indices": [<1-based integers, {count}
                         if 1 <= int(idx) <= len(all_items):
                             selected.append(all_items[int(idx) - 1])
                     add_log(state, f"[Generator] Pass 1 selected indices: {indices}")
-                    return selected[:count]
+                    if selected:
+                        return selected[:count]
+                    add_log(state, "[Generator] Pass 1 indices were all out of range — falling back to top entries.")
             except Exception as parse_err:
                 add_log(state, f"[Generator] Pass 1 failed to parse index JSON: {parse_err}")
 
@@ -283,8 +285,8 @@ Return this exact JSON object: {{"selected_indices": [<1-based integers, {count}
                     prompt=prompt,
                     system_message="You are a senior social media copywriter. Output your final generation in strict, clean JSON matching the template format exactly.",
                     state=state,
-                    # use_json_object left at default True -- this call
-                    # genuinely wants an object, unchanged from before.
+                    # response_format left at default ({"type": "json_object"})
+                    # -- this call genuinely wants an object, unchanged.
                 )
                 engine_used = "Groq-LLaMA3"
                 tokens_used = len(prompt.split()) + len(raw_response.split())
