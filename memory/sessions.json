@@ -1856,6 +1856,47 @@
           "link": ""
         }
       ]
+    },
+    {
+      "session_id": "7f0e257f",
+      "timestamp": "2026-07-24T12:48:12.312850",
+      "prompt": "test",
+      "topic": "test",
+      "platform": "instagram",
+      "sources_used": [
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 1846,
+      "errors": [
+        "[IntentExtractor] LLM call failed: Connection error. \u2014 using rule fallback.",
+        "[LLMRouter] Failed: Connection error. \u2014 using fallback",
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}",
+        "[ContentGenerator] Critical: Fallback engine failed: Connection error.",
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "AI\u2011Powered Test\u2011Case Generator for CI Pipelines",
+          "link": "https://www.dictionary.com/browse/test"
+        },
+        {
+          "title": "Real\u2011Time A/B Test Dashboard for SaaS Metrics",
+          "link": "https://en.wikipedia.org/wiki/Test"
+        },
+        {
+          "title": "Edge\u2011Optimized Load\u2011Test Suite for Serverless Functions",
+          "link": "https://www.collinsdictionary.com/us/dictionary/english/test"
+        },
+        {
+          "title": "Multilingual Spell\u2011Check API Powered by Test Corpora",
+          "link": "https://www.merriam-webster.com/dictionary/test"
+        },
+        {
+          "title": "Gamified Test\u2011Preparation Platform for Competitive Coding",
+          "link": "https://www.britannica.com/dictionary/test"
+        }
+      ]
     }
   ]
 }

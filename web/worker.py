@@ -9,12 +9,28 @@ itself -- it only enqueues work and polls status. Scale this
 horizontally (multiple worker processes/containers) independently of the
 web process -- that's the entire point of pulling it out.
 """
+import os
+
 from redis import Redis
-from rq import Worker, Queue
+from rq import Queue
 
 from memory.redis_session_store import REDIS_URL
 
 if __name__ == "__main__":
     conn = Redis.from_url(REDIS_URL)
-    worker = Worker([Queue("trendforge", connection=conn)], connection=conn)
+    queue = Queue("trendforge", connection=conn)
+
+    if os.name == "nt":
+        # RQ's default Worker forks a child process per job (os.fork()),
+        # which doesn't exist on Windows at all. SimpleWorker runs each
+        # job in the worker's own process instead -- no crash isolation
+        # between jobs, but it's the only worker class Windows can run.
+        # Fine for local dev; deploy on Linux and the branch below (the
+        # real, process-isolated Worker) is what actually runs.
+        from rq import SimpleWorker
+        worker = SimpleWorker([queue], connection=conn)
+    else:
+        from rq import Worker
+        worker = Worker([queue], connection=conn)
+
     worker.work()
