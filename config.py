@@ -26,7 +26,7 @@ class ModelConfig:
 
     # Gemini — used for final creative content generation
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
-    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 
     # Temperature: low = consistent/deterministic, high = creative
     routing_temperature: float = 0.0

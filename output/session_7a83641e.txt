@@ -1,0 +1,125 @@
+
+╔══════════════════════════════════════════════════════════╗
+║  🔥 TRENDFORGE — INSTAGRAM CONTENT SERIES                             ║
+║  Topic: hello                                            ║
+║  Sources: tavily, google_trends                          ║
+╚══════════════════════════════════════════════════════════╝
+
+────────────────────────────────────────────────────────────
+  POST 1/5 — The Power of One Hello
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  What if a single greeting could change the course of your day?
+
+  📌 SUMMARY
+  Feeling invisible in a crowded room
+  Realizing a simple 'hello' opens doors
+  Use curiosity to connect authentically
+
+  🔗 LINK
+  https://www.bbc.com/culture/article/20260113-hello-hiya-aloha-what-our-greetings-reveal
+
+  ✍️  CAPTION
+  I remember walking into a networking event, heart pounding, wondering if anyone would notice me. I took a breath, smiled, and said a genuine "hello." That tiny word sparked a conversation that led to a mentorship I still cherish. 🌟 How has a simple greeting shifted your path? Share your story below! 👇
+
+  🏷️  HASHTAGS
+  #HelloPower #Connection #MindsetShift
+
+────────────────────────────────────────────────────────────
+  POST 2/5 — From Hullo to Hello
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Did you know the word we use daily has a rebellious past?
+
+  📌 SUMMARY
+  Stuck in routine language
+  Discovering "hullo" was once an exclamation of surprise
+  Embrace curiosity in everyday speech
+
+  🔗 LINK
+  https://en.wikipedia.org/wiki/Hello
+
+  ✍️  CAPTION
+  When I first learned that "hello" evolved from the bold "hullo," I felt a spark of rebellion. It reminded me that even the most familiar words can carry a spark of adventure. 🌍 Next time you greet someone, think of the centuries of curiosity behind it. What word in your life holds a hidden story? ✨
+
+  🏷️  HASHTAGS
+  #WordHistory #Curiosity #LanguageLove
+
+────────────────────────────────────────────────────────────
+  POST 3/5 — Hello Like a Hit Song
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Imagine your greeting hitting the charts of someone's heart.
+
+  📌 SUMMARY
+  Feeling unheard
+  Seeing Adele's "Hello" dominate charts
+  Channel that energy into personal connections
+
+  🔗 LINK
+  https://en.wikipedia.org/wiki/Hello_(Adele_song)
+
+  ✍️  CAPTION
+  Adele's "Hello" sold 165,000 copies in three days—proof that a heartfelt hello resonates worldwide. 🎤 I started using that same intensity in my daily greetings, and people responded with unexpected warmth. How do you make your "hello" unforgettable? Drop a note! 💌
+
+  🏷️  HASHTAGS
+  #HelloHits #AdeleVibes #SpeakFromHeart
+
+────────────────────────────────────────────────────────────
+  POST 4/5 — When Hello Becomes a Lifeline
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  Ever felt lost, then heard a voice say "hello" and find your way?
+
+  📌 SUMMARY
+  Isolation during a phone drop
+  Realizing "hello" signals presence
+  Use it to check in on loved ones
+
+  ✍️  CAPTION
+  During a late-night call, the line cut and I heard only silence. The next day, a friend texted "hello?" and it felt like a lifeline. 🌊 That moment taught me the power of checking in. Who's the person you need to say "hello" to today? Tag them! 📲
+
+  🏷️  HASHTAGS
+  #CheckIn #Support #HelloMatters
+
+────────────────────────────────────────────────────────────
+  POST 5/5 — Your Hello, Your Brand
+────────────────────────────────────────────────────────────
+
+  🔥 HOOK
+  What if your greeting could be your personal brand statement?
+
+  📌 SUMMARY
+  Struggling with self‑presentation
+  Seeing hello as a signature
+  Craft a memorable intro
+
+  ✍️  CAPTION
+  I used to think a greeting was just polite. Then I treated my "hello" like a logo—consistent, authentic, and memorable. Now people remember me before I even speak. 🌟 How do you want your hello to reflect you? Let’s brainstorm in the comments! 🧠
+
+  🏷️  HASHTAGS
+  #PersonalBrand #FirstImpression #HelloStyle
+
+────────────────────────────────────────────────────────────
+  📊 TREND INSIGHT
+────────────────────────────────────────────────────────────
+  People are craving authentic, bite‑size inspiration that feels instantly shareable. The word "hello" taps into universal human connection, driving high saves as users bookmark these uplifting reminders for daily motivation.
+
+════════════════════════════════════════════════════
+                TOKEN USAGE REPORT
+                ════════════════════════════════════════════════════
+                Prompt parsing:        1294 tokens  (Groq — openai/gpt-oss-20b)
+                Source routing:           0 tokens  (rules + Groq fallback)
+                Data fetching:            0 tokens  (HTTP APIs — free)
+                Content generation:    1755 tokens  (openai/gpt-oss-120b)
+                ────────────────────────────────────────────────
+                TOTAL:                 3049 tokens
+                ESTIMATED COST:      $0.0011 USD
+                ────────────────────────────────────────────────
+                Models used:    openai/gpt-oss-20b (Groq), openai/gpt-oss-120b (Groq)
+                Sources used:   tavily, google_trends
+                ════════════════════════════════════════════════════

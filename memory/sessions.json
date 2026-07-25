@@ -1897,6 +1897,158 @@
           "link": "https://www.britannica.com/dictionary/test"
         }
       ]
+    },
+    {
+      "session_id": "adc4d00a",
+      "timestamp": "2026-07-25T17:38:58.543455",
+      "prompt": "AI automation tools for job seekers",
+      "topic": "AI automation tools",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 4293,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "FastApply: The All\u2011In\u2011One AI Job Engine",
+          "link": "https://blog.fastapply.co/best-ai-job-application-automation-tools-2026"
+        },
+        {
+          "title": "Tsenta: End\u2011to\u2011End AI Job Hunt Companion",
+          "link": "https://tsenta.com/blog/top-rated-ai-job-search-agents-automation-tools"
+        },
+        {
+          "title": "AutoApplyMax: The Time\u2011Saving Form\u2011Filler",
+          "link": "https://www.autoapplymax.com/blog/ai-job-search-tools"
+        },
+        {
+          "title": "JobCopilot: Your AI Sidekick for Smarter Applications",
+          "link": "https://jobcopilot.com/best-ai-job-search-tools"
+        },
+        {
+          "title": "LoopCV: AI\u2011Powered Interview Prep & Tracking",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "session_id": "7a83641e",
+      "timestamp": "2026-07-25T17:39:12.412233",
+      "prompt": "hello",
+      "topic": "hello",
+      "platform": "instagram",
+      "sources_used": [
+        "tavily",
+        "google_trends"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3049,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "The Power of One Hello",
+          "link": "https://www.bbc.com/culture/article/20260113-hello-hiya-aloha-what-our-greetings-reveal"
+        },
+        {
+          "title": "From Hullo to Hello",
+          "link": "https://en.wikipedia.org/wiki/Hello"
+        },
+        {
+          "title": "Hello Like a Hit Song",
+          "link": "https://en.wikipedia.org/wiki/Hello_(Adele_song)"
+        },
+        {
+          "title": "When Hello Becomes a Lifeline",
+          "link": ""
+        },
+        {
+          "title": "Your Hello, Your Brand",
+          "link": ""
+        }
+      ]
+    },
+    {
+      "session_id": "89e66ad4",
+      "timestamp": "2026-07-25T17:39:41.897930",
+      "prompt": "web client's message",
+      "topic": "web client",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3156,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'service': 'generativelanguage.googleapis.com', 'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "CrossDesk \u2013 Ultra\u2011light Web Remote Desktop",
+          "link": "https://github.com/kunkundi/crossdesk"
+        },
+        {
+          "title": "PandoraAI \u2013 Multi\u2011Model Web Chat Playground",
+          "link": "https://github.com/waylaidwanderer/PandoraAI"
+        },
+        {
+          "title": "shlink\u2011web\u2011client \u2013 React UI for Short\u2011URL Management",
+          "link": "https://github.com/shlinkio/shlink-web-client"
+        },
+        {
+          "title": "Lnd Web Client \u2013 Angular Dashboard for Lightning Network",
+          "link": "https://github.com/mably/lncli-web"
+        },
+        {
+          "title": "Next.js 2026 \u2013 SEO\u2011Friendly React Framework Showcase",
+          "link": "https://msmcoretech.com/blogs/web-development-frameworks"
+        }
+      ]
+    },
+    {
+      "session_id": "3c65fe5e",
+      "timestamp": "2026-07-25T17:40:18.382809",
+      "prompt": "slack client's message",
+      "topic": "slack client",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 3769,
+      "errors": [
+        "[ContentGenerator] Gemini Service Alert: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'service': 'generativelanguage.googleapis.com', 'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent'}}]}}"
+      ],
+      "posts": [
+        {
+          "title": "Mastering Slack CLI Basics",
+          "link": "https://github.com/rockymadden/slack-cli"
+        },
+        {
+          "title": "How Slack\u2019s Web API Powers Integrations",
+          "link": "https://github.com/jolicode/slack-php-api"
+        },
+        {
+          "title": "Turning Slack Messages into Notion Databases",
+          "link": "https://www.magicbell.com/blog/best-slack-integrations"
+        },
+        {
+          "title": "Context\u2011Switch Elimination with Slack Apps",
+          "link": "https://www.zonkafeedback.com/blog/best-slack-apps-and-integrations"
+        },
+        {
+          "title": "Securing Your Slack Client Communications",
+          "link": ""
+        }
+      ]
     }
   ]
 }

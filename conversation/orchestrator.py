@@ -18,19 +18,7 @@ SYSTEM_PROMPT = (
 TOOLS = [
     {"type": "function", "function": {
         "name": "run_new_request",
-        "description": "Generate fresh content for a new topic/platform request. "
-                        "Write ONLY the topic/angle and any standing constraints as "
-                        "plain, flowing prose in 1-2 sentences -- e.g. 'AI automation "
-                        "project ideas for job-seeking engineers, industry-focused, "
-                        "avoid n8n and TensorFlow'. Do NOT specify output format, "
-                        "structure, or fields (title/caption/hashtags/tool stack/etc.) "
-                        "-- the pipeline already produces that structure for every "
-                        "request regardless of what's asked, and restating it here "
-                        "has been linked to the downstream topic/category extraction "
-                        "misfiring on longer, more complex prompts. Fold in relevant "
-                        "context from the conversation (earlier corrections, angle "
-                        "changes) -- the pipeline that receives this has NO memory "
-                        "of the conversation itself, only what you write here.",
+        "description": "Generate fresh content for a new topic/platform request.",
         "parameters": {"type": "object", "properties": {
             "prompt": {"type": "string"},
             "platform": {"type": "string", "enum": ["instagram", "youtube", "tiktok", "linkedin"]},
@@ -40,13 +28,6 @@ TOOLS = [
         "name": "edit_existing",
         "description": "Modify wording, tone, or length of already-generated posts.",
         "parameters": {"type": "object", "properties": {
-            # FIX: target_posts was previously in "required", forcing the
-            # model to always enumerate specific integers -- with no way
-            # to express "all of them" and no visibility into how many
-            # posts even exist (see the posts-context fix below), this
-            # made "edit all posts" requests unreliable. Now optional:
-            # omitting it means all posts, matching what main.py's
-            # handler already does with args.get("target_posts", "all").
             "target_posts": {
                 "type": "array", "items": {"type": "integer"},
                 "description": "1-based post numbers to target. Omit this field "
@@ -100,10 +81,6 @@ def _rough_tokens(messages) -> int:
 
 
 def _build_context_messages(conversation: dict) -> list:
-    """Sliding window + rolling summary + active constraints + (FIX) the
-    posts that actually exist right now, all read from the existing
-    conversation dict. Never raises -- degrades to system-prompt-only on
-    any failure."""
     try:
         history = conversation.get("message_history", [])
         windowed = history[-SLIDING_WINDOW_TURNS:]
@@ -113,10 +90,6 @@ def _build_context_messages(conversation: dict) -> list:
         if summary:
             system_content += f"\n\nEARLIER CONVERSATION SUMMARY:\n{summary}"
 
-        # FIX: this was completely missing before. Without it, the model
-        # has no reliable way to know how many posts exist, what they're
-        # about, or what "post 3" / "the last one" / "the funny one"
-        # would even refer to -- edit_existing had no grounding at all.
         posts = conversation.get("last_generated_posts") or []
         if posts:
             titles = "\n".join(f"{i}. {p.get('title', '(untitled)')}" for i, p in enumerate(posts, 1))
@@ -137,10 +110,24 @@ def _build_context_messages(conversation: dict) -> list:
 
 
 def maybe_summarize(conversation: dict) -> None:
+    """
+    FIX: this previously folded overflow into rolling_summary but never
+    actually shrunk conversation["message_history"] itself -- meaning a
+    long-lived session's stored history (and therefore its Redis
+    payload size) grew forever, even though the LLM CONTEXT sent per
+    turn stayed capped at SLIDING_WINDOW_TURNS via _build_context_messages'
+    own slicing. Now the retained tail actually replaces the full list --
+    but ONLY once the summary call has genuinely succeeded. If
+    summarization fails (network error, bad response, etc.), history is
+    left completely untouched: better to keep paying the storage cost a
+    while longer than to silently discard messages with no summary to
+    show for it.
+    """
     history = conversation.get("message_history", [])
     if len(history) <= SLIDING_WINDOW_TURNS:
         return
     overflow = history[:-SLIDING_WINDOW_TURNS]
+    retained = history[-SLIDING_WINDOW_TURNS:]
     if not overflow:
         return
     try:
@@ -153,15 +140,6 @@ def maybe_summarize(conversation: dict) -> None:
         response = client.chat.completions.create(
             model=CONFIG.models.groq_model_small,
             temperature=0.2, max_tokens=600,
-            # FIX: same class of bug as intent_extractor.py and
-            # llm_router.py -- openai/gpt-oss-20b is a reasoning model,
-            # reasoning_effort defaults to "medium" if unset, and that
-            # reasoning competes with the actual summary for the same
-            # token budget. Here the failure mode is quiet rather than
-            # visible: the except below just swallows it and the summary
-            # silently never updates, so long conversations lose memory
-            # of whatever aged out of the sliding window without any
-            # error appearing anywhere.
             reasoning_effort="low",
             messages=[
                 {"role": "system", "content": "Summarize this conversation segment in 2-4 sentences. "
@@ -172,18 +150,12 @@ def maybe_summarize(conversation: dict) -> None:
         new_summary = (response.choices[0].message.content or "").strip()
         if new_summary:
             conversation["rolling_summary"] = new_summary
+            conversation["message_history"] = retained
     except Exception:
         pass
 
 
 def update_last_tool_result(conversation: dict, summary: str) -> None:
-    """FIX: new function. process_turn appends a content-free tool-call
-    record ("dispatched:action_name") before main.py's dispatch_action
-    has even run, since the real outcome isn't known yet at that point.
-    Call this AFTER dispatch_action completes, once conversation state
-    (last_output, etc.) reflects what actually happened -- replaces the
-    placeholder with the real result so later turns' context (and any
-    future summarization) reflects reality instead of a stub string."""
     history = conversation.get("message_history", [])
     for msg in reversed(history):
         if msg.get("role") == "tool":
@@ -192,24 +164,12 @@ def update_last_tool_result(conversation: dict, summary: str) -> None:
 
 
 def process_turn(conversation: dict, user_message: str) -> dict:
-    """
-    Resolves ONE turn. Returns {action, args, tokens_used, error}.
-    NEVER executes the action -- caller (main.py's dispatch_action) does
-    that. Guaranteed to always return a usable dict, never raises.
-    """
     conversation.setdefault("message_history", []).append({"role": "user", "content": user_message})
 
     fallback = {"action": "run_new_request",
                 "args": {"prompt": user_message, "platform": conversation.get("last_platform")},
                 "tokens_used": 0, "error": None}
 
-    # FIX: Stage-0 shortcut. On the very first message of a session (or
-    # any time nothing has been generated yet), there is only one
-    # possible correct answer -- there's nothing to edit, exclude-from,
-    # or refetch, so it MUST be a fresh request. Every message before
-    # this fix paid for a full tool-calling round trip to reach a
-    # deterministic conclusion; this mirrors the old gate.py's
-    # locked_no_session shortcut, just adapted to this file's contract.
     if not conversation.get("last_generated_posts"):
         return fallback
 
@@ -221,14 +181,6 @@ def process_turn(conversation: dict, user_message: str) -> dict:
         response = client.chat.completions.create(
             model=CONFIG.models.groq_model_large,
             temperature=0.0,
-            # FIX: same reasoning-model class as the other three fixes
-            # (openai/gpt-oss-120b here). No explicit max_tokens cap on
-            # this call, so outright truncation is less likely -- but
-            # unset reasoning_effort still means "medium" by default,
-            # spending real tokens/latency deliberating over what's
-            # fundamentally a tool-selection task, not one needing deep
-            # reasoning. Consistency + cost, not a fix for an observed
-            # failure the way the other three were.
             reasoning_effort="low",
             tools=TOOLS,
             tool_choice="auto",
