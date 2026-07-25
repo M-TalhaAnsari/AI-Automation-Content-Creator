@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional
 
 def run_slow_action(
     session_id: str,
+    client_name: str,
     action: str,
     args: Dict[str, Any],
     prompt: str = "",
@@ -23,11 +24,11 @@ def run_slow_action(
     from memory.redis_session_store import load_conversation, save_conversation
     from web.handlers import finalize_turn
 
-    conversation = load_conversation(session_id)
+    conversation = load_conversation(session_id, client_name)
 
     reply = finalize_turn(action, args, conversation, verbose, prompt=prompt, platform=platform, posts=posts)
 
-    save_conversation(session_id, conversation)
+    save_conversation(session_id, client_name, conversation)
 
     return {
         "action": action,

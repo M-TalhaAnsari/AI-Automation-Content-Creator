@@ -8,7 +8,10 @@ in for a real Redis server.
 This exists to prove the wiring is correct -- request in, correct
 dispatch, correct response shape, correct session persistence -- not to
 test the pipeline's content quality (that's what the stubbed fetchers/
-generator are for).
+generator are for), and not to test auth itself (that's web/test_auth.py
+and web/test_client_isolation.py's job). Auth is overridden here via
+FastAPI's dependency_overrides, which is the standard way to bypass a
+dependency you're not testing -- not a workaround for something broken.
 """
 import fakeredis
 import pytest
@@ -16,6 +19,9 @@ from fastapi.testclient import TestClient
 
 import memory.redis_session_store as store
 from web import app as app_module
+from web.auth import verify_api_key
+
+TEST_CLIENT_NAME = "testclient"
 
 client = TestClient(app_module.app)
 
@@ -25,6 +31,13 @@ def fake_redis_everywhere(monkeypatch):
     fake = fakeredis.FakeRedis(decode_responses=True)
     monkeypatch.setattr(store, "_client", fake)
     yield fake
+
+
+@pytest.fixture(autouse=True)
+def bypass_auth():
+    app_module.app.dependency_overrides[verify_api_key] = lambda: TEST_CLIENT_NAME
+    yield
+    app_module.app.dependency_overrides.clear()
 
 
 def test_health():
@@ -48,8 +61,7 @@ def test_first_message_is_always_run_new_request_and_goes_through_job_queue():
 
 def test_explicit_session_id_is_honored_over_cookie():
     r = client.post("/chat", json={"message": "hello", "session_id": "explicit-123"})
-    assert r.json()["session_id"] if "session_id" in r.json() else True  # response doesn't echo id on this path
-    # Confirm it actually persisted under that exact key
+    assert r.json()["session_id"] if "session_id" in r.json() else True
     sess = client.get("/session/explicit-123")
     assert sess.status_code == 200
     assert sess.json()["message_history"][-1]["content"] == "hello"
@@ -64,7 +76,7 @@ def test_inline_action_add_constraint_bypasses_queue(monkeypatch):
     session_id = "sess-inline-test"
     seeded = store._fresh_default()
     seeded["last_generated_posts"] = [{"title": "t1", "caption": "c1"}]
-    store.save_conversation(session_id, seeded)
+    store.save_conversation(session_id, TEST_CLIENT_NAME, seeded)
 
     def fake_process_turn(conversation, message):
         conversation.setdefault("message_history", []).append({"role": "user", "content": message})
@@ -82,13 +94,8 @@ def test_inline_action_add_constraint_bypasses_queue(monkeypatch):
     assert "n8n" in body["reply"]
     assert body["job_id"] is None
 
-    sess = store.load_conversation(session_id)
+    sess = store.load_conversation(session_id, TEST_CLIENT_NAME)
     assert {"type": "exclude", "value": "n8n"} in sess["active_constraints"]
-    # update_last_tool_result must have replaced the tool-call placeholder
-    tool_msgs = [m for m in sess["message_history"] if m.get("role") == "tool"]
-    # fake_process_turn didn't append a tool message (real one would),
-    # so nothing to check there in this fake -- verified separately below
-    # via the real orchestrator in test_real_orchestrator_stage0_shortcut.
 
 
 def test_real_orchestrator_stage0_shortcut_no_network_call():
@@ -119,7 +126,20 @@ def test_get_session_returns_fresh_default_for_new_id():
 
 def test_delete_session():
     session_id = "sess-to-delete-via-api"
-    store.save_conversation(session_id, store._fresh_default())
+    store.save_conversation(session_id, TEST_CLIENT_NAME, store._fresh_default())
     r = client.delete(f"/session/{session_id}")
     assert r.status_code == 200
     assert r.json()["status"] == "deleted"
+
+
+def test_no_api_key_is_rejected_when_auth_not_overridden():
+    """Confirms auth is actually wired into the endpoint (not just
+    present in the module) -- calls the real app WITHOUT the
+    bypass_auth override active, using a fresh TestClient against a
+    version of the app with no override installed."""
+    app_module.app.dependency_overrides.clear()  # remove this file's own override, just for this one test
+    try:
+        r = client.post("/chat", json={"message": "should be rejected"})
+        assert r.status_code == 401
+    finally:
+        app_module.app.dependency_overrides[verify_api_key] = lambda: TEST_CLIENT_NAME
