@@ -1,0 +1,36 @@
+# Never bake real secrets into the image -- these are passed in at
+# runtime via docker-compose's env_file, not copied into the layer.
+.env
+.env.*
+!.env.*.example
+
+# Local virtualenvs -- these must NEVER be copied in; the image builds
+# its own dependencies from requirements.txt inside the container.
+.venv/
+.venv-*/
+venv/
+env/
+
+# Python cruft
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+
+# VCS / editor
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Generated output from local runs -- not part of the image, and
+# regenerated fresh inside the container anyway
+output/
+
+# Docs, not needed at runtime
+*.md
+!README.md
+
+
+test_*.py

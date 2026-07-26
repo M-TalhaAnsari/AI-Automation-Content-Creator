@@ -39,12 +39,18 @@ from memory.redis_session_store import (
     ping as redis_ping,
     save_conversation,
 )
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from web.auth import verify_api_key
 from web.deps import resolve_session_id
 from web.handlers import finalize_turn
+from web.rate_limit import limiter, rate_limit_exceeded_handler
 from web.schemas import ChatRequest, ChatResponse, JobStatusResponse, SessionView
 
 app = FastAPI(title="TrendForge Conversation API")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 _redis_conn = Redis.from_url(REDIS_URL)
 _queue = Queue("trendforge", connection=_redis_conn)
@@ -62,6 +68,7 @@ def health():
 
 
 @app.post("/chat", response_model=ChatResponse)
+@limiter.limit("10/minute")
 def chat(body: ChatRequest, request: Request, response: Response, client_name: str = Depends(verify_api_key)):
     session_id = resolve_session_id(request, response, body.session_id)
     conversation = load_conversation(session_id, client_name)
@@ -111,7 +118,8 @@ def chat(body: ChatRequest, request: Request, response: Response, client_name: s
 
 
 @app.get("/chat/status/{job_id}", response_model=JobStatusResponse)
-def chat_status(job_id: str, client_name: str = Depends(verify_api_key)):
+@limiter.limit("60/minute")
+def chat_status(request: Request, response: Response, job_id: str, client_name: str = Depends(verify_api_key)):
     try:
         job = Job.fetch(job_id, connection=_redis_conn)
     except NoSuchJobError:
@@ -135,7 +143,8 @@ def chat_status(job_id: str, client_name: str = Depends(verify_api_key)):
 
 
 @app.get("/session/{session_id}", response_model=SessionView)
-def get_session(session_id: str, client_name: str = Depends(verify_api_key)):
+@limiter.limit("60/minute")
+def get_session(request: Request, response: Response, session_id: str, client_name: str = Depends(verify_api_key)):
     conversation = load_conversation(session_id, client_name)
     return SessionView(session_id=session_id, **conversation)
 

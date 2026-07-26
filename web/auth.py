@@ -67,11 +67,29 @@ async def verify_api_key(x_api_key: Optional[str] = Header(None, alias="X-API-Ke
     raise the exact same 401 with the exact same message -- the two
     failure paths are indistinguishable from the outside on purpose.
     """
-    if not x_api_key:
+    client_name = resolve_client_name(x_api_key)
+    if client_name is None:
         raise HTTPException(status_code=401, detail=GENERIC_AUTH_ERROR)
+    return client_name
 
+
+def resolve_client_name(api_key: Optional[str]) -> Optional[str]:
+    """
+    Core lookup, extracted out of verify_api_key (Phase 5): given a raw
+    API key string (or None/empty), returns the matching client_name,
+    or None if missing or unregistered. Never raises.
+
+    Exists so the rate limiter's key function (web/rate_limit.py) can
+    resolve the SAME client identity verify_api_key would, without a
+    second, parallel comparison implementation -- slowapi's key_func
+    receives the raw Request, not FastAPI's already-resolved
+    Depends(verify_api_key) value, so it has to look the key up
+    independently; it does so through this one shared function instead
+    of re-deriving the answer differently.
+    """
+    if not api_key:
+        return None
     for client_name, registered_key in _API_CLIENTS.items():
-        if secrets.compare_digest(x_api_key, registered_key):
+        if secrets.compare_digest(api_key, registered_key):
             return client_name
-
-    raise HTTPException(status_code=401, detail=GENERIC_AUTH_ERROR)
+    return None

@@ -1,0 +1,52 @@
+services:
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data   # session data (Phase 3's TTL-based store) survives
+                            # a `docker-compose restart`, not just a running container
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build: .
+    command: uvicorn web.app:app --host 0.0.0.0 --port 8000
+    env_file:
+      - .env
+    environment:
+      # Overrides whatever REDIS_URL is in .env (which is meant for
+      # local, non-Docker dev where redis runs on localhost) -- inside
+      # compose, services reach each other by SERVICE NAME, not
+      # localhost. This line is the one thing that must never be
+      # "redis://localhost:6379" here, even though that's exactly what
+      # works when running uvicorn directly on the host.
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy   # wait for redis to actually accept
+                                      # connections, not just for its
+                                      # container to have started
+    ports:
+      - "8000:8000"
+
+  worker:
+    build: .
+    command: python -m web.worker   # real path (web/worker.py), not the
+                                      # root-level worker.py some earlier
+                                      # docs assumed -- ground truth wins
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    # worker.py's own os.name check resolves to the standard RQ Worker
+    # in here automatically (any container is Linux, regardless of the
+    # host OS) -- the SimpleWorker fallback only ever applies when
+    # running directly on a Windows dev machine, outside Docker.
+
+volumes:
+  redis_data:
