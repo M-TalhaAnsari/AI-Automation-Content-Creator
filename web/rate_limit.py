@@ -41,18 +41,27 @@ def get_client_identity(request: Request) -> str:
     it -- just read independently from the raw header, since slowapi's
     key_func can't access FastAPI's already-resolved dependency values.
 
-    Defensive fallback only, should not trigger in normal operation
-    (verify_api_key already validates the same request): an unresolvable
-    key falls back to the raw header value, or the literal string
-    "unknown" if there's no header at all. Never raises -- a rate
-    limiter crashing the request outright over a key-lookup failure is
-    a worse outcome than degrading to a shared, coarser bucket.
+    CRITICAL: any request with a missing or unregistered key collapses
+    into the SAME shared bucket ("unauthenticated") -- it must NEVER
+    fall back to the raw key value itself. Confirmed by direct testing:
+    using the raw (invalid) key as the identity means every different
+    garbage key gets its own fresh, never-before-seen bucket, so an
+    attacker rotating the key on every single request faces no
+    practical rate limit at all (30 requests, 30 different garbage
+    keys, zero got throttled). Collapsing to one shared bucket means
+    the AGGREGATE volume of all failed-auth traffic combined is capped
+    at the route's normal limit (e.g. 10/minute total across every
+    invalid key someone tries), before FastAPI's own dependency
+    resolution (Depends(verify_api_key)) ever runs -- SlowAPIMiddleware
+    is genuine ASGI middleware that checks limits ahead of routing/
+    dependency injection, confirmed by reading slowapi's own installed
+    source, not assumed.
     """
     api_key = request.headers.get("X-API-Key")
     client_name = resolve_client_name(api_key)
     if client_name:
         return client_name
-    return api_key or "unknown"
+    return "unauthenticated"
 
 
 limiter = Limiter(

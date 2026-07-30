@@ -159,3 +159,29 @@ def test_missing_or_unresolvable_key_falls_back_gracefully_not_crash(client, mon
 
     r = client.get("/limited", headers=_headers("some-key-that-matches-nothing"))
     assert r.status_code == 200  # this isolated test app has no auth layer -- just proves no crash
+
+
+def test_rotating_invalid_keys_cannot_bypass_the_limit(client, monkeypatch):
+    """Real exploit found and fixed during Phase 6 planning: the
+    fallback identity for an unresolvable key used to be the RAW key
+    value itself, meaning every different garbage key got its own
+    fresh, never-before-seen bucket -- an attacker rotating the key on
+    every request faced NO practical rate limit at all (empirically
+    confirmed: 30 requests, 30 different garbage keys, zero throttled,
+    before this fix). All unresolvable/missing keys must now collapse
+    into ONE shared bucket, so the aggregate volume of invalid-key
+    traffic is capped at the route's normal limit -- not each attacker
+    getting an unlimited personal allowance by varying the key."""
+    monkeypatch.delenv("API_CLIENT_A", raising=False)
+    import importlib
+    from web import auth as auth_module
+    importlib.reload(auth_module)
+    monkeypatch.setattr("web.rate_limit.resolve_client_name", auth_module.resolve_client_name)
+
+    statuses = []
+    for i in range(10):  # LOW_LIMIT = 3/minute -- 10 different garbage keys, way over the limit
+        r = client.get("/limited", headers=_headers(f"garbage-key-{i}"))
+        statuses.append(r.status_code)
+
+    assert statuses.count(200) == 3  # exactly the limit, not one success per unique key
+    assert statuses.count(429) == 7
