@@ -1,3 +1,4 @@
+import React from "react";
 import { useState } from 'react'
 
 export default function PostModal({ post, postNumber, onClose, onSubmitEdit, submitting }) {

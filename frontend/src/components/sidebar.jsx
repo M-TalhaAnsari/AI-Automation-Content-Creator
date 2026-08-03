@@ -1,3 +1,4 @@
+import React from "react";
 export default function Sidebar({ sessions, activeSessionId, onSelect, onNewChat, isOpen, onClose, onLogout }) {
   return (
     <>

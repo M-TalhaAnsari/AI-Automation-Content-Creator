@@ -1,3 +1,4 @@
+import React from "react";
 export default function MessageBubble({ role, content, pending, posts, onOpenPost }) {
   const classes = ['message-bubble', role, pending ? 'pending' : ''].filter(Boolean).join(' ')
   return (

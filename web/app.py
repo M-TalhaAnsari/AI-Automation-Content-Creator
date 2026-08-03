@@ -164,6 +164,7 @@ def chat(body: ChatRequest, request: Request, response: Response, client_name: s
 def chat_status(request: Request, response: Response, job_id: str, client_name: str = Depends(verify_jwt)):
     try:
         job = Job.fetch(job_id, connection=_redis_conn)
+        job.refresh()
     except NoSuchJobError:
         raise HTTPException(status_code=404, detail="unknown or expired job_id")
 
