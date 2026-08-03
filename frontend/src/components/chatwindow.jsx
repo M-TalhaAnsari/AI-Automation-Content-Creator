@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import MessageBubble from './MessageBubble'
+import MessageBubble from '../MessageBubble'
 
 export default function ChatWindow({ messages, onSend, sending, error, onOpenPost }) {
   const [draft, setDraft] = useState('')
