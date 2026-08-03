@@ -1,29 +1,6 @@
-"""
-web/app.py -- FastAPI layer wrapping the existing conversation/pipeline
-code. Nothing about orchestrator.py, conversation/actions.py, or main.py's
-pipeline logic changes here -- this is an adapter, not a rewrite.
-
-Run locally:
-    uvicorn web.app:app --reload
-Run a worker (separate process, required for run_new_request/
-edit_existing/targeted_refetch to ever complete):
-    python -m web.worker
-
-Bugs fixed vs. the earlier draft (flagged, not silently patched):
-  - main.resolve_turn doesn't exist -- process_turn lives in
-    conversation/orchestrator.py, per main.py's own interactive_mode().
-    This was the exact stale-reference bug the Phase 3 master doc warned
-    about ("confirmed stale, calls main.resolve_turn which no longer
-    exists post-pivot") -- the new web layer re-introduced it.
-  - process_turn returns {action, args, tokens_used, error} -- there is
-    no "method" key. The draft read gate_result["method"] in both
-    response paths, which would KeyError on the very first request.
-  - update_last_tool_result / maybe_summarize were never called after
-    dispatch_action -- added in web/handlers.py, see that file's
-    docstring for why this matters.
-"""
+import logging
 import uuid
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from redis import Redis
@@ -41,11 +18,32 @@ from memory.redis_session_store import (
 )
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from web.auth import verify_api_key
+from web.auth import create_jwt, hash_password, verify_jwt, verify_password
+from web.db import (
+    create_user,
+    delete_chat_session,
+    get_user_by_email,
+    get_user_by_id,
+    init_db,
+    list_chat_sessions,
+    upsert_chat_session,
+)
 from web.deps import resolve_session_id
 from web.handlers import finalize_turn
 from web.rate_limit import limiter, rate_limit_exceeded_handler
-from web.schemas import ChatRequest, ChatResponse, JobStatusResponse, SessionView
+from web.schemas import (
+    ChatRequest,
+    ChatResponse,
+    JobStatusResponse,
+    LoginRequest,
+    MeResponse,
+    SessionListItem,
+    SessionView,
+    SignupRequest,
+    TokenResponse,
+)
+
+logger = logging.getLogger("trendforge.web.app")
 
 app = FastAPI(title="TrendForge Conversation API")
 app.state.limiter = limiter
@@ -55,11 +53,19 @@ app.add_middleware(SlowAPIMiddleware)
 _redis_conn = Redis.from_url(REDIS_URL)
 _queue = Queue("trendforge", connection=_redis_conn)
 
-# Actions that are cheap (pure bookkeeping, no pipeline/LLM/network calls)
-# run inline in the request. Everything else is genuinely slow (20-96s
-# pipeline runs observed in CLI testing) and must be a background job --
-# an HTTP request has no business blocking that long.
 INLINE_ACTIONS = {"add_constraint", "remove_constraint", "clarify"}
+
+
+@app.on_event("startup")
+def _startup():
+    try:
+        init_db()
+    except Exception as e:
+        logger.error("init_db() failed at startup: %s", e)
+
+
+def _user_id(client_name: str) -> int:
+    return int(client_name.split(":", 1)[1])
 
 
 @app.get("/health")
@@ -67,20 +73,52 @@ def health():
     return {"ok": True, "redis": redis_ping()}
 
 
+@app.post("/auth/signup", response_model=TokenResponse, status_code=201)
+def signup(body: SignupRequest):
+    if get_user_by_email(body.email):
+        raise HTTPException(status_code=409, detail="Email already registered")
+    password_hash = hash_password(body.password)
+    user_id = create_user(body.email, password_hash)
+    return TokenResponse(token=create_jwt(user_id))
+
+
+@app.post("/auth/login", response_model=TokenResponse)
+def login(body: LoginRequest):
+    user = get_user_by_email(body.email)
+    if not user or not verify_password(body.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    return TokenResponse(token=create_jwt(user["id"]))
+
+
+@app.get("/auth/me", response_model=MeResponse)
+def me(client_name: str = Depends(verify_jwt)):
+    user = get_user_by_id(_user_id(client_name))
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return MeResponse(**user)
+
+
+@app.get("/sessions", response_model=List[SessionListItem])
+def sessions(client_name: str = Depends(verify_jwt)):
+    return [SessionListItem(**row) for row in list_chat_sessions(_user_id(client_name))]
+
+
 @app.post("/chat", response_model=ChatResponse)
 @limiter.limit("10/minute")
-def chat(body: ChatRequest, request: Request, response: Response, client_name: str = Depends(verify_api_key)):
+def chat(body: ChatRequest, request: Request, response: Response, client_name: str = Depends(verify_jwt)):
     session_id = resolve_session_id(request, response, body.session_id)
     conversation = load_conversation(session_id, client_name)
 
     platform = body.platform or conversation.get("last_platform")
 
     turn = process_turn(conversation, body.message)
-    # Persist immediately -- process_turn already appended to
-    # message_history regardless of which action fires next, and if the
-    # slow path's job takes a while, that bookkeeping shouldn't be lost
-    # if the process restarts in between.
     save_conversation(session_id, client_name, conversation)
+
+    title = body.message[:60] if not conversation.get("last_topic") else None
+    try:
+        upsert_chat_session(_user_id(client_name), session_id, title=title)
+    except Exception as e:
+        logger.warning("upsert_chat_session failed for %s/%s: %s", client_name, session_id, e)
 
     action = turn["action"]
     args = turn.get("args", {})
@@ -99,14 +137,9 @@ def chat(body: ChatRequest, request: Request, response: Response, client_name: s
     job = _queue.enqueue(
         "web.jobs.run_slow_action",
         session_id, client_name, action, args, body.message, platform, body.posts, body.verbose,
-        job_timeout=180,      # generous vs. the ~96s worst case seen in testing
-        result_ttl=3600,      # RQ's default is 500s -- too short for a client that
-                              # polls slowly or reconnects later. The underlying
-                              # conversation state is safe regardless (it's saved to
-                              # Redis under the session's own TTL, independent of this)
-                              # -- this only affects how long /chat/status/{job_id}
-                              # itself stays answerable.
-        meta={"client_name": client_name},  # so /chat/status can verify ownership
+        job_timeout=180,
+        result_ttl=3600,
+        meta={"client_name": client_name},
     )
     return ChatResponse(
         status="processing",
@@ -119,18 +152,12 @@ def chat(body: ChatRequest, request: Request, response: Response, client_name: s
 
 @app.get("/chat/status/{job_id}", response_model=JobStatusResponse)
 @limiter.limit("60/minute")
-def chat_status(request: Request, response: Response, job_id: str, client_name: str = Depends(verify_api_key)):
+def chat_status(request: Request, response: Response, job_id: str, client_name: str = Depends(verify_jwt)):
     try:
         job = Job.fetch(job_id, connection=_redis_conn)
     except NoSuchJobError:
         raise HTTPException(status_code=404, detail="unknown or expired job_id")
 
-    # A job belongs to whichever client enqueued it (see meta= in /chat
-    # above). A different client asking about this job_id gets the exact
-    # same 404 as a genuinely nonexistent job -- same no-leak principle
-    # as session scoping: don't reveal that a job_id exists for someone
-    # else. UUIDs are high-entropy, so this is defense in depth rather
-    # than the primary protection, but it costs nothing to check.
     if job.meta.get("client_name") != client_name:
         raise HTTPException(status_code=404, detail="unknown or expired job_id")
 
@@ -144,14 +171,18 @@ def chat_status(request: Request, response: Response, job_id: str, client_name: 
 
 @app.get("/session/{session_id}", response_model=SessionView)
 @limiter.limit("60/minute")
-def get_session(request: Request, response: Response, session_id: str, client_name: str = Depends(verify_api_key)):
+def get_session(request: Request, response: Response, session_id: str, client_name: str = Depends(verify_jwt)):
     conversation = load_conversation(session_id, client_name)
     return SessionView(session_id=session_id, **conversation)
 
 
 @app.delete("/session/{session_id}")
-def reset_session(session_id: str, client_name: str = Depends(verify_api_key)):
+def reset_session(session_id: str, client_name: str = Depends(verify_jwt)):
     ok = delete_conversation(session_id, client_name)
     if not ok:
         raise HTTPException(status_code=503, detail="could not reach session store")
+    try:
+        delete_chat_session(_user_id(client_name), session_id)
+    except Exception as e:
+        logger.warning("delete_chat_session failed for %s/%s: %s", client_name, session_id, e)
     return {"status": "deleted", "session_id": session_id}
