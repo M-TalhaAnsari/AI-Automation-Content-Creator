@@ -72,3 +72,23 @@ async def verify_jwt(authorization: Optional[str] = Header(None)) -> str:
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail=GENERIC_TOKEN_ERROR)
     return payload["sub"]
+
+
+async def verify_identity(
+    authorization: Optional[str] = Header(None),
+    x_anon_id: Optional[str] = Header(None, alias="X-Anon-Id"),
+) -> str:
+    """Accepts either a real logged-in user (Bearer JWT) or a pre-login
+    guest (X-Anon-Id) -- Phase 8. A guest past the trial limit is rejected
+    with a distinct "signup_required" detail so the frontend can show a
+    real prompt instead of a generic auth failure."""
+    if authorization:
+        return await verify_jwt(authorization=authorization)
+
+    if not x_anon_id:
+        raise HTTPException(status_code=401, detail=GENERIC_TOKEN_ERROR)
+
+    from web import anon_trial
+    if anon_trial.is_over_limit(x_anon_id):
+        raise HTTPException(status_code=403, detail="signup_required")
+    return f"anon:{x_anon_id}"

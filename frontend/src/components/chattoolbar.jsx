@@ -1,7 +1,7 @@
 import React from "react";
 import { useState } from 'react'
 
-const PLATFORMS = ['instagram', 'youtube', 'linkedin', 'tiktok']
+const PLATFORMS = ['instagram', 'youtube', 'linkedin', 'tiktok', 'facebook']
 
 export default function ChatToolbar({
   platform,

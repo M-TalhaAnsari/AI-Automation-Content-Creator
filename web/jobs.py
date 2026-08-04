@@ -2,11 +2,6 @@
 web/jobs.py -- background job that a worker process (web/worker.py)
 actually executes. This is where the 20-96s pipeline runs, off the
 request thread.
-
-Imports of main/orchestrator happen inside the function, not at module
-load time, so a worker process that only ever runs this one job doesn't
-pay the import cost of the whole pipeline until a job actually arrives
-(and so `rq worker` can import this module cheaply to register it).
 """
 from typing import Any, Dict, Optional
 

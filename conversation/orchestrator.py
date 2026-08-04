@@ -1,6 +1,5 @@
 """
 conversation/orchestrator.py — Native Tool-Calling Turn Resolver
-(patched: see FIX comments for exactly what changed and why)
 """
 
 import json
@@ -21,7 +20,7 @@ TOOLS = [
         "description": "Generate fresh content for a new topic/platform request.",
         "parameters": {"type": "object", "properties": {
             "prompt": {"type": "string"},
-            "platform": {"type": "string", "enum": ["instagram", "youtube", "tiktok", "linkedin"]},
+            "platform": {"type": "string", "enum": ["instagram", "youtube", "tiktok", "linkedin", "facebook"]},
         }, "required": ["prompt"]},
     }},
     {"type": "function", "function": {
@@ -110,19 +109,6 @@ def _build_context_messages(conversation: dict) -> list:
 
 
 def maybe_summarize(conversation: dict) -> None:
-    """
-    FIX: this previously folded overflow into rolling_summary but never
-    actually shrunk conversation["message_history"] itself -- meaning a
-    long-lived session's stored history (and therefore its Redis
-    payload size) grew forever, even though the LLM CONTEXT sent per
-    turn stayed capped at SLIDING_WINDOW_TURNS via _build_context_messages'
-    own slicing. Now the retained tail actually replaces the full list --
-    but ONLY once the summary call has genuinely succeeded. If
-    summarization fails (network error, bad response, etc.), history is
-    left completely untouched: better to keep paying the storage cost a
-    while longer than to silently discard messages with no summary to
-    show for it.
-    """
     history = conversation.get("message_history", [])
     if len(history) <= SLIDING_WINDOW_TURNS:
         return

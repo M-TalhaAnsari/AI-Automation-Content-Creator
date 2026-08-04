@@ -53,13 +53,6 @@ def run(prompt: str, platform: str = None, post_count: int = 5, verbose: bool = 
         state["selected_sources"] = ["google_trends", "hackernews"]
 
     # ── STEP 3: DATA FETCHERS + QUALITY GATE ─────────────────
-    # FIX: workflow/gates.py existed, was unit-solid, and was never wired
-    # into anything ("Not wired into any graph yet" per its own header).
-    # data_starved never got set anywhere in the real pipeline, which is
-    # why generation/prompts.py's honest-concept-pitch branch (built
-    # specifically to avoid promising a repo link that doesn't exist)
-    # never activated even in a real forced-failure run with only 2
-    # items surviving the topic filter.
     print("  [3/5] 🌐 Fetching live data...")
     try:
         from fetchers.fetcher_orchestrator import FetcherOrchestrator
@@ -76,25 +69,10 @@ def run(prompt: str, platform: str = None, post_count: int = 5, verbose: bool = 
             print(f"        🔁 Retry {state['fetch_retry_count']}/{MAX_FETCH_RETRIES}: {quality['reason']}")
 
             if next_query:
-                # ASSUMPTION, isolated to these two lines: fetcher_orchestrator.py
-                # passes the whole state through as a SimpleNamespace and
-                # delegates entirely to per-fetcher getattr() reads (pattern
-                # lives in e.g. tavily_fetcher.py, which I haven't seen) --
-                # so I can't confirm every fetcher reads fetch_summary
-                # specifically rather than core_topic or search_queries[0].
-                # core/state.py documents fetch_summary as "primary search
-                # query used", so it's updated here; search_queries is also
-                # reordered to promote next_query to front, covering a
-                # fetcher that iterates the list instead. If sources still
-                # don't change on retry in a real run, this is the first
-                # place to check.
                 state["fetch_summary"] = next_query
                 queries = state.get("search_queries", [])
                 state["search_queries"] = [next_query] + [q for q in queries if q != next_query]
 
-            # fetcher.fetch() fully replaces fetched_data/sources_used/
-            # total_items_fetched each call -- merge with the previous
-            # attempt's results instead of losing them.
             prev_fetched = state.get("fetched_data", {})
             prev_sources = set(state.get("sources_used", []))
 
@@ -127,15 +105,6 @@ def run(prompt: str, platform: str = None, post_count: int = 5, verbose: bool = 
         add_log(state, f"[Main] Already-covered lookup skipped: {e}")
 
     # ── STEP 4: CONTENT GENERATOR + VALIDATION GATE ──────────
-    # FIX: same story as the fetch gate -- evaluate_post_validation existed,
-    # was never called, and generation_validation_errors never got
-    # populated anywhere real. Calling ContentGenerator().generate(state)
-    # again is safe for a retry: its own topic-filter and Pass-1-selection
-    # steps are idempotent against an already-narrowed fetched_data (Pass 1
-    # only fires when len(items) > target_count, which is false after the
-    # first narrowing), so a second call effectively just regenerates the
-    # creative step from the same selected data -- exactly what a
-    # validation-triggered retry should do.
     print("  [4/5] ✨ Generating content...")
     try:
         from generation.content_generator import ContentGenerator
@@ -220,6 +189,12 @@ def _extract_flags(prompt: str):
     return prompt.strip(), platform, posts
 
 
+def _summarize_for_chat(platform: str, topic: str, post_count: int) -> str:
+    plural = "s" if post_count != 1 else ""
+    topic_part = f' about "{topic}"' if topic else ""
+    return f"Generated {post_count} {platform} post{plural}{topic_part}."
+
+
 def _handle_run_new_request(args, prompt, platform, posts, verbose, conversation):
     resolved_prompt = args.get("prompt") or prompt
     resolved_platform = args.get("platform") or platform
@@ -231,7 +206,20 @@ def _handle_run_new_request(args, prompt, platform, posts, verbose, conversation
     conversation["last_platform"] = result.get("platform")
     conversation["last_content_intent"] = result.get("content_intent")
     conversation["last_generated_posts"] = result.get("posts", [])
-    conversation["last_output"] = result.get("output")
+    # FIX (P9): last_output previously held the full terminal-formatted
+    # block (state["final_output"] -- box-drawing chars, emoji section
+    # headers, meant for a monospace CLI). web/jobs.py's run_slow_action
+    # returns this exact field verbatim as the chat reply, so that block
+    # was landing straight in the web UI. The CLI's own real-time display
+    # is unaffected -- run() already printed state["final_output"] in full
+    # before returning, and save_output() still writes the complete block
+    # to disk. Only the shared last_output field (used by both the CLI's
+    # "last" command and the web reply) changes to something meant to be
+    # read in a chat bubble; the structured posts themselves still flow to
+    # the frontend separately via last_generated_posts / GET /session.
+    conversation["last_output"] = _summarize_for_chat(
+        result.get("platform", ""), result.get("topic", ""), len(result.get("posts", [])),
+    )
 
 
 def _handle_edit_existing(args, conversation, verbose):
@@ -260,7 +248,12 @@ def _handle_edit_existing(args, conversation, verbose):
     print(state["final_output"])
     if saved_path:
         print(f"  💾 Saved to: {saved_path}")
-    conversation["last_output"] = state["final_output"]
+    # FIX (P9): see _handle_run_new_request -- last_output is the chat
+    # reply, not the terminal block. state["final_output"] (printed above,
+    # saved to disk above) is untouched for CLI users.
+    conversation["last_output"] = (
+        f'Updated the post(s) — {instruction}' if instruction else "Updated the requested post(s)."
+    )
 
 
 def _handle_add_constraint(args, conversation, verbose):
@@ -318,7 +311,10 @@ def _handle_targeted_refetch(args, conversation, verbose):
         print(f"  💾 Saved to: {saved_path}")
     conversation["last_topic"] = state["core_topic"]
     conversation["last_generated_posts"] = state["generated_posts"]
-    conversation["last_output"] = state["final_output"]
+    # FIX (P9): see _handle_run_new_request -- same reasoning.
+    conversation["last_output"] = _summarize_for_chat(
+        state.get("platform", ""), state.get("core_topic", ""), len(state.get("generated_posts", [])),
+    )
     conversation["leftover_fetch_pool"] = state.get("leftover_fetch_pool", [])
 
 

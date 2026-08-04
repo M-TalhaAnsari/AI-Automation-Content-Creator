@@ -4,7 +4,7 @@ import * as api from '../api/client'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-export default function AuthScreen({ onAuthenticated }) {
+export default function AuthScreen({ onAuthenticated, message, onCancel }) {
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -41,6 +41,7 @@ export default function AuthScreen({ onAuthenticated }) {
     <div className="auth-shell">
       <form className="auth-card" onSubmit={handleSubmit}>
         <h2 className="auth-title">TrendForge</h2>
+        {message && <p className="auth-error" style={{ color: 'var(--text-muted)' }}>{message}</p>}
         <div className="auth-tabs">
           <button
             type="button"
@@ -76,6 +77,11 @@ export default function AuthScreen({ onAuthenticated }) {
         <button className="auth-submit" type="submit" disabled={submitting}>
           {submitting ? 'Working...' : mode === 'signup' ? 'Create account' : 'Log in'}
         </button>
+        {onCancel && (
+          <button type="button" className="logout-btn" onClick={onCancel} style={{ alignSelf: 'center' }}>
+            Continue as guest
+          </button>
+        )}
       </form>
     </div>
   )

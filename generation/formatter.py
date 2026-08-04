@@ -20,10 +20,6 @@ def format_output(state: TrendForgeState) -> TrendForgeState:
     posts = state.get("generated_posts", [])
     platform = state.get("platform", "instagram").upper()
     topic = state.get("core_topic", "")
-    # sources_used always exists (create_initial_state sets it to []), so
-    # no fallback key is needed here — selected_sources is a different,
-    # intentionally distinct field (what the router picked vs what actually
-    # returned data).
     sources = state.get("sources_used", [])
     trend_insight = state.get("trend_insight", "")
 
@@ -66,16 +62,12 @@ def format_output(state: TrendForgeState) -> TrendForgeState:
         lines.append(f"  {hashtags}")
         lines.append("")
 
-    # Trend insight
     if trend_insight:
         lines.append(f"{'─'*60}")
         lines.append(f"  📊 TREND INSIGHT")
         lines.append(f"{'─'*60}")
         lines.append(f"  {trend_insight}\n")
 
-    # Token report — label the content-generation engine dynamically based
-    # on which one actually ran this session (see content_generator.py),
-    # instead of a hardcoded name that drifts when models/configs change.
     gen_engine = state.get("content_generation_engine", "")
     if "groq" in gen_engine.lower():
         gen_model_label = f"{CONFIG.models.groq_model_large} (Groq)"
@@ -98,9 +90,6 @@ def save_output(state: TrendForgeState, output_dir: str = "output") -> str:
     """Saves final output to file. Returns file path (empty string on failure)."""
     try:
         os.makedirs(output_dir, exist_ok=True)
-        # Use .get() with a fallback so a missing/renamed session_id can
-        # never crash the run at the very last step, after generation has
-        # already succeeded and already cost tokens.
         session_id = state.get("session_id", "unknown")
         path = os.path.join(output_dir, f"session_{session_id}.txt")
         with open(path, "w", encoding="utf-8") as f:

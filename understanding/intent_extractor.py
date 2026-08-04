@@ -122,7 +122,7 @@ Return ONLY this JSON, nothing else:
   "category": "<tech|business|lifestyle|entertainment|education|news>",
   "core_topic": "<actual subject only, 2-5 words max>",
   "content_intent": "<showcase|educate|news|inspire|review>",
-  "platform": "<instagram|youtube|tiktok|linkedin>",
+  "platform": "<instagram|youtube|tiktok|linkedin|facebook>",
   "post_count": <1-10>,
   "content_type": "<posts|script|thread|carousel>",
   "special_requests": [<strings>],
@@ -206,21 +206,6 @@ class IntentExtractor:
                 model=CONFIG.models.groq_model_small,
                 temperature=CONFIG.models.routing_temperature,
                 max_tokens=1500,
-                # FIX: openai/gpt-oss-20b is a reasoning model -- without this,
-                # reasoning_effort defaults to "medium", and its hidden
-                # chain-of-thought is generated INSIDE the same max_tokens
-                # budget before the JSON answer is ever written. Confirmed via
-                # real logs: a 57-char prompt came back clean; longer,
-                # more constraint-laden follow-ups (458/526 chars) burned
-                # 1830/1852 real tokens but produced no parseable JSON at
-                # all -- every one of _parse_llm_json's four fallback
-                # strategies failed, including the bare-regex last resort,
-                # which is only possible if the response never got as far as
-                # writing "core_topic". This is a classification/extraction
-                # task, not one that benefits from deep reasoning -- "low"
-                # leaves the budget for the actual answer regardless of how
-                # complex the input is. max_tokens raised too, as a second
-                # layer of margin, not a substitute for this.
                 reasoning_effort="low",
                 messages=[
                     {"role": "system", "content": INTENT_SYSTEM_PROMPT},
@@ -296,11 +281,6 @@ class IntentExtractor:
 
         state["is_long_prompt"] = rules.get("is_long", len(state["raw_prompt"]) > 120)
 
-        # item_kind: generic, freshly inferred per-request -- no hardcoded
-        # domain examples here, that's the whole point. Empty string means
-        # "no discrete-named-items constraint applies", which is the
-        # correct default when the LLM call failed or the request is
-        # genuinely about sub-concepts of one topic.
         state["item_kind"] = (llm.get("item_kind") or "").strip()
 
         return state

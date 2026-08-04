@@ -5,11 +5,14 @@ export default function MessageBubble({ role, content, pending, posts, onOpenPos
     <div className={classes}>
       {content}
       {Array.isArray(posts) && posts.length > 0 && (
-        <div className="post-chip-row">
+        <div className="post-entry-list">
           {posts.map((p, i) => (
-            <button key={i} className="post-chip" onClick={() => onOpenPost(i)}>
-              Post {i + 1}
-            </button>
+            <div key={i} className="post-entry">
+              <span className="post-entry-title">{p.title || `Post ${i + 1}`}</span>
+              <button className="post-entry-btn" onClick={() => onOpenPost(i)}>
+                View post
+              </button>
+            </div>
           ))}
         </div>
       )}

@@ -1,8 +1,5 @@
 """
 config.py — TrendForge Central Configuration
-
-Single source of truth for all API keys, model settings, and source toggles.
-Every other file reads from CONFIG — nothing should redefine these values elsewhere.
 """
 
 import os
@@ -13,43 +10,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-# ─────────────────────────────────────────────
-# MODEL CONFIGURATION
-# ─────────────────────────────────────────────
-
 @dataclass
 class ModelConfig:
-    # Groq — used for fast/cheap classification, routing, intent extraction
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
     groq_model_small: str = os.getenv("GROQ_MODEL_SMALL", "openai/gpt-oss-20b")
     groq_model_large: str = os.getenv("GROQ_MODEL_LARGE", "openai/gpt-oss-120b")
-
-    # Gemini — used for final creative content generation
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
     gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
-
-    # Temperature: low = consistent/deterministic, high = creative
     routing_temperature: float = 0.0
     generation_temperature: float = 0.85
 
-
-# ─────────────────────────────────────────────
-# DATA SOURCE CONFIGURATION
-# ─────────────────────────────────────────────
 
 @dataclass
 class SourceConfig:
     tavily_api_key: str = os.getenv("TAVILY_API_KEY", "")
     youtube_api_key: str = os.getenv("YOUTUBE_API_KEY", "")
-
     reddit_client_id: str = os.getenv("REDDIT_CLIENT_ID", "")
     reddit_client_secret: str = os.getenv("REDDIT_CLIENT_SECRET", "")
     reddit_user_agent: str = os.getenv("REDDIT_USER_AGENT", "TrendForge/1.0")
-
-    # GitHub works without a token (60 req/hour); token raises limit to 5000/hour
     github_token: str = os.getenv("GITHUB_TOKEN", "")
-
-    # Per-source on/off switches
     enable_github: bool = os.getenv("ENABLE_GITHUB", "true").lower() == "true"
     enable_reddit: bool = os.getenv("ENABLE_REDDIT", "true").lower() == "true"
     enable_youtube: bool = os.getenv("ENABLE_YOUTUBE", "true").lower() == "true"
@@ -59,14 +38,6 @@ class SourceConfig:
     enable_huggingface: bool = os.getenv("ENABLE_HUGGINGFACE", "true").lower() == "true"
     enable_tavily: bool = os.getenv("ENABLE_TAVILY", "true").lower() == "true"
 
-
-# ─────────────────────────────────────────────
-# SOURCE ROUTING — which sources serve which content category
-#
-# NOTE: category itself is decided by the LLM in intent_extractor.py,
-# NOT by keyword matching here. This map only answers: given a category
-# the LLM already decided, which sources should we fetch from?
-# ─────────────────────────────────────────────
 
 SOURCE_MAP = {
     "tech":          ["github", "reddit"],
@@ -79,54 +50,36 @@ SOURCE_MAP = {
 }
 
 
-# ─────────────────────────────────────────────
-# PLATFORM SETTINGS — tone/format rules per output platform
-# ─────────────────────────────────────────────
-
 PLATFORM_SETTINGS = {
     "instagram": {
-        "post_format": "image_caption",
-        "max_caption_chars": 2200,
-        "hashtag_count": 15,
-        "tone": "aspirational, visual, lifestyle-driven",
-        "hook_style": "bold statement or curiosity gap",
+        "post_format": "image_caption", "max_caption_chars": 2200, "hashtag_count": 15,
+        "tone": "aspirational, visual, lifestyle-driven", "hook_style": "bold statement or curiosity gap",
         "emoji_usage": "high",
     },
     "youtube": {
-        "post_format": "video_script",
-        "max_caption_chars": 5000,
-        "hashtag_count": 10,
-        "tone": "informative, engaging, educational",
-        "hook_style": "question or surprising fact",
+        "post_format": "video_script", "max_caption_chars": 5000, "hashtag_count": 10,
+        "tone": "informative, engaging, educational", "hook_style": "question or surprising fact",
         "emoji_usage": "medium",
     },
     "linkedin": {
-        "post_format": "professional_post",
-        "max_caption_chars": 3000,
-        "hashtag_count": 5,
-        "tone": "professional, insightful, thought leadership",
-        "hook_style": "bold insight or personal story",
+        "post_format": "professional_post", "max_caption_chars": 3000, "hashtag_count": 5,
+        "tone": "professional, insightful, thought leadership", "hook_style": "bold insight or personal story",
         "emoji_usage": "low",
     },
     "tiktok": {
-        "post_format": "short_video_script",
-        "max_caption_chars": 2200,
-        "hashtag_count": 10,
-        "tone": "raw, authentic, Gen-Z, fast paced",
-        "hook_style": "pattern interrupt, POV",
+        "post_format": "short_video_script", "max_caption_chars": 2200, "hashtag_count": 10,
+        "tone": "raw, authentic, Gen-Z, fast paced", "hook_style": "pattern interrupt, POV",
         "emoji_usage": "high",
+    },
+    "facebook": {
+        "post_format": "community_post", "max_caption_chars": 5000, "hashtag_count": 3,
+        "tone": "conversational, community-driven, relatable", "hook_style": "relatable statement or question",
+        "emoji_usage": "medium",
     },
 }
 
 SUPPORTED_PLATFORMS = list(PLATFORM_SETTINGS.keys())
 
-
-# ─────────────────────────────────────────────
-# SYSTEM SETTINGS
-#
-# NOTE: not all fields below are confirmed to be read elsewhere yet —
-# verify usage as each remaining file is cleaned, remove if truly unused.
-# ─────────────────────────────────────────────
 
 @dataclass
 class SystemConfig:
@@ -141,21 +94,12 @@ class SystemConfig:
     show_agent_logs: bool = False
 
 
-# ─────────────────────────────────────────────
-# GLOBAL CONFIG — single instance, imported everywhere as CONFIG
-# ─────────────────────────────────────────────
-
 class TrendForgeConfig:
     def __init__(self):
         self.models = ModelConfig()
         self.sources = SourceConfig()
         self.system = SystemConfig()
 
-    # ── Read-only UPPERCASE adapters ─────────────────────────────
-    # WHY THESE EXIST: fetchers receive CONFIG directly (not CONFIG.sources)
-    # and expect flat UPPERCASE attribute names. These properties are the
-    # ONLY place that mapping happens — the dataclasses above remain the
-    # single source of truth. Never assign to these properties directly.
     @property
     def GROQ_API_KEY(self):
         return self.models.groq_api_key
@@ -181,12 +125,7 @@ class TrendForgeConfig:
         return self.sources.reddit_user_agent
 
     def validate(self) -> List[str]:
-        """
-        Returns human-readable warnings for missing config.
-        Never raises — the system should degrade gracefully, not crash.
-        """
         warnings = []
-
         if not self.models.groq_api_key:
             warnings.append("GROQ_API_KEY missing — routing + parsing will fail.")
         if not self.models.gemini_api_key:
@@ -199,14 +138,11 @@ class TrendForgeConfig:
             warnings.append("REDDIT credentials missing — Reddit source disabled.")
         if not self.sources.github_token:
             warnings.append("GITHUB_TOKEN missing — GitHub limited to 60 req/hour (still works).")
-
         return warnings
 
     def available_sources(self) -> List[str]:
-        """Returns sources that are actually usable right now (enabled + credentials present)."""
         available = []
         s = self.sources
-
         if s.enable_github:
             available.append("github")
         if s.enable_hackernews:
@@ -223,9 +159,7 @@ class TrendForgeConfig:
             available.append("youtube")
         if s.enable_tavily and s.tavily_api_key:
             available.append("tavily")
-
         return available
 
 
-# Singleton — import this everywhere, never instantiate TrendForgeConfig() again
 CONFIG = TrendForgeConfig()

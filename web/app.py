@@ -3,7 +3,6 @@ import uuid
 from typing import List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
-from fastapi.middleware.cors import CORSMiddleware
 from redis import Redis
 from rq import Queue
 from rq.job import Job
@@ -19,7 +18,8 @@ from memory.redis_session_store import (
 )
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from web.auth import create_jwt, hash_password, verify_jwt, verify_password
+from web import anon_trial
+from web.auth import create_jwt, hash_password, verify_identity, verify_jwt, verify_password
 from web.db import (
     create_user,
     delete_chat_session,
@@ -50,15 +50,7 @@ app = FastAPI(title="TrendForge Conversation API")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
 _redis_conn = Redis.from_url(REDIS_URL)
 _queue = Queue("trendforge", connection=_redis_conn)
 
@@ -71,6 +63,10 @@ def _startup():
         init_db()
     except Exception as e:
         logger.error("init_db() failed at startup: %s", e)
+
+
+def _is_user(client_name: str) -> bool:
+    return client_name.startswith("user:")
 
 
 def _user_id(client_name: str) -> int:
@@ -114,7 +110,7 @@ def sessions(client_name: str = Depends(verify_jwt)):
 
 @app.post("/chat", response_model=ChatResponse)
 @limiter.limit("10/minute")
-def chat(body: ChatRequest, request: Request, response: Response, client_name: str = Depends(verify_jwt)):
+def chat(body: ChatRequest, request: Request, response: Response, client_name: str = Depends(verify_identity)):
     session_id = resolve_session_id(request, response, body.session_id)
     conversation = load_conversation(session_id, client_name)
 
@@ -123,11 +119,19 @@ def chat(body: ChatRequest, request: Request, response: Response, client_name: s
     turn = process_turn(conversation, body.message)
     save_conversation(session_id, client_name, conversation)
 
-    title = body.message[:60] if not conversation.get("last_topic") else None
-    try:
-        upsert_chat_session(_user_id(client_name), session_id, title=title)
-    except Exception as e:
-        logger.warning("upsert_chat_session failed for %s/%s: %s", client_name, session_id, e)
+    # Guest usage (Phase 8): every /chat call counts against the trial,
+    # regardless of which action fired -- a clarify or a failed call still
+    # used one of the free tries. Real users are never tracked here.
+    if not _is_user(client_name):
+        anon_id = client_name.split(":", 1)[1]
+        anon_trial.record_message(anon_id, tokens_used=turn.get("tokens_used", 0))
+
+    if _is_user(client_name):
+        title = body.message[:60] if not conversation.get("last_topic") else None
+        try:
+            upsert_chat_session(_user_id(client_name), session_id, title=title)
+        except Exception as e:
+            logger.warning("upsert_chat_session failed for %s/%s: %s", client_name, session_id, e)
 
     action = turn["action"]
     args = turn.get("args", {})
@@ -161,10 +165,9 @@ def chat(body: ChatRequest, request: Request, response: Response, client_name: s
 
 @app.get("/chat/status/{job_id}", response_model=JobStatusResponse)
 @limiter.limit("60/minute")
-def chat_status(request: Request, response: Response, job_id: str, client_name: str = Depends(verify_jwt)):
+def chat_status(request: Request, response: Response, job_id: str, client_name: str = Depends(verify_identity)):
     try:
         job = Job.fetch(job_id, connection=_redis_conn)
-        job.refresh()
     except NoSuchJobError:
         raise HTTPException(status_code=404, detail="unknown or expired job_id")
 
@@ -173,6 +176,13 @@ def chat_status(request: Request, response: Response, job_id: str, client_name: 
 
     if job.is_finished:
         result = job.result or {}
+        # Best-effort: the real generation-call token cost only exists once
+        # the background job finishes, not synchronously in /chat. Depends
+        # on run_slow_action's result including "tokens_used" -- unverified
+        # against the real web/jobs.py, which hasn't been shared yet.
+        if not _is_user(client_name):
+            anon_id = client_name.split(":", 1)[1]
+            anon_trial.add_tokens(anon_id, result.get("tokens_used", 0))
         return JobStatusResponse(status="done", action=result.get("action"), reply=result.get("reply"))
     if job.is_failed:
         return JobStatusResponse(status="error", detail="job failed -- check worker logs")
@@ -181,18 +191,19 @@ def chat_status(request: Request, response: Response, job_id: str, client_name: 
 
 @app.get("/session/{session_id}", response_model=SessionView)
 @limiter.limit("60/minute")
-def get_session(request: Request, response: Response, session_id: str, client_name: str = Depends(verify_jwt)):
+def get_session(request: Request, response: Response, session_id: str, client_name: str = Depends(verify_identity)):
     conversation = load_conversation(session_id, client_name)
     return SessionView(session_id=session_id, **conversation)
 
 
 @app.delete("/session/{session_id}")
-def reset_session(session_id: str, client_name: str = Depends(verify_jwt)):
+def reset_session(session_id: str, client_name: str = Depends(verify_identity)):
     ok = delete_conversation(session_id, client_name)
     if not ok:
         raise HTTPException(status_code=503, detail="could not reach session store")
-    try:
-        delete_chat_session(_user_id(client_name), session_id)
-    except Exception as e:
-        logger.warning("delete_chat_session failed for %s/%s: %s", client_name, session_id, e)
+    if _is_user(client_name):
+        try:
+            delete_chat_session(_user_id(client_name), session_id)
+        except Exception as e:
+            logger.warning("delete_chat_session failed for %s/%s: %s", client_name, session_id, e)
     return {"status": "deleted", "session_id": session_id}

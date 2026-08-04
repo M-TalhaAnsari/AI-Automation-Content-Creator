@@ -1,5 +1,6 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 const TOKEN_KEY = 'tf_token'
+const ANON_ID_KEY = 'tf_anon_id'
 
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY)
@@ -17,12 +18,39 @@ export function isLoggedIn() {
   return Boolean(getToken())
 }
 
+// Guest identity (Phase 8) -- generated once, persisted, sent only when
+// there's no real token. Signing up doesn't need to clear this; the
+// backend simply stops checking it once a real Authorization header shows
+// up (verify_identity prefers the JWT unconditionally).
+export function getAnonId() {
+  let id = localStorage.getItem(ANON_ID_KEY)
+  if (!id) {
+    id = crypto.randomUUID()
+    localStorage.setItem(ANON_ID_KEY, id)
+  }
+  return id
+}
+
 async function request(path, options = {}) {
   const token = getToken()
   const headers = { 'Content-Type': 'application/json', ...options.headers }
-  if (token) headers.Authorization = `Bearer ${token}`
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  } else {
+    headers['X-Anon-Id'] = getAnonId()
+  }
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
+
+  if (res.status === 403) {
+    const body = await res.json().catch(() => ({}))
+    if (body.detail === 'signup_required') {
+      const error = new Error('signup_required')
+      error.status = 403
+      error.code = 'signup_required'
+      throw error
+    }
+  }
 
   if (res.status === 401) {
     clearToken()

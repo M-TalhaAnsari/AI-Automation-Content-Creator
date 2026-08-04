@@ -1,6 +1,5 @@
 """
 generation/content_generator.py — Step 5: Content Generator
-(patched: see FIX comments for exactly what changed and why)
 """
 
 import json
@@ -11,7 +10,8 @@ import html
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.state import TrendForgeState, add_log, add_error, add_tokens
-from generation.prompts import build_generation_prompt, SYSTEM_PROMPT
+from generation.prompt_composer import compose_prompt
+from generation.prompts import SYSTEM_PROMPT
 from config import CONFIG
 
 
@@ -100,22 +100,6 @@ class ContentGenerator:
 
     def _call_groq_fallback(self, prompt: str, system_message: str = SYSTEM_PROMPT,
                              state: TrendForgeState = None, response_format=None) -> str:
-        """Isolated helper to hit the Groq fallback endpoint cleanly.
-
-        FIX (v2): response_format is now an explicit dict, not a bool.
-        The original bug was forcing {"type": "json_object"} on a caller
-        that wanted a bare array -- an object-mode guarantee can never be
-        satisfied by an array, which is why Pass 1 failed on literally
-        every call. The v1 fix just dropped enforcement for that caller,
-        which stopped the failure but downgraded it to best-effort text +
-        regex -- exactly the fragility this project has been moving away
-        from everywhere else (see gate.py's strict-schema rewrite). This
-        version instead wraps the array in a trivial object
-        ({"selected_indices": [...]}) so Pass 1 gets the SAME strict,
-        guaranteed-schema-conformant enforcement as everything else,
-        rather than a weaker fallback. Defaults to the plain json_object
-        object-mode used by the main generation path, unchanged.
-        """
         from groq import Groq
         groq_client = Groq(api_key=CONFIG.models.groq_api_key)
 
@@ -248,7 +232,7 @@ Return this exact JSON object: {{"selected_indices": [<1-based integers, {count}
             add_log(state, f"[Generator] Skipped Pass 1 selection — intent={content_intent}, keeping all {len(all_items)} items as loose reference")
             state["leftover_fetch_pool"] = []
 
-        prompt = build_generation_prompt(state)
+        prompt = compose_prompt(state)
         raw_response = None
         tokens_used = 0
         engine_used = "None"
@@ -285,8 +269,6 @@ Return this exact JSON object: {{"selected_indices": [<1-based integers, {count}
                     prompt=prompt,
                     system_message="You are a senior social media copywriter. Output your final generation in strict, clean JSON matching the template format exactly.",
                     state=state,
-                    # response_format left at default ({"type": "json_object"})
-                    # -- this call genuinely wants an object, unchanged.
                 )
                 engine_used = "Groq-LLaMA3"
                 tokens_used = len(prompt.split()) + len(raw_response.split())
