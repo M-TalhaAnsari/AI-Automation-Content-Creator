@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 
-from web.auth import JWT_ALGORITHM, JWT_SECRET
+from api.web.auth import JWT_ALGORITHM, JWT_SECRET
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 

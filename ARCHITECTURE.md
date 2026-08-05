@@ -1,4 +1,4 @@
-# AI-Automation-Content-Creator# TrendForge — Architecture Reference
+# TrendForge — Architecture Reference
 
 > **Purpose of this document:** Give any developer or AI assistant enough context to work on one feature without reading the whole codebase. When asking an AI for help, share this file + the specific module folder you are working on. Nothing else should be needed.
 

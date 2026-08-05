@@ -8,7 +8,7 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 from typing import List, Dict, Any, Optional
-from fetchers.base import safe_request
+from research.fetchers.base import safe_request
 
 logger = logging.getLogger("trendforge.fetchers.reddit_extractor")
 

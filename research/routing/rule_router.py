@@ -10,8 +10,8 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from typing import List
-from routing.base import BaseRouter
-from routing.registry import get_available_sources
+from research.routing.base import BaseRouter
+from research.routing.registry import get_available_sources
 from core.state import TrendForgeState, add_log
 from config import SOURCE_MAP
 

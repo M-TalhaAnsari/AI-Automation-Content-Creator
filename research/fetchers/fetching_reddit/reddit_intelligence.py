@@ -60,7 +60,7 @@ def extract_reddit_content(urls: List[str], config) -> List[Dict[str, Any]]:
     Firecrawl does NOT support Reddit, so we skip it.
     """
     logger.info("🔄 Using HTTP/JSON extraction for Reddit...")
-    from fetching_reddit.reddit_extractor import extract_multiple_reddit_posts
+    from research.fetchers.fetching_reddit.reddit_extractor import extract_multiple_reddit_posts
     return extract_multiple_reddit_posts(urls)
 
 

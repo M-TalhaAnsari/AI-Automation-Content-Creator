@@ -88,7 +88,7 @@ async def verify_identity(
     if not x_anon_id:
         raise HTTPException(status_code=401, detail=GENERIC_TOKEN_ERROR)
 
-    from web import anon_trial
+    from api.web import anon_trial
     if anon_trial.is_over_limit(x_anon_id):
         raise HTTPException(status_code=403, detail="signup_required")
     return f"anon:{x_anon_id}"

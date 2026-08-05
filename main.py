@@ -45,7 +45,7 @@ def run(prompt: str, platform: str = None, post_count: int = 5, verbose: bool = 
 
     print("  [2/5] 🔀 Selecting sources...")
     try:
-        from routing.router_orchestrator import RouterOrchestrator
+        from research.routing.router_orchestrator import RouterOrchestrator
         state = RouterOrchestrator().route(state)
         print(f"        ✅ sources={state['selected_sources']} | method={state['routing_method']}")
     except Exception as e:
@@ -55,7 +55,7 @@ def run(prompt: str, platform: str = None, post_count: int = 5, verbose: bool = 
     # ── STEP 3: DATA FETCHERS + QUALITY GATE ─────────────────
     print("  [3/5] 🌐 Fetching live data...")
     try:
-        from fetchers.fetcher_orchestrator import FetcherOrchestrator
+        from research.fetchers.fetcher_orchestrator import FetcherOrchestrator
         from workflow.gates import evaluate_fetch_quality, MAX_FETCH_RETRIES
 
         fetcher = FetcherOrchestrator()

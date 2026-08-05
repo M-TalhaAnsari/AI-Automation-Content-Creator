@@ -17,7 +17,7 @@ def run_slow_action(
     verbose: bool = False,
 ) -> Dict[str, Any]:
     from memory.redis_session_store import load_conversation, save_conversation
-    from web.handlers import finalize_turn
+    from api.web.handlers import finalize_turn
 
     conversation = load_conversation(session_id, client_name)
 

@@ -18,9 +18,9 @@ from memory.redis_session_store import (
 )
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from web import anon_trial
-from web.auth import create_jwt, hash_password, verify_identity, verify_jwt, verify_password
-from web.db import (
+from api.web import anon_trial
+from api.web.auth import create_jwt, hash_password, verify_identity, verify_jwt, verify_password
+from api.web.db import (
     create_user,
     delete_chat_session,
     get_user_by_email,
@@ -29,10 +29,10 @@ from web.db import (
     list_chat_sessions,
     upsert_chat_session,
 )
-from web.deps import resolve_session_id
-from web.handlers import finalize_turn
-from web.rate_limit import limiter, rate_limit_exceeded_handler
-from web.schemas import (
+from api.web.deps import resolve_session_id
+from api.web.handlers import finalize_turn
+from api.web.rate_limit import limiter, rate_limit_exceeded_handler
+from api.web.schemas import (
     ChatRequest,
     ChatResponse,
     JobStatusResponse,

@@ -19,8 +19,8 @@ from fastapi.testclient import TestClient
 from rq import Queue
 
 import memory.redis_session_store as store
-from web import app as app_module
-from web.auth import verify_api_key
+from api.web import app as app_module
+from api.web.auth import verify_api_key
 
 TEST_CLIENT_NAME = "testclient"
 

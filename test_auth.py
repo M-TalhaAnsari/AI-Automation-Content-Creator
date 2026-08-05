@@ -17,7 +17,7 @@ import os
 import pytest
 from fastapi import HTTPException
 
-from web import auth as auth_module
+from api.web import auth as auth_module
 
 
 def _reload_with_env(monkeypatch, env: dict):

@@ -28,7 +28,7 @@ from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from web.rate_limit import get_client_identity, rate_limit_exceeded_handler
+from api.web.rate_limit import get_client_identity, rate_limit_exceeded_handler
 
 LOW_LIMIT = "3/minute"  # small number so tests run fast and deterministically
 
@@ -69,7 +69,7 @@ def _headers(key):
 def test_client_a_succeeds_up_to_the_limit(client, monkeypatch):
     monkeypatch.setenv("API_CLIENT_A", "key-for-client-a")
     import importlib
-    from web import auth as auth_module
+    from api.web import auth as auth_module
     importlib.reload(auth_module)
     monkeypatch.setattr("web.rate_limit.resolve_client_name", auth_module.resolve_client_name)
 
@@ -81,7 +81,7 @@ def test_client_a_succeeds_up_to_the_limit(client, monkeypatch):
 def test_client_a_blocked_on_the_next_request_past_the_limit(client, monkeypatch):
     monkeypatch.setenv("API_CLIENT_A", "key-for-client-a")
     import importlib
-    from web import auth as auth_module
+    from api.web import auth as auth_module
     importlib.reload(auth_module)
     monkeypatch.setattr("web.rate_limit.resolve_client_name", auth_module.resolve_client_name)
 
@@ -99,7 +99,7 @@ def test_client_b_unaffected_by_client_a_hitting_their_limit(client, monkeypatch
     monkeypatch.setenv("API_CLIENT_A", "key-for-client-a")
     monkeypatch.setenv("API_CLIENT_B", "key-for-client-b")
     import importlib
-    from web import auth as auth_module
+    from api.web import auth as auth_module
     importlib.reload(auth_module)
     monkeypatch.setattr("web.rate_limit.resolve_client_name", auth_module.resolve_client_name)
 
@@ -122,7 +122,7 @@ def test_retry_after_seconds_is_real_not_hardcoded(client, monkeypatch):
     resetting) than the first."""
     monkeypatch.setenv("API_CLIENT_A", "key-for-client-a")
     import importlib
-    from web import auth as auth_module
+    from api.web import auth as auth_module
     importlib.reload(auth_module)
     monkeypatch.setattr("web.rate_limit.resolve_client_name", auth_module.resolve_client_name)
 
@@ -153,7 +153,7 @@ def test_missing_or_unresolvable_key_falls_back_gracefully_not_crash(client, mon
     relevant to this isolated app, which has no auth dependency)."""
     monkeypatch.delenv("API_CLIENT_A", raising=False)
     import importlib
-    from web import auth as auth_module
+    from api.web import auth as auth_module
     importlib.reload(auth_module)
     monkeypatch.setattr("web.rate_limit.resolve_client_name", auth_module.resolve_client_name)
 
@@ -174,7 +174,7 @@ def test_rotating_invalid_keys_cannot_bypass_the_limit(client, monkeypatch):
     getting an unlimited personal allowance by varying the key."""
     monkeypatch.delenv("API_CLIENT_A", raising=False)
     import importlib
-    from web import auth as auth_module
+    from api.web import auth as auth_module
     importlib.reload(auth_module)
     monkeypatch.setattr("web.rate_limit.resolve_client_name", auth_module.resolve_client_name)
 

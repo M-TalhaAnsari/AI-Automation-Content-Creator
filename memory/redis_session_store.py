@@ -67,7 +67,7 @@ def load_conversation(session_id: str, client_name: str) -> Dict[str, Any]:
     # Redis miss (expired, evicted, or never cached) -- fall back to Postgres,
     # which is the actual permanent store.
     try:
-        from web.db import load_conversation_from_db, parse_user_id
+        from api.web.db import load_conversation_from_db, parse_user_id
         user_id = parse_user_id(client_name)
         db_data = load_conversation_from_db(user_id, session_id)
     except Exception as e:
@@ -100,7 +100,7 @@ def save_conversation(session_id: str, client_name: str, conversation: Dict[str,
         redis_ok = False
 
     try:
-        from web.db import save_conversation_to_db, parse_user_id
+        from api.web.db import save_conversation_to_db, parse_user_id
         user_id = parse_user_id(client_name)
         save_conversation_to_db(user_id, session_id, conversation)
     except Exception as e:

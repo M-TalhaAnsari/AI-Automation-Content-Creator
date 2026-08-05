@@ -18,8 +18,8 @@ from fastapi.testclient import TestClient
 from rq import Queue
 
 import memory.redis_session_store as store
-from web import app as app_module
-from web.auth import verify_api_key
+from api.web import app as app_module
+from api.web.auth import verify_api_key
 
 TEST_CLIENT_NAME = "testclient"
 
@@ -168,10 +168,10 @@ def test_two_different_api_keys_same_session_id_get_genuinely_separate_conversat
     monkeypatch.setenv("API_CLIENT_WEB", "web-real-key")
     monkeypatch.setenv("API_CLIENT_SLACK", "slack-real-key")
     import importlib
-    from web import auth as auth_module
+    from api.web import auth as auth_module
     importlib.reload(auth_module)  # rebuilds _API_CLIENTS from the env vars just set
 
-    from web.auth import verify_api_key as route_registered_dependency
+    from api.web.auth import verify_api_key as route_registered_dependency
     app_module.app.dependency_overrides[route_registered_dependency] = auth_module.verify_api_key
 
     same_session_id = "shared-across-clients"
@@ -209,10 +209,10 @@ def test_wrong_or_missing_key_rejected_with_real_auth(monkeypatch):
     app_module.app.dependency_overrides.clear()
     monkeypatch.setenv("API_CLIENT_WEB", "web-real-key")
     import importlib
-    from web import auth as auth_module
+    from api.web import auth as auth_module
     importlib.reload(auth_module)
 
-    from web.auth import verify_api_key as route_registered_dependency
+    from api.web.auth import verify_api_key as route_registered_dependency
     app_module.app.dependency_overrides[route_registered_dependency] = auth_module.verify_api_key
 
     no_key = client.post("/chat", json={"message": "test"})
@@ -236,9 +236,9 @@ def test_job_status_rejects_wrong_client_same_as_unknown_job(monkeypatch):
     monkeypatch.setenv("API_CLIENT_WEB", "web-real-key")
     monkeypatch.setenv("API_CLIENT_SLACK", "slack-real-key")
     import importlib
-    from web import auth as auth_module
+    from api.web import auth as auth_module
     importlib.reload(auth_module)
-    from web.auth import verify_api_key as route_registered_dependency
+    from api.web.auth import verify_api_key as route_registered_dependency
     app_module.app.dependency_overrides[route_registered_dependency] = auth_module.verify_api_key
 
     # Fresh session -> stage-0 shortcut -> real process_turn resolves to

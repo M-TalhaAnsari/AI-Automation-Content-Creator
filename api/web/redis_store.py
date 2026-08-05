@@ -15,7 +15,7 @@ import json
 import os
 from typing import Any, Dict, Optional
 
-import web.redis_store as redis_store
+import api.web.redis_store as redis_store
 
 SESSION_TTL_SECONDS = int(os.environ.get("SESSION_TTL_SECONDS", 60 * 60 * 48))  # 48h default
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")

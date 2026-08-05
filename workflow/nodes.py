@@ -24,7 +24,7 @@ def node_parse(state: TrendForgeState) -> TrendForgeState:
 def node_route(state: TrendForgeState) -> TrendForgeState:
     """Mirrors main.py STEP 2 — source routing, same fallback on failure."""
     try:
-        from routing.router_orchestrator import RouterOrchestrator
+        from research.routing.router_orchestrator import RouterOrchestrator
         state = RouterOrchestrator().route(state)
     except Exception as e:
         add_log(state, f"[Graph] Router error: {e} — using defaults")
@@ -35,7 +35,7 @@ def node_route(state: TrendForgeState) -> TrendForgeState:
 def node_fetch(state: TrendForgeState) -> TrendForgeState:
     """Mirrors main.py STEP 3 — data fetching, same two-branch fallback."""
     try:
-        from fetchers.fetcher_orchestrator import FetcherOrchestrator
+        from research.fetchers.fetcher_orchestrator import FetcherOrchestrator
         state = FetcherOrchestrator().fetch(state)
     except ImportError:
         state["fetched_data"] = {}

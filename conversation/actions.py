@@ -169,7 +169,7 @@ def targeted_refetch(topic_delta: str, current_topic: str,
     exclude_text = " ".join(_sanitize_constraint_for_query(v) for v in exclude_values)
     scoped_query = f"{combined_topic} {exclude_text}".strip() if exclude_text else combined_topic
 
-    from fetchers.fetcher_orchestrator import FetcherOrchestrator
+    from research.fetchers.fetcher_orchestrator import FetcherOrchestrator
     fetch_input_state = {
         "core_topic": combined_topic,
         "fetch_summary": scoped_query,
