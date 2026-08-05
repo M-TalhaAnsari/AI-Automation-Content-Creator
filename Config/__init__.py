@@ -17,4 +17,4 @@ Current state: everything lives in one config.py at the project root.
 Future: split into config/settings.py, config/platforms.py, config/sources.py
 as each grows. The public interface stays identical either way.
 """
-from config import CONFIG, PLATFORM_SETTINGS, SUPPORTED_PLATFORMS, SOURCE_MAP
+from .config import CONFIG, PLATFORM_SETTINGS, SUPPORTED_PLATFORMS, SOURCE_MAP
