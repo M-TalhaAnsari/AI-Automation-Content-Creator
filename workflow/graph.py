@@ -124,7 +124,7 @@ def run_graph(prompt: str, platform: str = None, post_count: int = 5) -> dict:
     the full field-by-field mapping). Now includes the fetch-quality and
     post-validation retry loops, plus a wall-clock timeout backstop.
     """
-    from config import SUPPORTED_PLATFORMS
+    from Config.config import SUPPORTED_PLATFORMS
 
     session_id = str(uuid.uuid4())[:8]
     state = create_initial_state(raw_prompt=prompt, session_id=session_id)

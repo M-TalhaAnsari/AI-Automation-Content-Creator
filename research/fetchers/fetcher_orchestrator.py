@@ -55,7 +55,7 @@ class FetcherOrchestrator:
         total_items = 0
         sources_used = []
 
-        from config import CONFIG
+        from Config.config import CONFIG
 
         for source in selected:
             fetcher = FETCHER_MAP.get(source)

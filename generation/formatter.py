@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.state import TrendForgeState, add_log
 from core.token_tracker import TokenTracker
-from config import CONFIG
+from Config.config import CONFIG
 
 
 def format_output(state: TrendForgeState) -> TrendForgeState:

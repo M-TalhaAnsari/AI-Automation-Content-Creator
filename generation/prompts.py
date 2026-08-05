@@ -4,7 +4,7 @@ generation/prompts.py — Dynamic Cross-Field Prompt Templates
 """
 
 import html
-from config import PLATFORM_SETTINGS
+from Config.config import PLATFORM_SETTINGS
 
 
 def build_generation_prompt(state: dict) -> str:

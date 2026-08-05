@@ -1,6 +1,6 @@
 from typing import Dict, Any
 from core.state import TrendForgeState
-from config import PLATFORM_SETTINGS
+from Config.config import PLATFORM_SETTINGS
 
 MIN_ITEMS_FLOOR = 3
 MAX_FETCH_RETRIES = 2
@@ -109,7 +109,7 @@ For each title, decide whether it genuinely names a specific instance of "{item_
 
     try:
         from groq import Groq
-        from config import CONFIG
+        from Config.config import CONFIG
         client = Groq(api_key=CONFIG.models.groq_api_key)
         response = client.chat.completions.create(
             model=CONFIG.models.groq_model_small,

@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.state import TrendForgeState, add_log, add_error, add_tokens
 from generation.prompt_composer import compose_prompt
 from generation.prompts import SYSTEM_PROMPT
-from config import CONFIG
+from Config.config import CONFIG
 
 
 def _parse_json(text: str) -> dict:

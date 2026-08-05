@@ -10,7 +10,7 @@ from typing import List
 from research.routing.base import BaseRouter
 from research.routing.registry import get_available_sources
 from core.state import TrendForgeState, add_log, add_error, add_tokens
-from config import CONFIG
+from Config.config import CONFIG
 
 ROUTER_SYSTEM = "You are a source selector. Return ONLY a JSON array of source names. No explanation."
 

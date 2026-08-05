@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from typing import Dict, List, Optional
 from research.routing.base import SourceMetadata
-from config import CONFIG
+from Config.config import CONFIG
 
 
 # ═══════════════════════════════════════════════════════

@@ -8,7 +8,7 @@ import json
 import re
 from typing import List, Dict, Any
 
-from config import CONFIG
+from Config.config import CONFIG
 from generation.content_generator import _parse_json as _parse_llm_response
 
 

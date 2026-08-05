@@ -3,7 +3,7 @@ conversation/orchestrator.py — Native Tool-Calling Turn Resolver
 """
 
 import json
-from config import CONFIG
+from Config.config import CONFIG
 
 SYSTEM_PROMPT = (
     "You are TrendForge's conversation assistant. The user is generating "

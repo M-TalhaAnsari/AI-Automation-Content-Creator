@@ -14,7 +14,7 @@ class BasePlatformStrategy(ABC):
         # max_caption_chars/hashtag_count (workflow/gates.py's validation
         # already reads from there) -- this layer doesn't duplicate it,
         # only adds structural behavior config.py has no place for.
-        from config import PLATFORM_SETTINGS
+        from Config.config import PLATFORM_SETTINGS
         return PLATFORM_SETTINGS.get(self.name, PLATFORM_SETTINGS["instagram"])
 
     def effective_post_count(self, requested_count: int) -> int:

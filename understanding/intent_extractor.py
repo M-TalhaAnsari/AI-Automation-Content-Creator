@@ -9,7 +9,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from config import CONFIG, SUPPORTED_PLATFORMS
+from Config.config import CONFIG, SUPPORTED_PLATFORMS
 from core.state import TrendForgeState, add_log, add_error, add_tokens
 
 

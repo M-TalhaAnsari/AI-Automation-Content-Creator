@@ -13,7 +13,7 @@ from typing import List
 from research.routing.base import BaseRouter
 from research.routing.registry import get_available_sources
 from core.state import TrendForgeState, add_log
-from config import SOURCE_MAP
+from Config.config import SOURCE_MAP
 
 
 class RuleRouter(BaseRouter):

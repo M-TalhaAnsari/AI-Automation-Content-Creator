@@ -6,7 +6,7 @@ main.py — TrendForge Interactive Runner
 import sys, os, uuid, re
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import CONFIG, SUPPORTED_PLATFORMS
+from Config.config import CONFIG, SUPPORTED_PLATFORMS
 from core.state import create_initial_state, get_total_tokens, add_log, add_tokens
 
 MAX_ACTIVE_CONSTRAINTS = 20

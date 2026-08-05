@@ -8,7 +8,7 @@ and cost estimate. It does not record tokens itself.
 """
 
 from core.state import TrendForgeState, get_total_tokens
-from config import CONFIG
+from Config.config import CONFIG
 
 
 # Cost per 1M tokens (USD, approximate) — keys MUST match the actual
