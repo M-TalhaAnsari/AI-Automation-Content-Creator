@@ -3,6 +3,7 @@ import uuid
 from typing import List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from redis import Redis
 from rq import Queue
 from rq.job import Job
@@ -43,6 +44,7 @@ from api.web.schemas import (
     SignupRequest,
     TokenResponse,
 )
+from api.web.jobs import run_slow_action
 
 logger = logging.getLogger("trendforge.web.app")
 
@@ -50,7 +52,15 @@ app = FastAPI(title="TrendForge Conversation API")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 _redis_conn = Redis.from_url(REDIS_URL)
 _queue = Queue("trendforge", connection=_redis_conn)
 
@@ -148,7 +158,7 @@ def chat(body: ChatRequest, request: Request, response: Response, client_name: s
         )
 
     job = _queue.enqueue(
-        "web.jobs.run_slow_action",
+        run_slow_action,
         session_id, client_name, action, args, body.message, platform, body.posts, body.verbose,
         job_timeout=180,
         result_ttl=3600,
