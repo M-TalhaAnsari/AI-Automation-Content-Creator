@@ -115,6 +115,10 @@ RULES:
    - "explain machine learning" → "" (sub-concepts of one topic, not discrete named things)
    - "top 5 exercises for abs" → "a named exercise movement"
 
+6. post_count_explicit: true if the user actually stated a number of posts/items to create
+   ("5 posts", "give me 3", "make 10", "one more"), false if no number was mentioned at all
+   and post_count is just your best-guess default.
+
 USER PROMPT: "{cleaned_text}"{known_str}
 
 Return ONLY this JSON, nothing else:
@@ -124,6 +128,7 @@ Return ONLY this JSON, nothing else:
   "content_intent": "<showcase|educate|news|inspire|review>",
   "platform": "<instagram|youtube|tiktok|linkedin|facebook>",
   "post_count": <1-10>,
+  "post_count_explicit": <true|false>,
   "content_type": "<posts|script|thread|carousel>",
   "special_requests": [<strings>],
   "item_kind": "<see rule 5 above, or empty string>",
@@ -250,6 +255,20 @@ class IntentExtractor:
         else:
             final_count = 5
         state["post_count"] = final_count if 1 <= final_count <= 20 else 5
+
+        # FIX: without this, an explicit "give me 5 linkedin posts" and a
+        # plain "linkedin post" that defaulted to 5 look identical by the
+        # time post_count reaches generation/ -- a platform strategy like
+        # LinkedIn's (which defaults to 1) couldn't tell "user really
+        # wants 5" from "system guessed 5" and had no way to honor an
+        # explicit request. rule_val only exists when the regex-based
+        # cleaner found a real number in the raw text, which is a much
+        # more reliable "explicit" signal than the LLM's own self-report,
+        # so it's checked first; the LLM's flag is a fallback for numbers
+        # phrased in ways the regex misses (e.g. "one more", "a couple").
+        rule_count_detected = bool(rule_val) and str(rule_val).isdigit()
+        llm_explicit_flag = bool(llm.get("post_count_explicit"))
+        state["post_count_explicit"] = rule_count_detected or llm_explicit_flag
 
         state["content_type"] = rules.get("detected_content_type") or llm.get("content_type") or "posts"
 

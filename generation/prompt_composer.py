@@ -19,7 +19,9 @@ def compose_prompt(state: dict) -> str:
 
     guidance = intent_strategy.get_guidance(state)
     ps = platform_strategy.tone_settings()
-    post_count = platform_strategy.effective_post_count(state.get("post_count", 5))
+    post_count = platform_strategy.effective_post_count(
+        state.get("post_count", 5), state.get("post_count_explicit", False),
+    )
 
     topic = state.get("core_topic", "")
     fetched = state.get("fetched_data", {})

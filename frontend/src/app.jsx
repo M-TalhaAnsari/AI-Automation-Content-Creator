@@ -18,7 +18,7 @@ function normalizeHistoryEntry(entry) {
   return { role: entry.role === 'user' ? 'user' : 'assistant', content: entry.content }
 }
 
-const POST_PRODUCING_ACTIONS = ['run_new_request', 'edit_existing', 'targeted_refetch']
+const POST_PRODUCING_ACTIONS = ['run_new_request', 'generate_more', 'edit_existing', 'targeted_refetch']
 
 export default function App() {
   const [authChecking, setAuthChecking] = useState(true)

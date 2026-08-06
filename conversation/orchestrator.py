@@ -8,10 +8,14 @@ from Config.config import CONFIG
 SYSTEM_PROMPT = (
     "You are TrendForge's conversation assistant. The user is generating "
     "social media content. Decide, for each message, whether to call a "
-    "tool to modify/refine existing content or preferences, or call "
-    "run_new_request for a fresh, unrelated content request. If genuinely "
-    "uncertain what the user wants, call clarify and ask — do not guess "
-    "at destructive or content-altering actions."
+    "tool to modify/refine existing content or preferences, call "
+    "generate_more for ADDITIONAL content on the SAME topic as what's "
+    "already been generated, or call run_new_request for a fresh, "
+    "genuinely UNRELATED content request. Phrases like 'one more', "
+    "'give me another', 'a few more of these' mean generate_more, not "
+    "run_new_request. If genuinely uncertain what the user wants, call "
+    "clarify and ask — do not guess at destructive or content-altering "
+    "actions."
 )
 
 TOOLS = [
@@ -22,6 +26,17 @@ TOOLS = [
             "prompt": {"type": "string"},
             "platform": {"type": "string", "enum": ["instagram", "youtube", "tiktok", "linkedin", "facebook"]},
         }, "required": ["prompt"]},
+    }},
+    {"type": "function", "function": {
+        "name": "generate_more",
+        "description": "User wants ADDITIONAL post(s) on the SAME topic as what's already "
+                        "been generated -- adds to the existing set rather than replacing it "
+                        "or editing it. Use for 'one more', 'give me another', 'a few more of "
+                        "these'. Do NOT use run_new_request for this -- that tool is only for "
+                        "a genuinely different, unrelated topic.",
+        "parameters": {"type": "object", "properties": {
+            "count": {"type": "integer", "description": "How many additional posts. Default 1 if not specified."},
+        }, "required": []},
     }},
     {"type": "function", "function": {
         "name": "edit_existing",
@@ -92,7 +107,18 @@ def _build_context_messages(conversation: dict) -> list:
         posts = conversation.get("last_generated_posts") or []
         if posts:
             titles = "\n".join(f"{i}. {p.get('title', '(untitled)')}" for i, p in enumerate(posts, 1))
-            system_content += f"\n\nCURRENTLY GENERATED POSTS ({len(posts)} total):\n{titles}"
+            # Every platform answers for itself via its own strategy --
+            # this file never checks a platform name directly, so a new
+            # platform's "one more" behavior needs zero changes here.
+            behavior_note = ""
+            last_platform = conversation.get("last_platform")
+            if last_platform:
+                try:
+                    from generation.platforms.registry import get_platform_strategy
+                    behavior_note = f" ({get_platform_strategy(last_platform).repeat_request_note()})"
+                except Exception:
+                    behavior_note = ""
+            system_content += f"\n\nCURRENTLY GENERATED POSTS ({len(posts)} total){behavior_note}:\n{titles}"
 
         constraints = conversation.get("active_constraints", [])
         if constraints:

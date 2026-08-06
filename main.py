@@ -222,6 +222,87 @@ def _handle_run_new_request(args, prompt, platform, posts, verbose, conversation
     )
 
 
+def _handle_generate_more(args, conversation, verbose):
+    from generation.platforms.registry import get_platform_strategy
+    from generation.content_generator import ContentGenerator
+    from generation.formatter import format_output, save_output
+    from research.fetchers.fetcher_orchestrator import FetcherOrchestrator
+
+    platform = conversation.get("last_platform") or "instagram"
+    topic = conversation.get("last_topic") or ""
+    content_intent = conversation.get("last_content_intent") or "showcase"
+    strategy = get_platform_strategy(platform)
+    requested_count = args.get("count") or 1
+
+    if verbose:
+        print(f"  [Action] generate_more(count={requested_count}, accumulates={strategy.accumulates_posts()})")
+
+    leftover = conversation.get("leftover_fetch_pool", [])
+    if leftover:
+        regrouped = {}
+        for item in leftover:
+            regrouped.setdefault(item.get("_source", "leftover"), []).append(item)
+        fetched_data = regrouped
+    else:
+        fetch_state = {
+            "core_topic": topic,
+            "fetch_summary": topic,
+            "search_queries": [topic],
+            "content_intent": content_intent,
+            "selected_sources": ["github", "tavily", "google_trends", "youtube", "hackernews"],
+            "errors": [],
+        }
+        fetch_result = FetcherOrchestrator().fetch(fetch_state)
+        fetched_data = fetch_result.get("fetched_data", {})
+
+    state = create_initial_state(raw_prompt=f"more {topic}", session_id=str(uuid.uuid4())[:8])
+    state["core_topic"] = topic
+    state["platform"] = platform
+    state["content_intent"] = content_intent
+    state["post_count"] = requested_count
+    state["post_count_explicit"] = True  # generate_more's count is always a deliberate value
+    state["fetched_data"] = fetched_data
+    state["total_items_fetched"] = sum(len(v) for v in fetched_data.values())
+    state["sources_used"] = list(fetched_data.keys())
+    state["active_constraints"] = conversation.get("active_constraints", [])
+
+    state = ContentGenerator().generate(state)
+    new_posts = state.get("generated_posts", [])
+
+    if strategy.accumulates_posts():
+        # FIX: this is the actual bug fix. run_new_request always
+        # OVERWRITES last_generated_posts -- "give me one more" going
+        # through that tool silently destroyed the prior post instead of
+        # adding to it. This handler appends, and renumbers so post
+        # chips / edit-target indices stay consistent with the combined
+        # array, not each generation call's own internal 1..N numbering.
+        combined = conversation.get("last_generated_posts", []) + new_posts
+        for i, p in enumerate(combined, 1):
+            p["number"] = i
+        conversation["last_generated_posts"] = combined
+        conversation["leftover_fetch_pool"] = state.get("leftover_fetch_pool", [])
+    else:
+        conversation["last_generated_posts"] = new_posts
+
+    state["generated_posts"] = conversation["last_generated_posts"]
+    state = format_output(state)
+    saved_path = save_output(state)
+    print(state["final_output"])
+    if saved_path:
+        print(f"  💾 Saved to: {saved_path}")
+
+    conversation["last_topic"] = topic
+    conversation["last_platform"] = platform
+    conversation["last_content_intent"] = content_intent
+    conversation["last_output"] = _summarize_for_chat(platform, topic, len(new_posts))
+
+
+_EDIT_ERROR_MESSAGES = {
+    "no_posts_to_edit": "There's nothing generated yet to edit -- try generating some posts first.",
+    "no_valid_target_posts": "I couldn't tell which post you meant -- try referring to it by number, or say \"the post\" if there's only one.",
+}
+
+
 def _handle_edit_existing(args, conversation, verbose):
     from conversation.actions import edit_existing
     from generation.formatter import format_output, save_output
@@ -231,8 +312,18 @@ def _handle_edit_existing(args, conversation, verbose):
     result = edit_existing(target_posts, instruction, conversation.get("last_generated_posts", []))
 
     if result.get("error"):
-        print(f"\n  ⚠️  Couldn't apply that edit ({result['error']}) — posts are unchanged.\n")
-        conversation["last_output"] = f"Edit failed: {result['error']}"
+        error_code = result["error"]
+        # FIX (production-grade error UX): last_output is the actual chat
+        # reply (see P9) -- it must never show a raw internal code like
+        # "no_valid_target_posts" verbatim to the user. The CLI print
+        # below keeps the real code for debugging; only the conversation-
+        # facing message gets translated.
+        human_message = _EDIT_ERROR_MESSAGES.get(
+            error_code,
+            "I couldn't apply that edit -- the post(s) are unchanged. Try rephrasing what you'd like changed.",
+        )
+        print(f"\n  ⚠️  Couldn't apply that edit ({error_code}) — posts are unchanged.\n")
+        conversation["last_output"] = human_message
         return
 
     conversation["last_generated_posts"] = result["edited_posts"]
@@ -321,6 +412,7 @@ def _handle_targeted_refetch(args, conversation, verbose):
 def dispatch_action(action, args, conversation, verbose, prompt="", platform=None, posts=5):
     handlers = {
         "run_new_request": lambda: _handle_run_new_request(args, prompt, platform, posts, verbose, conversation),
+        "generate_more": lambda: _handle_generate_more(args, conversation, verbose),
         "edit_existing": lambda: _handle_edit_existing(args, conversation, verbose),
         "add_constraint": lambda: _handle_add_constraint(args, conversation, verbose),
         "remove_constraint": lambda: _handle_remove_constraint(args, conversation, verbose),
