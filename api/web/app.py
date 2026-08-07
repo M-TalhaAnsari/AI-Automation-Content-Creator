@@ -52,15 +52,7 @@ app = FastAPI(title="TrendForge Conversation API")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
 _redis_conn = Redis.from_url(REDIS_URL)
 _queue = Queue("trendforge", connection=_redis_conn)
 
