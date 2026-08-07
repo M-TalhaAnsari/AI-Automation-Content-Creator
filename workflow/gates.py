@@ -76,21 +76,6 @@ def evaluate_fetch_quality(state: TrendForgeState) -> Dict[str, Any]:
 
 
 def evaluate_item_kind_match(state: TrendForgeState) -> Dict[str, Any]:
-    """
-    Tier 2 (semantic) check — deliberately separate from evaluate_post_validation,
-    which is Tier-1/deterministic only by design (see its docstring). Whether
-    "Prompt Engineering" counts as "a named API or protocol" requires actual
-    judgment, not a keyword rule -- that's exactly the ReAct-style
-    generate -> observe -> correct loop this function feeds into, reusing
-    the same generation_validation_errors/correction_block mechanism
-    evaluate_post_validation already uses.
-
-    Only runs at all when state["item_kind"] is non-empty (set by
-    intent_extractor.py only when the request asked for N discrete named
-    things). Returns the same {valid, errors, should_retry} shape as
-    evaluate_post_validation so main.py's retry loop can treat them
-    identically.
-    """
     item_kind = state.get("item_kind", "")
     posts = state.get("generated_posts", [])
     retry_count = state.get("generation_retry_count", 0)
@@ -142,9 +127,6 @@ For each title, decide whether it genuinely names a specific instance of "{item_
         result = json.loads(response.choices[0].message.content)
         mismatched = result.get("mismatched_indices", [])
     except Exception:
-        # Verification call itself failing shouldn't block the pipeline --
-        # degrade to "assume valid" rather than retry forever on a check
-        # that can't run.
         return {"valid": True, "errors": [], "should_retry": False}
 
     if not mismatched:
@@ -162,12 +144,24 @@ For each title, decide whether it genuinely names a specific instance of "{item_
     }
 
 
+def _collect_real_links(state: TrendForgeState) -> set:
+    fetched = state.get("fetched_data", {})
+    links = set()
+    for items in fetched.values():
+        for item in items:
+            link = item.get("link", "")
+            if link:
+                links.add(link)
+    return links
+
+
 def evaluate_post_validation(state: TrendForgeState) -> Dict[str, Any]:
     posts = state.get("generated_posts", [])
     platform = state.get("platform", "instagram")
     content_intent = state.get("content_intent", "showcase")
     data_starved = state.get("data_starved", False)
     retry_count = state.get("generation_retry_count", 0)
+    real_links = _collect_real_links(state)
 
     errors = []
 
@@ -193,12 +187,31 @@ def evaluate_post_validation(state: TrendForgeState) -> Dict[str, Any]:
                 errors.append(f"{label}: 'hashtags' must be a non-empty list")
 
             link = post.get("link", "")
-            if not data_starved and content_intent in link_required_intents:
-                if not link:
-                    errors.append(f"{label}: link is required for content_intent='{content_intent}' but is empty")
-                elif _is_generic_search_url(link):
+            if not data_starved and content_intent in link_required_intents and not link:
+                errors.append(f"{label}: link is required for content_intent='{content_intent}' but is empty")
+            elif link:
+                if _is_generic_search_url(link):
                     errors.append(
                         f"{label}: link is a generic search-engine results page, not a specific source — {link}"
+                    )
+                # FIX: previously nothing checked whether a link was ever
+                # actually returned by a real fetcher -- the prompt asked
+                # the model not to invent URLs, but asking is not
+                # enforcing, and it invented them anyway (confirmed in a
+                # real run: github.com/example/rbac-demo, .../mac-example,
+                # etc. -- the "/example/" pattern is fabricated, not real
+                # fetched data). This is a deterministic fact-check against
+                # state["fetched_data"], not a phrasing/keyword rule -- it
+                # applies identically to every link, forever, with nothing
+                # to add or maintain as new topics come up. Only runs when
+                # we actually have real links to compare against; an empty
+                # real_links set (fetch legitimately returned nothing)
+                # means this check can't be meaningfully evaluated, so it
+                # doesn't block on an unrelated infra issue.
+                elif real_links and link not in real_links:
+                    errors.append(
+                        f"{label}: link '{link}' was not found in the fetched source data — "
+                        f"likely hallucinated, not a real source"
                     )
 
             caption = post.get("caption", "")

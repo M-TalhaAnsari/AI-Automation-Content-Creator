@@ -73,6 +73,13 @@ TOOLS = [
         }, "required": ["topic_delta"]},
     }},
     {"type": "function", "function": {
+        "name": "undo",
+        "description": "User wants to REVERT the most recent post generation or edit, "
+                        "restoring the version before that change. Use for 'undo', 'go "
+                        "back', 'that's wrong, revert it', 'put it back the way it was'.",
+        "parameters": {"type": "object", "properties": {}},
+    }},
+    {"type": "function", "function": {
         "name": "clarify",
         "description": "The request is too ambiguous to act on safely. Ask the user a specific question instead of guessing.",
         "parameters": {"type": "object", "properties": {
@@ -82,6 +89,17 @@ TOOLS = [
 ]
 
 VALID_TOOL_NAMES = {t["function"]["name"] for t in TOOLS}
+
+# Unconditional, no exceptions, no pattern matching: any action in this
+# set that would replace non-empty last_generated_posts always requires
+# one confirmation turn first. Deliberately NOT trying to detect "is this
+# specific request actually safe" via keywords/phrasing -- that's the
+# exact kind of pattern list that grows forever and still gets bypassed.
+# generate_more is deliberately excluded: it's a targeted, contextually-
+# informed action (the user already saw this platform's repeat-request
+# behavior in context before asking), unlike run_new_request's blind
+# unrelated-topic replace.
+DESTRUCTIVE_ACTIONS = {"run_new_request"}
 
 SLIDING_WINDOW_TURNS = 20
 MAX_HISTORY_TOKENS = 6000
@@ -94,12 +112,26 @@ def _rough_tokens(messages) -> int:
         return 0
 
 
-def _build_context_messages(conversation: dict) -> list:
+def _build_context_messages(conversation: dict, pending_confirmation: dict = None) -> list:
     try:
         history = conversation.get("message_history", [])
         windowed = history[-SLIDING_WINDOW_TURNS:]
 
         system_content = SYSTEM_PROMPT
+
+        if pending_confirmation:
+            # Fixed-size, always identical -- this does not grow as new
+            # edge cases show up. The LLM's only job this turn is a
+            # narrow yes/no judgment; it does not decide what actually
+            # executes (see process_turn -- the stored original action/
+            # args are used deterministically, never re-derived).
+            system_content += (
+                "\n\nThe user was just asked to confirm replacing their existing posts. "
+                "If their reply clearly agrees, call run_new_request. If they decline, "
+                "ask something else, or seem unsure, call clarify instead — do not guess "
+                "in favor of proceeding."
+            )
+
         summary = conversation.get("rolling_summary", "")
         if summary:
             system_content += f"\n\nEARLIER CONVERSATION SUMMARY:\n{summary}"
@@ -185,10 +217,12 @@ def process_turn(conversation: dict, user_message: str) -> dict:
     if not conversation.get("last_generated_posts"):
         return fallback
 
+    pending = conversation.get("pending_confirmation")
+
     try:
         from groq import Groq
         client = Groq(api_key=CONFIG.models.groq_api_key)
-        messages = _build_context_messages(conversation)
+        messages = _build_context_messages(conversation, pending_confirmation=pending)
 
         response = client.chat.completions.create(
             model=CONFIG.models.groq_model_large,
@@ -204,6 +238,13 @@ def process_turn(conversation: dict, user_message: str) -> dict:
 
         if not tool_calls:
             conversation["message_history"].append({"role": "assistant", "content": choice.content or ""})
+            if pending:
+                # No tool call at all during a pending confirmation is
+                # ambiguous -- default to asking again, never to the
+                # destructive fallback.
+                conversation.pop("pending_confirmation", None)
+                question = "Just to confirm — did you want me to go ahead and replace the existing posts?"
+                return {"action": "clarify", "args": {"clarify_question": question}, "tokens_used": tokens_used, "error": None}
             fallback["tokens_used"] = tokens_used
             return fallback
 
@@ -223,14 +264,47 @@ def process_turn(conversation: dict, user_message: str) -> dict:
         if action_name not in VALID_TOOL_NAMES or not isinstance(args, dict):
             fallback["tokens_used"] = tokens_used
             fallback["error"] = f"Invalid tool call: {action_name!r} / {args!r}"
+            if pending:
+                conversation.pop("pending_confirmation", None)
             return fallback
 
         conversation["message_history"].append({
             "role": "tool", "tool_call_id": call.id, "content": f"dispatched:{action_name}",
         })
 
+        if pending:
+            # Resolving a pending confirmation: the LLM's only job this
+            # turn was the narrow affirm-vs-decline judgment. A "clarify"
+            # call means decline/unsure. Anything else means proceed --
+            # and we execute the ORIGINALLY STORED action/args
+            # deterministically, never a freshly re-derived call, so
+            # confirming can never silently change what actually runs.
+            conversation.pop("pending_confirmation", None)
+            if action_name == "clarify":
+                return {"action": action_name, "args": args, "tokens_used": tokens_used, "error": None}
+            return {"action": pending["action"], "args": pending["args"], "tokens_used": tokens_used, "error": None}
+
+        if action_name in DESTRUCTIVE_ACTIONS and conversation.get("last_generated_posts"):
+            count = len(conversation["last_generated_posts"])
+            conversation["pending_confirmation"] = {"action": action_name, "args": args}
+            question = (
+                f"This will replace your {count} existing post(s) with new content — "
+                f"reply to confirm, or tell me if you meant something else."
+            )
+            conversation["message_history"].append({"role": "assistant", "content": question})
+            return {"action": "clarify", "args": {"clarify_question": question}, "tokens_used": tokens_used, "error": None}
+
         return {"action": action_name, "args": args, "tokens_used": tokens_used, "error": None}
 
     except Exception as e:
         fallback["error"] = f"Orchestrator call failed: {e}"
+        if pending:
+            # A failure mid-confirmation must never silently fall through
+            # to the destructive default.
+            conversation.pop("pending_confirmation", None)
+            return {
+                "action": "clarify",
+                "args": {"clarify_question": "Something went wrong confirming that — did you want me to replace the existing posts?"},
+                "tokens_used": 0, "error": fallback["error"],
+            }
         return fallback

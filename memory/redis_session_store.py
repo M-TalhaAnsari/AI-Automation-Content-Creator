@@ -26,6 +26,8 @@ _DEFAULT_CONVERSATION: Dict[str, Any] = {
     "message_history": [],
     "rolling_summary": "",
     "gate_tokens_used": 0,
+    "post_history": [],
+    "pending_confirmation": None,
 }
 
 _client = redis.Redis.from_url(REDIS_URL, decode_responses=True)

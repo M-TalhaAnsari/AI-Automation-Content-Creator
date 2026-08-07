@@ -39,6 +39,8 @@ class SessionView(BaseModel):
     message_history: List[Dict[str, Any]] = Field(default_factory=list)
     rolling_summary: str = ""
     gate_tokens_used: int = 0
+    post_history: List[List[Dict[str, Any]]] = Field(default_factory=list)
+    pending_confirmation: Optional[Dict[str, Any]] = None
 
 
 class SignupRequest(BaseModel):

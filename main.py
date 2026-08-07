@@ -189,6 +189,37 @@ def _extract_flags(prompt: str):
     return prompt.strip(), platform, posts
 
 
+MAX_POST_HISTORY = 3
+
+
+def _snapshot_posts(conversation):
+    """Push the current last_generated_posts onto post_history before it's
+    about to be overwritten, so a wrong result is one 'undo' away instead
+    of silently gone. Never raises -- a failed snapshot degrades to no
+    undo available, not a broken request."""
+    current = conversation.get("last_generated_posts")
+    if not current:
+        return
+    history = conversation.setdefault("post_history", [])
+    history.append(current)
+    conversation["post_history"] = history[-MAX_POST_HISTORY:]
+
+
+def _handle_undo(args, conversation, verbose):
+    history = conversation.get("post_history", [])
+    if not history:
+        confirmation = "There's nothing to undo — no previous version saved."
+        print(f"\n  ℹ️  {confirmation}\n")
+        conversation["last_output"] = confirmation
+        return
+    conversation["last_generated_posts"] = history.pop()
+    conversation["post_history"] = history
+    count = len(conversation["last_generated_posts"])
+    confirmation = f"Reverted to the previous version — {count} post(s) restored."
+    print(f"\n  ↩️  {confirmation}\n")
+    conversation["last_output"] = confirmation
+
+
 def _summarize_for_chat(platform: str, topic: str, post_count: int) -> str:
     plural = "s" if post_count != 1 else ""
     topic_part = f' about "{topic}"' if topic else ""
@@ -202,6 +233,7 @@ def _handle_run_new_request(args, prompt, platform, posts, verbose, conversation
         print(f"  [Action] using orchestrator-resolved prompt instead of raw input:\n"
               f"           {resolved_prompt!r}")
     result = run(resolved_prompt, platform=resolved_platform, post_count=posts, verbose=verbose)
+    _snapshot_posts(conversation)
     conversation["last_topic"] = result.get("topic")
     conversation["last_platform"] = result.get("platform")
     conversation["last_content_intent"] = result.get("content_intent")
@@ -282,6 +314,7 @@ def _handle_generate_more(args, conversation, verbose):
         conversation["last_generated_posts"] = combined
         conversation["leftover_fetch_pool"] = state.get("leftover_fetch_pool", [])
     else:
+        _snapshot_posts(conversation)
         conversation["last_generated_posts"] = new_posts
 
     state["generated_posts"] = conversation["last_generated_posts"]
@@ -326,6 +359,7 @@ def _handle_edit_existing(args, conversation, verbose):
         conversation["last_output"] = human_message
         return
 
+    _snapshot_posts(conversation)
     conversation["last_generated_posts"] = result["edited_posts"]
 
     state = create_initial_state(raw_prompt=instruction, session_id=str(uuid.uuid4())[:8])
@@ -395,6 +429,7 @@ def _handle_targeted_refetch(args, conversation, verbose):
     state["sources_used"] = list(refetch_result["fetched_data"].keys())
     state["active_constraints"] = conversation.get("active_constraints", [])
     state = ContentGenerator().generate(state)
+    _snapshot_posts(conversation)
     state = format_output(state)
     saved_path = save_output(state)
     print(state["final_output"])
@@ -413,6 +448,7 @@ def dispatch_action(action, args, conversation, verbose, prompt="", platform=Non
     handlers = {
         "run_new_request": lambda: _handle_run_new_request(args, prompt, platform, posts, verbose, conversation),
         "generate_more": lambda: _handle_generate_more(args, conversation, verbose),
+        "undo": lambda: _handle_undo(args, conversation, verbose),
         "edit_existing": lambda: _handle_edit_existing(args, conversation, verbose),
         "add_constraint": lambda: _handle_add_constraint(args, conversation, verbose),
         "remove_constraint": lambda: _handle_remove_constraint(args, conversation, verbose),
