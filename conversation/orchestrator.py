@@ -29,13 +29,22 @@ TOOLS = [
     }},
     {"type": "function", "function": {
         "name": "generate_more",
-        "description": "User wants ADDITIONAL post(s) on the SAME topic as what's already "
-                        "been generated -- adds to the existing set rather than replacing it "
-                        "or editing it. Use for 'one more', 'give me another', 'a few more of "
-                        "these'. Do NOT use run_new_request for this -- that tool is only for "
-                        "a genuinely different, unrelated topic.",
+        "description": "User wants ADDITIONAL post(s) on the SAME general topic as what's "
+                        "already been generated -- adds to the existing set rather than "
+                        "replacing it. Use for 'one more', 'give me another', 'a few more "
+                        "of these'. If the user ALSO asks for a different angle, format, "
+                        "or specific type of content (e.g. 'give me project ideas based "
+                        "on these', 'with github links this time', 'make them shorter'), "
+                        "capture that in topic_delta -- never silently ignore it. Do NOT "
+                        "use run_new_request for this -- that tool is only for a "
+                        "genuinely different, unrelated topic.",
         "parameters": {"type": "object", "properties": {
             "count": {"type": "integer", "description": "How many additional posts. Default 1 if not specified."},
+            "topic_delta": {"type": "string", "description": "Any refinement, new angle, "
+                            "or specific instruction for these additional posts, beyond "
+                            "just 'more of the same' -- e.g. 'project ideas that "
+                            "implement these strategies, with github links'. Empty "
+                            "string if truly just more of the exact same thing."},
         }, "required": []},
     }},
     {"type": "function", "function": {

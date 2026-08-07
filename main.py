@@ -261,25 +261,41 @@ def _handle_generate_more(args, conversation, verbose):
     from research.fetchers.fetcher_orchestrator import FetcherOrchestrator
 
     platform = conversation.get("last_platform") or "instagram"
-    topic = conversation.get("last_topic") or ""
+    base_topic = conversation.get("last_topic") or ""
     content_intent = conversation.get("last_content_intent") or "showcase"
     strategy = get_platform_strategy(platform)
     requested_count = args.get("count") or 1
+    topic_delta = (args.get("topic_delta") or "").strip()
+
+    # FIX: previously this always reused base_topic verbatim and had no
+    # field at all to carry a refinement -- "give me one more" and "give
+    # me project ideas based on these, with github links" produced
+    # near-identical output (confirmed in a real run: posts 6-10 were
+    # rewordings of posts 1-5, the actual request was silently dropped).
+    # effective_topic is what's actually fetched/generated against here;
+    # base_topic is deliberately NOT overwritten with it below, so repeated
+    # generate_more calls don't compound deltas into an ever-longer topic
+    # string turn after turn.
+    effective_topic = f"{base_topic} — {topic_delta}" if topic_delta else base_topic
 
     if verbose:
-        print(f"  [Action] generate_more(count={requested_count}, accumulates={strategy.accumulates_posts()})")
+        print(f"  [Action] generate_more(count={requested_count}, topic_delta={topic_delta!r}, accumulates={strategy.accumulates_posts()})")
 
     leftover = conversation.get("leftover_fetch_pool", [])
-    if leftover:
+    # A topic_delta changes what's actually relevant to fetch -- the old
+    # leftover pool was gathered for the ORIGINAL topic and may not serve
+    # a meaningfully different angle, so it's only reused when there's no
+    # refinement at all.
+    if leftover and not topic_delta:
         regrouped = {}
         for item in leftover:
             regrouped.setdefault(item.get("_source", "leftover"), []).append(item)
         fetched_data = regrouped
     else:
         fetch_state = {
-            "core_topic": topic,
-            "fetch_summary": topic,
-            "search_queries": [topic],
+            "core_topic": effective_topic,
+            "fetch_summary": effective_topic,
+            "search_queries": [effective_topic],
             "content_intent": content_intent,
             "selected_sources": ["github", "tavily", "google_trends", "youtube", "hackernews"],
             "errors": [],
@@ -287,8 +303,8 @@ def _handle_generate_more(args, conversation, verbose):
         fetch_result = FetcherOrchestrator().fetch(fetch_state)
         fetched_data = fetch_result.get("fetched_data", {})
 
-    state = create_initial_state(raw_prompt=f"more {topic}", session_id=str(uuid.uuid4())[:8])
-    state["core_topic"] = topic
+    state = create_initial_state(raw_prompt=f"more: {effective_topic}", session_id=str(uuid.uuid4())[:8])
+    state["core_topic"] = effective_topic
     state["platform"] = platform
     state["content_intent"] = content_intent
     state["post_count"] = requested_count
@@ -324,10 +340,10 @@ def _handle_generate_more(args, conversation, verbose):
     if saved_path:
         print(f"  💾 Saved to: {saved_path}")
 
-    conversation["last_topic"] = topic
+    conversation["last_topic"] = base_topic
     conversation["last_platform"] = platform
     conversation["last_content_intent"] = content_intent
-    conversation["last_output"] = _summarize_for_chat(platform, topic, len(new_posts))
+    conversation["last_output"] = _summarize_for_chat(platform, base_topic, len(new_posts))
 
 
 _EDIT_ERROR_MESSAGES = {
