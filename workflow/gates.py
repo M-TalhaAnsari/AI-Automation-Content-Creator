@@ -1,12 +1,24 @@
 from typing import Dict, Any
 from core.state import TrendForgeState
 from Config.config import PLATFORM_SETTINGS
+from llm.client import call_groq
+from llm.schemas import ItemKindCheckSchema
+from llm.errors import LLMCallFailed, LLMSchemaViolation
 
 MIN_ITEMS_FLOOR = 3
 MAX_FETCH_RETRIES = 2
 MAX_GENERATION_RETRIES = 2
 
 GENERIC_SEARCH_URL_PATTERNS = ("google.com/search", "bing.com/search", "duckduckgo.com/?q=")
+
+# agents/07_item_kind_gate.md: "System prompt (unchanged — already
+# well-scoped)". item_kind is interpolated into the SYSTEM message here
+# (not the user message) — matches the spec's given prompt exactly.
+_ITEM_KIND_SYSTEM_PROMPT = (
+    'You check whether generated titles match a requested category. For each '
+    'title, decide whether it genuinely names a specific instance of '
+    '"{item_kind}" (not a related practice, technique, or adjacent concept).'
+)
 
 
 def _is_generic_search_url(link: str) -> bool:
@@ -18,6 +30,16 @@ LINK_REQUIRED_INTENTS = {"showcase", "news", "review"}
 
 
 def evaluate_fetch_quality(state: TrendForgeState) -> Dict[str, Any]:
+    # UNCHANGED — ARCHITECTURE.md: "already correctly deterministic/
+    # code-only and need nothing." Flagging, not fixing here: this reads
+    # state["total_items_fetched"] / state["sources_used"] directly,
+    # neither of which has a reducer the way fetched_data now does (see
+    # core/state.py). If fetcher_orchestrator.py returns a per-attempt
+    # count rather than a running total, this function could keep
+    # judging fetch insufficient (or flip to sufficient too early) using
+    # a count that's out of sync with the now-accumulating fetched_data.
+    # Don't have fetcher_orchestrator.py to confirm which way it goes —
+    # worth checking before trusting the retry loop's sufficiency check.
     total_items = state.get("total_items_fetched", 0)
     sources_used = state.get("sources_used", [])
     retry_count = state.get("fetch_retry_count", 0)
@@ -76,6 +98,16 @@ def evaluate_fetch_quality(state: TrendForgeState) -> Dict[str, Any]:
 
 
 def evaluate_item_kind_match(state: TrendForgeState) -> Dict[str, Any]:
+    """
+    FIX (ARCHITECTURE.md workflow/gates.py entry): inline `Groq(...)`
+    client + hand-rolled json.loads() replaced with
+    llm.client.call_groq(schema=ItemKindCheckSchema). No other change —
+    same fail-open-on-any-failure behavior as before (returns valid=True
+    rather than blocking the pipeline over an infra hiccup on this one
+    semantic check — deliberately still a bare `except Exception`, not
+    narrowed to just LLMCallFailed/LLMSchemaViolation, to preserve that
+    exact original fail-open posture for literally any failure mode).
+    """
     item_kind = state.get("item_kind", "")
     posts = state.get("generated_posts", [])
     retry_count = state.get("generation_retry_count", 0)
@@ -84,48 +116,20 @@ def evaluate_item_kind_match(state: TrendForgeState) -> Dict[str, Any]:
         return {"valid": True, "errors": [], "should_retry": False}
 
     titles = [p.get("title", "") for p in posts]
-    prompt = f"""Requested item kind: "{item_kind}"
-
-Titles generated:
-{chr(10).join(f"{i+1}. {t}" for i, t in enumerate(titles))}
-
-For each title, decide whether it genuinely names a specific instance of "{item_kind}"
-(not a related practice, technique, or adjacent concept)."""
+    user_prompt = f"""Titles generated:
+{chr(10).join(f"{i+1}. {t}" for i, t in enumerate(titles))}"""
 
     try:
-        from groq import Groq
         from Config.config import CONFIG
-        client = Groq(api_key=CONFIG.models.groq_api_key)
-        response = client.chat.completions.create(
+        result = call_groq(
+            system=_ITEM_KIND_SYSTEM_PROMPT.format(item_kind=item_kind),
+            user=user_prompt,
             model=CONFIG.models.groq_model_small,
+            schema=ItemKindCheckSchema,
             temperature=0.0,
-            max_tokens=500,
             reasoning_effort="low",
-            response_format={
-                "type": "json_schema",
-                "json_schema": {
-                    "name": "item_kind_check",
-                    "strict": True,
-                    "schema": {
-                        "type": "object",
-                        "properties": {
-                            "mismatched_indices": {"type": "array", "items": {"type": "integer"}},
-                            "reason": {"type": "string"},
-                        },
-                        "required": ["mismatched_indices", "reason"],
-                        "additionalProperties": False,
-                    },
-                },
-            },
-            messages=[
-                {"role": "system", "content": "You check whether generated titles match a requested category. "
-                                               "Return ONLY the JSON schema requested."},
-                {"role": "user", "content": prompt},
-            ],
         )
-        import json
-        result = json.loads(response.choices[0].message.content)
-        mismatched = result.get("mismatched_indices", [])
+        mismatched = result.content.get("mismatched_indices", [])
     except Exception:
         return {"valid": True, "errors": [], "should_retry": False}
 
@@ -156,6 +160,7 @@ def _collect_real_links(state: TrendForgeState) -> set:
 
 
 def evaluate_post_validation(state: TrendForgeState) -> Dict[str, Any]:
+    # UNCHANGED — ARCHITECTURE.md: "need nothing."
     posts = state.get("generated_posts", [])
     platform = state.get("platform", "instagram")
     content_intent = state.get("content_intent", "showcase")
@@ -194,20 +199,6 @@ def evaluate_post_validation(state: TrendForgeState) -> Dict[str, Any]:
                     errors.append(
                         f"{label}: link is a generic search-engine results page, not a specific source — {link}"
                     )
-                # FIX: previously nothing checked whether a link was ever
-                # actually returned by a real fetcher -- the prompt asked
-                # the model not to invent URLs, but asking is not
-                # enforcing, and it invented them anyway (confirmed in a
-                # real run: github.com/example/rbac-demo, .../mac-example,
-                # etc. -- the "/example/" pattern is fabricated, not real
-                # fetched data). This is a deterministic fact-check against
-                # state["fetched_data"], not a phrasing/keyword rule -- it
-                # applies identically to every link, forever, with nothing
-                # to add or maintain as new topics come up. Only runs when
-                # we actually have real links to compare against; an empty
-                # real_links set (fetch legitimately returned nothing)
-                # means this check can't be meaningfully evaluated, so it
-                # doesn't block on an unrelated infra issue.
                 elif real_links and link not in real_links:
                     errors.append(
                         f"{label}: link '{link}' was not found in the fetched source data — "

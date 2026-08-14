@@ -1,4 +1,62 @@
-from typing import TypedDict, List, Dict
+from typing import Annotated, TypedDict, List, Dict
+
+
+def merge_fetched_data(existing: dict, new: dict) -> dict:
+    """
+    FIX (ARCHITECTURE.md workflow/graph.py entry, Fix 2 /
+    agents/00_graph_wiring.md): LangGraph reducer for the `fetched_data`
+    channel. Without this, every time the graph loops back through
+    evaluate_fetch -> route -> fetch on a retry, the fetch node's return
+    value overwrote fetched_data outright — attempt 1's results were
+    silently discarded the moment attempt 2 ran.
+
+    IMPORTANT — read this before adding any other reducer-backed field:
+    LangGraph calls a channel's reducer on EVERY node return that
+    includes that key, not just when a node actually changes it, and it
+    doesn't matter whether the value is the literal same object — it
+    still gets merged again. Every node function in workflow/nodes.py
+    follows this codebase's existing convention of mutating `state` in
+    place and returning the full dict. Verified by test: with that
+    convention unchanged, adding this reducer duplicates fetched_data at
+    EVERY node hop after fetch runs, not just at retries — a single
+    fetch -> evaluate_fetch -> generate -> evaluate_generation -> format
+    pass with zero retries would end up roughly 16x-duplicated by the
+    time it reaches formatting, worse than the bug being fixed.
+
+    The fix that makes this safe: REDUCER_OWNED_KEYS and
+    state_without_reducer_keys() below. Every node except the one that
+    actually owns a reducer-backed field must exclude that field from
+    its return value (a partial update omitting the key), not echo back
+    the full state. workflow/nodes.py applies this to every node.
+    """
+    merged = dict(existing)
+    for source, items in new.items():
+        merged[source] = merged.get(source, []) + items
+    return merged
+
+
+# Keys with a channel reducer registered in TrendForgeState below. If you
+# add another Annotated[..., reducer_fn] field, add its key here too —
+# see state_without_reducer_keys()'s docstring for why this matters.
+REDUCER_OWNED_KEYS = frozenset({"fetched_data"})
+
+
+def state_without_reducer_keys(state: dict, owns: frozenset = frozenset()) -> dict:
+    """
+    Every workflow/nodes.py node function should return through this
+    (or build its return dict the same way) instead of `return state`
+    directly, UNLESS it's the node that actually owns a reducer-backed
+    field for that call (pass that field's name in `owns`).
+
+    Returning the full state naively re-submits every reducer-backed
+    key's current (already-merged) value on every single node hop,
+    which LangGraph then merges AGAIN against itself — silent, steadily
+    compounding duplication with no error, no warning, nothing in the
+    logs to catch it. See merge_fetched_data's docstring for the test
+    that confirmed this.
+    """
+    exclude = REDUCER_OWNED_KEYS - owns
+    return {k: v for k, v in state.items() if k not in exclude}
 
 
 class TrendForgeState(TypedDict):
@@ -20,7 +78,11 @@ class TrendForgeState(TypedDict):
     selected_sources: List[str]
     routing_method: str
 
-    fetched_data: Dict[str, List[Dict]]
+    # FIX: was `Dict[str, List[Dict]]` (plain field, last-write-wins under
+    # LangGraph). Now accumulates across fetch retries via
+    # merge_fetched_data above — see that function's docstring for the
+    # companion fix (state_without_reducer_keys) this requires elsewhere.
+    fetched_data: Annotated[Dict[str, List[Dict]], merge_fetched_data]
     fetch_summary: str
     search_queries: List[str]
     total_items_fetched: int
