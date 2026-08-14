@@ -24,10 +24,7 @@ from core.state import create_initial_state, add_tokens
 from pipeline.generate import run
 
 MAX_ACTIVE_CONSTRAINTS = 20
-# Carried over unchanged from main.py -- not referenced anywhere in the
-# main.py source seen so far. Kept rather than dropped in case something
-# outside the shown files depends on it; flagging rather than silently
-# deleting what might be dead code.
+
 MAX_RECENT_MESSAGES = 5
 
 MAX_POST_HISTORY = 3
@@ -35,9 +32,7 @@ MAX_POST_HISTORY = 3
 
 def _snapshot_posts(conversation):
     """Push the current last_generated_posts onto post_history before it's
-    about to be overwritten, so a wrong result is one 'undo' away instead
-    of silently gone. Never raises -- a failed snapshot degrades to no
-    undo available, not a broken request."""
+    about to be overwritten."""
     current = conversation.get("last_generated_posts")
     if not current:
         return
@@ -79,17 +74,7 @@ def _handle_run_new_request(args, prompt, platform, posts, verbose, conversation
     conversation["last_platform"] = result.get("platform")
     conversation["last_content_intent"] = result.get("content_intent")
     conversation["last_generated_posts"] = result.get("posts", [])
-    # FIX (P9): last_output previously held the full terminal-formatted
-    # block (state["final_output"] -- box-drawing chars, emoji section
-    # headers, meant for a monospace CLI). web/jobs.py's run_slow_action
-    # returns this exact field verbatim as the chat reply, so that block
-    # was landing straight in the web UI. The CLI's own real-time display
-    # is unaffected -- run() already printed state["final_output"] in full
-    # before returning, and save_output() still writes the complete block
-    # to disk. Only the shared last_output field (used by both the CLI's
-    # "last" command and the web reply) changes to something meant to be
-    # read in a chat bubble; the structured posts themselves still flow to
-    # the frontend separately via last_generated_posts / GET /session.
+
     conversation["last_output"] = _summarize_for_chat(
         result.get("platform", ""), result.get("topic", ""), len(result.get("posts", [])),
     )
@@ -108,25 +93,13 @@ def _handle_generate_more(args, conversation, verbose):
     requested_count = args.get("count") or 1
     topic_delta = (args.get("topic_delta") or "").strip()
 
-    # FIX: previously this always reused base_topic verbatim and had no
-    # field at all to carry a refinement -- "give me one more" and "give
-    # me project ideas based on these, with github links" produced
-    # near-identical output (confirmed in a real run: posts 6-10 were
-    # rewordings of posts 1-5, the actual request was silently dropped).
-    # effective_topic is what's actually fetched/generated against here;
-    # base_topic is deliberately NOT overwritten with it below, so repeated
-    # generate_more calls don't compound deltas into an ever-longer topic
-    # string turn after turn.
     effective_topic = f"{base_topic} — {topic_delta}" if topic_delta else base_topic
 
     if verbose:
         print(f"  [Action] generate_more(count={requested_count}, topic_delta={topic_delta!r}, accumulates={strategy.accumulates_posts()})")
 
     leftover = conversation.get("leftover_fetch_pool", [])
-    # A topic_delta changes what's actually relevant to fetch -- the old
-    # leftover pool was gathered for the ORIGINAL topic and may not serve
-    # a meaningfully different angle, so it's only reused when there's no
-    # refinement at all.
+
     if leftover and not topic_delta:
         regrouped = {}
         for item in leftover:
@@ -159,12 +132,7 @@ def _handle_generate_more(args, conversation, verbose):
     new_posts = state.get("generated_posts", [])
 
     if strategy.accumulates_posts():
-        # FIX: this is the actual bug fix. run_new_request always
-        # OVERWRITES last_generated_posts -- "give me one more" going
-        # through that tool silently destroyed the prior post instead of
-        # adding to it. This handler appends, and renumbers so post
-        # chips / edit-target indices stay consistent with the combined
-        # array, not each generation call's own internal 1..N numbering.
+
         combined = conversation.get("last_generated_posts", []) + new_posts
         for i, p in enumerate(combined, 1):
             p["number"] = i
@@ -203,11 +171,6 @@ def _handle_edit_existing(args, conversation, verbose):
 
     if result.get("error"):
         error_code = result["error"]
-        # FIX (production-grade error UX): last_output is the actual chat
-        # reply (see P9) -- it must never show a raw internal code like
-        # "no_valid_target_posts" verbatim to the user. The CLI print
-        # below keeps the real code for debugging; only the conversation-
-        # facing message gets translated.
         human_message = _EDIT_ERROR_MESSAGES.get(
             error_code,
             "I couldn't apply that edit -- the post(s) are unchanged. Try rephrasing what you'd like changed.",
@@ -230,9 +193,6 @@ def _handle_edit_existing(args, conversation, verbose):
     print(state["final_output"])
     if saved_path:
         print(f"  💾 Saved to: {saved_path}")
-    # FIX (P9): see _handle_run_new_request -- last_output is the chat
-    # reply, not the terminal block. state["final_output"] (printed above,
-    # saved to disk above) is untouched for CLI users.
     conversation["last_output"] = (
         f'Updated the post(s) — {instruction}' if instruction else "Updated the requested post(s)."
     )

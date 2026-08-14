@@ -1,18 +1,6 @@
 """
 main.py — TrendForge CLI Entrypoint
 
-Slimmed per FLOW.md's migration plan: this file now contains ONLY
-CLI-specific concerns (the interactive input loop, flag parsing, the
-banner, argparse). Everything that used to live here and is also
-needed by the RQ worker path -- the actual generation pipeline and the
-8 action handlers -- moved to pipeline/generate.py and
-orchestration/dispatch.py respectively, per CLAUDE.md rule 5: "CLI
-code and worker code never share a file."
-
-Import changed as part of this same pass: process_turn / maybe_summarize
-/ update_last_tool_result now come from orchestration.conversation_agent
-(renamed from conversation.orchestrator per agents/08_conversation_agent.md)
--- this is the only behavioral dependency this file has on that rename.
 """
 
 import sys, os, re
@@ -76,11 +64,6 @@ def interactive_mode(verbose: bool = False):
             if platform is None and conversation["last_platform"]:
                 platform = conversation["last_platform"]
 
-            # FIX (rename, agents/08_conversation_agent.md): was
-            # `from conversation.orchestrator import ...` -- that module
-            # is now orchestration/conversation_agent.py, with the
-            # confirmation-gate bypass fix applied (see that file's
-            # module docstring for the three bug paths that closes).
             from orchestration.conversation_agent import process_turn, maybe_summarize, update_last_tool_result
             result = process_turn(conversation, prompt)
             conversation["gate_tokens_used"] += result.get("tokens_used", 0)

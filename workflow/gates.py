@@ -3,7 +3,7 @@ from core.state import TrendForgeState
 from Config.config import PLATFORM_SETTINGS
 from llm.client import call_groq
 from llm.schemas import ItemKindCheckSchema
-from llm.errors import LLMCallFailed, LLMSchemaViolation
+
 
 MIN_ITEMS_FLOOR = 3
 MAX_FETCH_RETRIES = 2
@@ -11,9 +11,6 @@ MAX_GENERATION_RETRIES = 2
 
 GENERIC_SEARCH_URL_PATTERNS = ("google.com/search", "bing.com/search", "duckduckgo.com/?q=")
 
-# agents/07_item_kind_gate.md: "System prompt (unchanged — already
-# well-scoped)". item_kind is interpolated into the SYSTEM message here
-# (not the user message) — matches the spec's given prompt exactly.
 _ITEM_KIND_SYSTEM_PROMPT = (
     'You check whether generated titles match a requested category. For each '
     'title, decide whether it genuinely names a specific instance of '
@@ -30,18 +27,9 @@ LINK_REQUIRED_INTENTS = {"showcase", "news", "review"}
 
 
 def evaluate_fetch_quality(state: TrendForgeState) -> Dict[str, Any]:
-    # UNCHANGED — ARCHITECTURE.md: "already correctly deterministic/
-    # code-only and need nothing." Flagging, not fixing here: this reads
-    # state["total_items_fetched"] / state["sources_used"] directly,
-    # neither of which has a reducer the way fetched_data now does (see
-    # core/state.py). If fetcher_orchestrator.py returns a per-attempt
-    # count rather than a running total, this function could keep
-    # judging fetch insufficient (or flip to sufficient too early) using
-    # a count that's out of sync with the now-accumulating fetched_data.
-    # Don't have fetcher_orchestrator.py to confirm which way it goes —
-    # worth checking before trusting the retry loop's sufficiency check.
-    total_items = state.get("total_items_fetched", 0)
-    sources_used = state.get("sources_used", [])
+    fetched_data = state.get("fetched_data", {})
+    total_items = sum(len(items) for items in fetched_data.values())
+    sources_used = [src for src, items in fetched_data.items() if items]
     retry_count = state.get("fetch_retry_count", 0)
     content_intent = state.get("content_intent", "showcase")
 
@@ -50,7 +38,6 @@ def evaluate_fetch_quality(state: TrendForgeState) -> Dict[str, Any]:
 
     link_quality_ok = True
     if content_intent in LINK_REQUIRED_INTENTS:
-        fetched_data = state.get("fetched_data", {})
         all_links = [
             item.get("link", "")
             for items in fetched_data.values()
@@ -98,16 +85,6 @@ def evaluate_fetch_quality(state: TrendForgeState) -> Dict[str, Any]:
 
 
 def evaluate_item_kind_match(state: TrendForgeState) -> Dict[str, Any]:
-    """
-    FIX (ARCHITECTURE.md workflow/gates.py entry): inline `Groq(...)`
-    client + hand-rolled json.loads() replaced with
-    llm.client.call_groq(schema=ItemKindCheckSchema). No other change —
-    same fail-open-on-any-failure behavior as before (returns valid=True
-    rather than blocking the pipeline over an infra hiccup on this one
-    semantic check — deliberately still a bare `except Exception`, not
-    narrowed to just LLMCallFailed/LLMSchemaViolation, to preserve that
-    exact original fail-open posture for literally any failure mode).
-    """
     item_kind = state.get("item_kind", "")
     posts = state.get("generated_posts", [])
     retry_count = state.get("generation_retry_count", 0)
@@ -160,7 +137,6 @@ def _collect_real_links(state: TrendForgeState) -> set:
 
 
 def evaluate_post_validation(state: TrendForgeState) -> Dict[str, Any]:
-    # UNCHANGED — ARCHITECTURE.md: "need nothing."
     posts = state.get("generated_posts", [])
     platform = state.get("platform", "instagram")
     content_intent = state.get("content_intent", "showcase")

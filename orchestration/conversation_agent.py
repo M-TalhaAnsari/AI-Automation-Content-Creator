@@ -1,41 +1,6 @@
 """
 orchestration/conversation_agent.py — Native Tool-Calling Turn Resolver
 
-Renamed from conversation/orchestrator.py per agents/08_conversation_agent.md.
-Tool-calling mechanism (native Groq tool-calling, fixed TOOLS schema,
-tool_choice="auto") is unchanged per that spec -- it was already
-correctly designed. What changed is the confirmation-gate wiring.
-
-FIX (agents/08, safety bug -- ARCHITECTURE.md §8 / CLAUDE.md "still
-highest priority, not started"): every return in process_turn now flows
-through exactly one of two chokepoints, and nothing else in this file is
-allowed to hand back a bare {"action": ..., ...} dict:
-
-  - _resolve(action_name, args, conversation, tokens_used, error) is the
-    ONLY place allowed to hand back a concrete action when there is no
-    confirmation already in flight. It unconditionally re-checks
-    "is this destructive and are there posts to lose" before returning.
-  - _ask_reconfirm(...) is used only when a confirmation was ALREADY
-    pending and this turn's resolution was ambiguous or failed -- it
-    never proceeds to execute anything, only re-asks.
-  - The pending-confirmation success branch inside the try block is the
-    one deliberate exception: it executes the ORIGINALLY STORED
-    action/args deterministically without re-running the gate, because
-    the gate already ran on the turn that SET pending_confirmation.
-    Re-gating here would just re-ask the same question forever.
-
-Previously, three exit points built the `fallback` dict (defaulting to
-run_new_request) directly and returned it WITHOUT checking
-DESTRUCTIVE_ACTIONS at all:
-  1. the LLM returned no tool_calls and no confirmation was pending
-  2. the LLM returned a malformed/unknown tool call
-  3. the Groq API call raised an exception
-All three are real, reachable paths -- a model can decline to call a
-tool, hallucinate a bad tool name, or the API call can simply fail -- and
-all three used to fall straight to run_new_request even when
-last_generated_posts was non-empty, silently destroying existing content
-with no confirmation. Fixed by routing every one of them through
-_resolve() or _ask_reconfirm() instead of constructing `fallback` inline.
 """
 
 import json
@@ -135,15 +100,6 @@ TOOLS = [
 
 VALID_TOOL_NAMES = {t["function"]["name"] for t in TOOLS}
 
-# Unconditional, no exceptions, no pattern matching: any action in this
-# set that would replace non-empty last_generated_posts always requires
-# one confirmation turn first. Deliberately NOT trying to detect "is this
-# specific request actually safe" via keywords/phrasing -- that's the
-# exact kind of pattern list that grows forever and still gets bypassed.
-# generate_more is deliberately excluded: it's a targeted, contextually-
-# informed action (the user already saw this platform's repeat-request
-# behavior in context before asking), unlike run_new_request's blind
-# unrelated-topic replace.
 DESTRUCTIVE_ACTIONS = {"run_new_request"}
 
 SLIDING_WINDOW_TURNS = 20
@@ -165,11 +121,7 @@ def _build_context_messages(conversation: dict, pending_confirmation: dict = Non
         system_content = SYSTEM_PROMPT
 
         if pending_confirmation:
-            # Fixed-size, always identical -- this does not grow as new
-            # edge cases show up. The LLM's only job this turn is a
-            # narrow yes/no judgment; it does not decide what actually
-            # executes (see process_turn -- the stored original action/
-            # args are used deterministically, never re-derived).
+
             system_content += (
                 "\n\nThe user was just asked to confirm replacing their existing posts. "
                 "If their reply clearly agrees, call run_new_request. If they decline, "
@@ -184,9 +136,6 @@ def _build_context_messages(conversation: dict, pending_confirmation: dict = Non
         posts = conversation.get("last_generated_posts") or []
         if posts:
             titles = "\n".join(f"{i}. {p.get('title', '(untitled)')}" for i, p in enumerate(posts, 1))
-            # Every platform answers for itself via its own strategy --
-            # this file never checks a platform name directly, so a new
-            # platform's "one more" behavior needs zero changes here.
             behavior_note = ""
             last_platform = conversation.get("last_platform")
             if last_platform:
@@ -255,17 +204,7 @@ def update_last_tool_result(conversation: dict, summary: str) -> None:
 def _resolve(action_name: str, args: dict, conversation: dict, tokens_used: int, error: str = None) -> dict:
     """
     The single chokepoint for every NON-PENDING resolution in
-    process_turn. Applies the destructive-action confirmation gate
-    unconditionally -- this is the only function in the file allowed to
-    hand back a concrete action when there was no confirmation already
-    in flight, so a future new failure branch can't quietly bypass the
-    gate by building its own return dict inline the way the old
-    `fallback` did.
-
-    If action_name is destructive (currently just run_new_request) and
-    there are existing posts that would be lost, this converts the
-    return into a "clarify" asking for confirmation and stashes
-    pending_confirmation instead of letting the action through.
+    process_turn. 
     """
     posts = conversation.get("last_generated_posts")
     if action_name in DESTRUCTIVE_ACTIONS and posts:
@@ -283,10 +222,7 @@ def _resolve(action_name: str, args: dict, conversation: dict, tokens_used: int,
 def _ask_reconfirm(conversation: dict, tokens_used: int, question: str = None, error: str = None) -> dict:
     """
     Used only when a confirmation was ALREADY pending and this turn's
-    resolution was ambiguous or failed -- no tool call, an invalid tool
-    call, or an exception mid-call. Never proceeds to execute anything,
-    only re-asks. Distinct from _resolve(): there's nothing to gate here,
-    the gate already fired on the turn that set pending_confirmation.
+    resolution was ambiguous or failed
     """
     conversation.pop("pending_confirmation", None)
     question = question or "Just to confirm — did you want me to go ahead and replace the existing posts?"
@@ -300,11 +236,7 @@ def process_turn(conversation: dict, user_message: str) -> dict:
     fallback_args = {"prompt": user_message, "platform": conversation.get("last_platform")}
 
     if not conversation.get("last_generated_posts"):
-        # Nothing to lose -- _resolve() will pass this straight through
-        # unchanged (the gate only fires when posts is non-empty), but
-        # routing it through _resolve() anyway keeps this file to one
-        # rule with no carve-outs: every return is built by _resolve()
-        # or _ask_reconfirm(), never inline.
+
         return _resolve("run_new_request", fallback_args, conversation, 0)
 
     pending = conversation.get("pending_confirmation")
@@ -329,11 +261,9 @@ def process_turn(conversation: dict, user_message: str) -> dict:
         if not tool_calls:
             conversation["message_history"].append({"role": "assistant", "content": choice.content or ""})
             if pending:
-                # No tool call at all during a pending confirmation is
-                # ambiguous -- ask again, never guess.
+
                 return _ask_reconfirm(conversation, tokens_used)
-            # FIX (bug path #1): previously `return fallback` here,
-            # bypassing the gate unconditionally even with posts present.
+
             return _resolve("run_new_request", fallback_args, conversation, tokens_used)
 
         call = tool_calls[0]
@@ -352,12 +282,9 @@ def process_turn(conversation: dict, user_message: str) -> dict:
         if action_name not in VALID_TOOL_NAMES or not isinstance(args, dict):
             error = f"Invalid tool call: {action_name!r} / {args!r}"
             if pending:
-                # Same reasoning as the no-tool-calls branch: a malformed
-                # call during a pending confirmation is not an
-                # affirmative answer, so ask again instead of guessing.
+
                 return _ask_reconfirm(conversation, tokens_used, error=error)
-            # FIX (bug path #2): previously `return fallback` here too --
-            # the second confirmed bypass.
+
             return _resolve("run_new_request", fallback_args, conversation, tokens_used, error=error)
 
         conversation["message_history"].append({
@@ -365,17 +292,6 @@ def process_turn(conversation: dict, user_message: str) -> dict:
         })
 
         if pending:
-            # Resolving a pending confirmation: the LLM's only job this
-            # turn was the narrow affirm-vs-decline judgment. A "clarify"
-            # call means decline/unsure. Anything else means proceed --
-            # and we execute the ORIGINALLY STORED action/args
-            # deterministically, never a freshly re-derived call, so
-            # confirming can never silently change what actually runs.
-            # This is the one deliberate place that hands back a
-            # destructive action without going through _resolve()'s gate
-            # -- the gate already ran on the turn that SET
-            # pending_confirmation; re-running it here would just re-ask
-            # the same question forever instead of ever proceeding.
             conversation.pop("pending_confirmation", None)
             if action_name == "clarify":
                 return {"action": action_name, "args": args, "tokens_used": tokens_used, "error": None}
@@ -386,14 +302,9 @@ def process_turn(conversation: dict, user_message: str) -> dict:
     except Exception as e:
         error = f"Orchestrator call failed: {e}"
         if pending:
-            # A failure mid-confirmation must never silently fall through
-            # to the destructive default.
             return _ask_reconfirm(
                 conversation, 0,
                 question="Something went wrong confirming that — did you want me to replace the existing posts?",
                 error=error,
             )
-        # FIX (bug path #3): previously `return fallback` here too -- the
-        # third confirmed bypass, and the one CLAUDE.md's ledger already
-        # named as unresolved.
         return _resolve("run_new_request", fallback_args, conversation, 0, error=error)
