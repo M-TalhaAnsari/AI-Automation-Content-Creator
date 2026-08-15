@@ -1,44 +1,94 @@
 """
 orchestration/dispatch.py — Action handlers + dispatch table
 
-Split out of main.py per FLOW.md's migration plan. Contains every
-_handle_* function and dispatch_action, unchanged from main.py except:
-  - imports `run` from pipeline.generate instead of defining it locally
-  - imports process_turn's counterpart tools from orchestration.
-    conversation_agent (the renamed conversation/orchestrator.py) where
-    relevant -- dispatch_action itself doesn't call process_turn
-    directly (that stays in main.py's interactive_mode, which resolves
-    the action BEFORE calling dispatch_action), so no change was needed
-    here for that rename; it's noted for anyone tracing the call chain.
-
-This is the module api/web/handlers.py should eventually import
-(`import orchestration.dispatch as dispatch`) once its own one-line fix
-is applied -- see FLOW.md's "Structural work still pending" section.
-That file's actual source hasn't been sent yet, so that edit isn't
-applied here.
+FIX (this session, four items):
+1. targeted_refetch's content_intent is now threaded from the
+   conversation's real last_content_intent, not left to actions.py's
+   hardcoded default.
+2. targeted_refetch now sets state["post_count"]/post_count_explicit --
+   previously unset, silently falling back to create_initial_state()'s
+   hardcoded 5 regardless of the batch actually being refined.
+3. _handle_generate_more's accumulate branch (the default for Instagram/
+   TikTok/YouTube/Facebook) now calls _snapshot_posts() before
+   overwriting last_generated_posts -- previously missing, meaning
+   `undo` after a generate_more on those platforms reverted the wrong
+   thing or no-op'd, since the pre-append state was never pushed to
+   post_history.
+4. Closes the validation-gate gap documented in CLAUDE.md/ARCHITECTURE.md:
+   generate_more and targeted_refetch used to call
+   ContentGenerator().generate(state) once and return whatever came
+   back, with none of run_new_request's retry-until-valid protection.
+   New _generate_with_validation() wraps both call sites in a manual
+   retry loop using the same gates the graph uses (workflow.gates.
+   evaluate_generation_combined) -- decision (a) from CLAUDE.md's two
+   options, not routing these actions through the graph itself, since
+   their append/leftover-pool semantics don't fit the graph's linear
+   format->END assumption without a bigger restructure.
 """
 
 import uuid
 
 from core.state import create_initial_state, add_tokens
 from pipeline.generate import run
+from Config.config import CONFIG
+from workflow.gates import evaluate_generation_combined, MAX_GENERATION_RETRIES
 
 MAX_ACTIVE_CONSTRAINTS = 20
-
 MAX_RECENT_MESSAGES = 5
-
 MAX_POST_HISTORY = 3
 
 
 def _snapshot_posts(conversation):
-    """Push the current last_generated_posts onto post_history before it's
-    about to be overwritten."""
     current = conversation.get("last_generated_posts")
     if not current:
         return
     history = conversation.setdefault("post_history", [])
     history.append(current)
     conversation["post_history"] = history[-MAX_POST_HISTORY:]
+
+
+def _generate_with_validation(state, verbose=False):
+    """
+    See module docstring, item 4. Not routed through the graph -- a
+    manual retry loop calling the same gate function the graph uses.
+    """
+    from generation.content_generator import ContentGenerator
+
+    original_fetched_data = state.get("fetched_data", {})
+
+    while True:
+        # FIX: content_generator.py mutates state["fetched_data"] in
+        # place (topic filter, then Pass-1 selection) on every call.
+        # Inside the graph this is safe -- state_without_reducer_keys()
+        # stops that mutation from persisting between hops, so each
+        # graph retry starts from the untouched, reducer-accumulated
+        # data again. This loop has no graph and no reducer protecting
+        # it, so without this reset, retry 2 would filter/select AGAIN
+        # on top of retry 1's already-narrowed output -- silently
+        # shrinking the real candidate pool on every retry instead of
+        # re-selecting from the full set.
+        state["fetched_data"] = {k: list(v) for k, v in original_fetched_data.items()}
+
+        state = ContentGenerator().generate(state)
+        result = evaluate_generation_combined(state)
+        state["generation_validation_errors"] = result["errors"]
+
+        if result["valid"]:
+            if verbose:
+                print("  [Action] generation validation passed")
+            return state
+
+        if not result["should_retry"]:
+            if verbose:
+                print(f"  [Action] validation failed after "
+                      f"{state.get('generation_retry_count', 0)} retries — "
+                      f"proceeding with best-effort output ({len(result['errors'])} issue(s))")
+            return state
+
+        state["generation_retry_count"] = state.get("generation_retry_count", 0) + 1
+        if verbose:
+            print(f"  [Action] validation failed ({len(result['errors'])} issue(s)) — "
+                  f"retrying (attempt {state['generation_retry_count']}/{MAX_GENERATION_RETRIES})")
 
 
 def _handle_undo(args, conversation, verbose):
@@ -82,7 +132,6 @@ def _handle_run_new_request(args, prompt, platform, posts, verbose, conversation
 
 def _handle_generate_more(args, conversation, verbose):
     from generation.platforms.registry import get_platform_strategy
-    from generation.content_generator import ContentGenerator
     from generation.formatter import format_output, save_output
     from research.fetchers.fetcher_orchestrator import FetcherOrchestrator
 
@@ -122,20 +171,20 @@ def _handle_generate_more(args, conversation, verbose):
     state["platform"] = platform
     state["content_intent"] = content_intent
     state["post_count"] = requested_count
-    state["post_count_explicit"] = True  # generate_more's count is always a deliberate value
+    state["post_count_explicit"] = True
     state["fetched_data"] = fetched_data
     state["total_items_fetched"] = sum(len(v) for v in fetched_data.values())
     state["sources_used"] = list(fetched_data.keys())
     state["active_constraints"] = conversation.get("active_constraints", [])
 
-    state = ContentGenerator().generate(state)
+    state = _generate_with_validation(state, verbose)
     new_posts = state.get("generated_posts", [])
 
     if strategy.accumulates_posts():
-
         combined = conversation.get("last_generated_posts", []) + new_posts
         for i, p in enumerate(combined, 1):
             p["number"] = i
+        _snapshot_posts(conversation)  # FIX: was missing on this branch
         conversation["last_generated_posts"] = combined
         conversation["leftover_fetch_pool"] = state.get("leftover_fetch_pool", [])
     else:
@@ -229,23 +278,36 @@ def _handle_clarify(args, conversation, verbose):
 
 def _handle_targeted_refetch(args, conversation, verbose):
     from conversation.actions import targeted_refetch
-    from generation.content_generator import ContentGenerator
     from generation.formatter import format_output, save_output
     topic_delta = args.get("topic_delta", "")
     current_topic = conversation.get("last_topic") or ""
+    content_intent = conversation.get("last_content_intent") or "showcase"
+
     refetch_result = targeted_refetch(topic_delta, current_topic,
                                        conversation.get("leftover_fetch_pool", []),
-                                       conversation.get("active_constraints", []))
+                                       conversation.get("active_constraints", []),
+                                       content_intent=content_intent)  # FIX: item 1
     state = create_initial_state(raw_prompt=f"{current_topic} {topic_delta}".strip(),
                                   session_id=str(uuid.uuid4())[:8])
     state["core_topic"] = f"{current_topic} ({topic_delta})".strip()
     state["platform"] = conversation.get("last_platform") or "instagram"
-    state["content_intent"] = conversation.get("last_content_intent") or "showcase"
+    state["content_intent"] = content_intent
+
+    # FIX: item 2 -- post_count was never set here, silently falling
+    # back to create_initial_state()'s hardcoded default of 5 regardless
+    # of how many posts were actually being refined. Default to the
+    # previous batch size so a targeted refetch doesn't change shape.
+    last_posts = conversation.get("last_generated_posts") or []
+    state["post_count"] = len(last_posts) if last_posts else CONFIG.system.default_post_count
+    state["post_count_explicit"] = True
+
     state["fetched_data"] = refetch_result["fetched_data"]
     state["total_items_fetched"] = sum(len(v) for v in refetch_result["fetched_data"].values())
     state["sources_used"] = list(refetch_result["fetched_data"].keys())
     state["active_constraints"] = conversation.get("active_constraints", [])
-    state = ContentGenerator().generate(state)
+
+    state = _generate_with_validation(state, verbose)  # FIX: item 4
+
     _snapshot_posts(conversation)
     state = format_output(state)
     saved_path = save_output(state)
@@ -254,7 +316,6 @@ def _handle_targeted_refetch(args, conversation, verbose):
         print(f"  💾 Saved to: {saved_path}")
     conversation["last_topic"] = state["core_topic"]
     conversation["last_generated_posts"] = state["generated_posts"]
-    # FIX (P9): see _handle_run_new_request -- same reasoning.
     conversation["last_output"] = _summarize_for_chat(
         state.get("platform", ""), state.get("core_topic", ""), len(state.get("generated_posts", [])),
     )

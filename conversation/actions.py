@@ -1,15 +1,33 @@
 """
 conversation/actions.py — Phase 2 Split B: action implementations
-(edit_existing patched: Groq fallback + honest error signaling. See
-inline comments marked FIX for exactly what changed and why.)
+
+FIX (this session, two separate items):
+
+1. GATEWAY COMPLIANCE: _edit_via_gemini/_edit_via_groq used to import
+   `groq`/`google.genai` directly -- a second rule #3 violation besides
+   content_generator.py's (now fixed separately). Routed through
+   llm/client.py using llm/schemas.py's EditSchema, which that module's
+   own docstring confirms was built specifically for this call site.
+   generation.content_generator._parse_json is no longer imported here
+   -- the gateway's model_validate_json() replaces it entirely.
+
+2. CONFIRMED BUG FIX (flagged in CLAUDE.md/ARCHITECTURE.md/FLOW.md
+   across multiple sessions): targeted_refetch() hardcoded
+   content_intent="showcase" in both the gate-check state and the real
+   fetch input state, silently discarding whatever content_intent the
+   conversation was actually using. Now takes content_intent as a
+   parameter (default "showcase" preserved for any other caller/test
+   that doesn't pass one) -- orchestration/dispatch.py threads the
+   conversation's real value through.
 """
 
-import json
 import re
 from typing import List, Dict, Any
 
 from Config.config import CONFIG
-from generation.content_generator import _parse_json as _parse_llm_response
+from llm.client import call_gemini, call_groq
+from llm.errors import LLMCallFailed, LLMSchemaViolation
+from llm.schemas import EditSchema
 
 
 def _sanitize_constraint_for_query(value: str) -> str:
@@ -17,6 +35,7 @@ def _sanitize_constraint_for_query(value: str) -> str:
 
 
 def _build_edit_prompt(instruction: str, targeted: List[Dict]) -> str:
+    import json
     posts_json = json.dumps(targeted, indent=2)
     return f"""You are editing existing social media posts based on a user instruction.
 
@@ -26,52 +45,48 @@ POSTS TO EDIT (JSON array, {len(targeted)} post(s)):
 {posts_json}
 
 Apply the instruction to every post above. Keep the exact same JSON field
-structure for each post (title, hook, summary, link, caption, hashtags) —
-only change what the instruction actually asks for. Do not add or remove
-posts. Return ONLY this JSON object, nothing else:
+structure for each post (number, title, hook, summary, link, caption,
+hashtags) — only change what the instruction actually asks for. Keep each
+post's original "number" value unchanged. Do not add or remove posts.
+Return ONLY this JSON object, nothing else:
 {{"posts": [<same {len(targeted)} posts, edited, same field structure>]}}"""
+    # FIX: "number" added to the enumerated field list above. EditSchema's
+    # PostItem requires "number" (int, no default) -- the old prompt only
+    # named title/hook/summary/link/caption/hashtags, which risked the
+    # model dropping "number" and failing schema validation on every
+    # edit call now that this goes through the gateway's hard-error path.
 
 
-def _edit_via_gemini(prompt: str) -> (list, int):
-    from google import genai
-    client = genai.Client(api_key=CONFIG.models.gemini_api_key)
-    response = client.models.generate_content(model=CONFIG.models.gemini_model, contents=prompt)
-    raw = response.text
-    parsed = _parse_llm_response(raw)
-    edited = parsed.get("posts", [])
-    try:
-        tokens_used = response.usage_metadata.total_token_count
-    except Exception:
-        tokens_used = len(prompt.split()) + len(raw.split())
-    return edited, tokens_used
-
-
-def _edit_via_groq(prompt: str) -> (list, int):
-    # FIX: this fallback didn't exist before. ContentGenerator already
-    # falls back to Groq when Gemini fails (visible in every real log as
-    # "Trying Groq Fallback... Generated N posts via Groq-LLaMA3") --
-    # edit_existing had no equivalent, so it silently no-op'd instead.
-    from groq import Groq
-    client = Groq(api_key=CONFIG.models.groq_api_key)
-    response = client.chat.completions.create(
-        model=CONFIG.models.groq_model_large,
-        temperature=0.3,
-        max_tokens=4000,
-        messages=[{"role": "user", "content": prompt}],
+def _edit_via_gemini(prompt: str) -> "tuple[list, int]":
+    result = call_gemini(
+        system="You are a senior social media copywriter editing existing posts. "
+               "Output your final result in strict, clean JSON matching the requested schema.",
+        user=prompt,
+        model=CONFIG.models.gemini_model,
+        schema=EditSchema,
+        temperature=CONFIG.models.generation_temperature,
     )
-    raw = response.choices[0].message.content
-    parsed = _parse_llm_response(raw)
-    edited = parsed.get("posts", [])
-    tokens_used = getattr(response.usage, "total_tokens", 0) if response.usage else 0
-    return edited, tokens_used
+    return result.content.get("posts", []), result.tokens_used
+
+
+def _edit_via_groq(prompt: str) -> "tuple[list, int]":
+    result = call_groq(
+        system="You are a senior social media copywriter editing existing posts. "
+               "Output your final result in strict, clean JSON matching the requested schema.",
+        user=prompt,
+        model=CONFIG.models.groq_model_large,
+        schema=EditSchema,
+        temperature=CONFIG.models.generation_temperature,
+        reasoning_effort="low",
+    )
+    return result.content.get("posts", []), result.tokens_used
 
 
 def edit_existing(target_posts, instruction: str, last_generated_posts: List[Dict]) -> dict:
     """
-    On total failure (both providers): returns the posts UNCHANGED, same
-    as before, but now ALSO returns "error" with a human-readable reason
-    -- FIX: previously this was indistinguishable from success. main.py's
-    _handle_edit_existing (patched separately) now checks this field.
+    On total failure (both providers): returns the posts UNCHANGED, and
+    ALSO returns "error" with a human-readable reason so the caller can
+    distinguish this from success.
     """
     if not last_generated_posts:
         return {"edited_posts": last_generated_posts, "tokens_used": 0, "error": "no_posts_to_edit"}
@@ -94,18 +109,18 @@ def edit_existing(target_posts, instruction: str, last_generated_posts: List[Dic
 
     try:
         edited, tokens_used = _edit_via_gemini(prompt)
-    except Exception as e:
+    except (LLMCallFailed, LLMSchemaViolation) as e:
         errors.append(f"gemini: {e}")
 
     if not isinstance(edited, list) or len(edited) != len(targeted):
         try:
             edited, tokens_used = _edit_via_groq(prompt)
-        except Exception as e:
+        except (LLMCallFailed, LLMSchemaViolation) as e:
             errors.append(f"groq: {e}")
 
     if not isinstance(edited, list) or len(edited) != len(targeted):
-        # Both providers failed or returned a malformed shape -- degrade
-        # to unedited posts (unchanged philosophy), but now say so.
+        # Both providers failed, or a schema-valid response still had
+        # the wrong post count -- degrade to unedited posts, say so.
         return {
             "edited_posts": last_generated_posts,
             "tokens_used": tokens_used or 0,
@@ -142,7 +157,8 @@ def remove_constraint(constraint_value: str, active_constraints: List[Dict]) -> 
 
 def targeted_refetch(topic_delta: str, current_topic: str,
                       leftover_fetch_pool: List[Dict],
-                      active_constraints: List[Dict]) -> dict:
+                      active_constraints: List[Dict],
+                      content_intent: str = "showcase") -> dict:
     exclude_values = [c["value"].lower() for c in active_constraints if c.get("type") == "exclude"]
 
     def _matches_exclusion(item: Dict) -> bool:
@@ -155,7 +171,8 @@ def targeted_refetch(topic_delta: str, current_topic: str,
         "total_items_fetched": len(filtered_pool),
         "sources_used": sources_present,
         "fetch_retry_count": 0,
-        "content_intent": "showcase",
+        # FIX: was hardcoded "showcase" -- now the conversation's real intent.
+        "content_intent": content_intent,
         "fetched_data": {"leftover": filtered_pool},
     }
 
@@ -174,7 +191,8 @@ def targeted_refetch(topic_delta: str, current_topic: str,
         "core_topic": combined_topic,
         "fetch_summary": scoped_query,
         "search_queries": [scoped_query],
-        "content_intent": "showcase",
+        # FIX: was hardcoded "showcase" here too.
+        "content_intent": content_intent,
         "selected_sources": ["github", "tavily", "google_trends", "youtube", "hackernews"],
         "errors": [],
     }

@@ -1,9 +1,5 @@
 """
 generation/formatter.py — Final Output Formatter
-
-Turns generated_posts list into a clean formatted string.
-Also generates the token report.
-Saves output to file.
 """
 
 import os
@@ -16,7 +12,6 @@ from Config.config import CONFIG
 
 
 def format_output(state: TrendForgeState) -> TrendForgeState:
-    """Builds final_output string from generated_posts."""
     posts = state.get("generated_posts", [])
     platform = state.get("platform", "instagram").upper()
     topic = state.get("core_topic", "")
@@ -68,8 +63,15 @@ def format_output(state: TrendForgeState) -> TrendForgeState:
         lines.append(f"{'─'*60}")
         lines.append(f"  {trend_insight}\n")
 
+    # FIX: gen_engine == "None" (both providers failed schema validation,
+    # _build_fallback_posts() ran) used to fall into the `else` branch
+    # below and get mislabeled as CONFIG.models.gemini_model -- claiming
+    # a successful Gemini generation for a total-failure/template run.
     gen_engine = state.get("content_generation_engine", "")
-    if "groq" in gen_engine.lower():
+    gen_engine_lower = gen_engine.lower()
+    if not gen_engine or gen_engine_lower == "none":
+        gen_model_label = "Template fallback (no LLM — both providers failed validation)"
+    elif "groq" in gen_engine_lower:
         gen_model_label = f"{CONFIG.models.groq_model_large} (Groq)"
     else:
         gen_model_label = CONFIG.models.gemini_model
@@ -87,7 +89,6 @@ def format_output(state: TrendForgeState) -> TrendForgeState:
 
 
 def save_output(state: TrendForgeState, output_dir: str = "output") -> str:
-    """Saves final output to file. Returns file path (empty string on failure)."""
     try:
         os.makedirs(output_dir, exist_ok=True)
         session_id = state.get("session_id", "unknown")

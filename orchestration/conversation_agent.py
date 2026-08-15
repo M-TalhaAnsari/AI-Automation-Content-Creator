@@ -1,6 +1,27 @@
 """
 orchestration/conversation_agent.py — Native Tool-Calling Turn Resolver
 
+FIX (this session): confirmed bug in the pending-confirmation branch.
+While a confirmation is pending, ALL 8 tools remain available to the
+model -- the instruction to only call run_new_request or clarify is
+prose in the system prompt, not an enforced tool_choice restriction.
+The old code discarded ANY tool call other than "clarify" and force-ran
+the pending action regardless -- so if the user's reply actually meant
+"no, undo that instead" and the model correctly called `undo`, that
+call was silently thrown away and the original destructive action ran
+anyway. Now: only an exact repeat of the pending action counts as
+confirmation; anything else (clarify, or a genuinely different action)
+is dispatched as what the user actually asked for, going back through
+_resolve() so a different destructive action gets its own fresh
+confirmation gate.
+
+KNOWN RESIDUAL LIMITATION, not solved here: if the model calls the SAME
+action name as the pending one but with DIFFERENT args (e.g. pending was
+run_new_request for topic A, and the new turn's reply -- ambiguously --
+resolves to run_new_request for topic B), this still treats it as
+confirming the ORIGINAL pending args, same as before this fix. That's a
+preexisting behavior, not something this fix changes for the worse;
+flagging it rather than silently expanding this fix's scope further.
 """
 
 import json
@@ -121,7 +142,6 @@ def _build_context_messages(conversation: dict, pending_confirmation: dict = Non
         system_content = SYSTEM_PROMPT
 
         if pending_confirmation:
-
             system_content += (
                 "\n\nThe user was just asked to confirm replacing their existing posts. "
                 "If their reply clearly agrees, call run_new_request. If they decline, "
@@ -202,10 +222,6 @@ def update_last_tool_result(conversation: dict, summary: str) -> None:
 
 
 def _resolve(action_name: str, args: dict, conversation: dict, tokens_used: int, error: str = None) -> dict:
-    """
-    The single chokepoint for every NON-PENDING resolution in
-    process_turn. 
-    """
     posts = conversation.get("last_generated_posts")
     if action_name in DESTRUCTIVE_ACTIONS and posts:
         count = len(posts)
@@ -220,10 +236,6 @@ def _resolve(action_name: str, args: dict, conversation: dict, tokens_used: int,
 
 
 def _ask_reconfirm(conversation: dict, tokens_used: int, question: str = None, error: str = None) -> dict:
-    """
-    Used only when a confirmation was ALREADY pending and this turn's
-    resolution was ambiguous or failed
-    """
     conversation.pop("pending_confirmation", None)
     question = question or "Just to confirm — did you want me to go ahead and replace the existing posts?"
     conversation.setdefault("message_history", []).append({"role": "assistant", "content": question})
@@ -236,7 +248,6 @@ def process_turn(conversation: dict, user_message: str) -> dict:
     fallback_args = {"prompt": user_message, "platform": conversation.get("last_platform")}
 
     if not conversation.get("last_generated_posts"):
-
         return _resolve("run_new_request", fallback_args, conversation, 0)
 
     pending = conversation.get("pending_confirmation")
@@ -261,9 +272,7 @@ def process_turn(conversation: dict, user_message: str) -> dict:
         if not tool_calls:
             conversation["message_history"].append({"role": "assistant", "content": choice.content or ""})
             if pending:
-
                 return _ask_reconfirm(conversation, tokens_used)
-
             return _resolve("run_new_request", fallback_args, conversation, tokens_used)
 
         call = tool_calls[0]
@@ -282,9 +291,7 @@ def process_turn(conversation: dict, user_message: str) -> dict:
         if action_name not in VALID_TOOL_NAMES or not isinstance(args, dict):
             error = f"Invalid tool call: {action_name!r} / {args!r}"
             if pending:
-
                 return _ask_reconfirm(conversation, tokens_used, error=error)
-
             return _resolve("run_new_request", fallback_args, conversation, tokens_used, error=error)
 
         conversation["message_history"].append({
@@ -293,9 +300,17 @@ def process_turn(conversation: dict, user_message: str) -> dict:
 
         if pending:
             conversation.pop("pending_confirmation", None)
-            if action_name == "clarify":
-                return {"action": action_name, "args": args, "tokens_used": tokens_used, "error": None}
-            return {"action": pending["action"], "args": pending["args"], "tokens_used": tokens_used, "error": None}
+            # FIX: previously, only "clarify" was special-cased here --
+            # ANY OTHER tool call (e.g. a correctly-resolved `undo` in
+            # response to the user changing their mind) was discarded
+            # and pending["action"] was force-run regardless. Now: only
+            # an exact repeat of the pending action counts as
+            # confirmation. Everything else is dispatched as what the
+            # user actually asked for, via _resolve() -- so a different
+            # destructive action still gets its own confirmation gate.
+            if action_name == pending["action"]:
+                return {"action": pending["action"], "args": pending["args"], "tokens_used": tokens_used, "error": None}
+            return _resolve(action_name, args, conversation, tokens_used)
 
         return _resolve(action_name, args, conversation, tokens_used)
 

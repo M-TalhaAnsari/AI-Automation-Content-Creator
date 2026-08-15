@@ -1,39 +1,61 @@
 """
 generation/content_generator.py — Step 5: Content Generator
+
+FIX (this session): routed through the LLM gateway (llm/client.py) per
+ARCHITECTURE.md principle #3 -- "All LLM calls go through llm/client.py.
+No other file imports groq or google.genai." This file used to
+instantiate both SDKs directly and roll its own ad-hoc JSON parser
+(_parse_json, with regex trailing-comma repair) as a substitute for the
+schema validation the gateway guarantees everywhere else. That parser
+is gone; llm/client.py's model_validate_json() is now the only path.
+
+KNOWN, DELIBERATE BEHAVIOR CHANGE from this fix: llm/client.py's
+contract is "hard error on schema violation, no prose-repair cascades"
+(see that module's docstring), and llm/schemas.py's GeneratedPostsSchema
+validates the WHOLE posts array in one call (including the "^#" hashtag
+pattern PostItem.hashtags enforces). Before this fix, a single malformed
+post in an otherwise-good batch could be silently dropped while the rest
+shipped. Now one bad post anywhere in the batch fails validation for the
+ENTIRE call, which triggers the Groq fallback, and if that also fails,
+_build_fallback_posts() (the template safety net) takes over -- same
+end state as before, just triggered by one stricter condition instead
+of a per-post filter. This is a direct, load-bearing consequence of the
+gateway's existing hard-error contract, not a new policy invented here.
+
+ALSO FIXED as a side effect: previously, if raw_response parsed but ALL
+individual posts failed the old hook/caption check, engine_used stayed
+labeled "Gemini" or "Groq-LLaMA3" even though the template fallback ran
+-- formatter.py would then mislabel a total-failure run as a successful
+LLM generation. Now engine_used is explicitly reset to "None" whenever
+`validated` ends up empty, regardless of why.
 """
 
-import json
-import re
+import html
 import sys
 import os
-import html
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from pydantic import BaseModel
 
 from core.state import TrendForgeState, add_log, add_error, add_tokens
 from generation.prompt_composer import compose_prompt
 from generation.prompts import SYSTEM_PROMPT
 from Config.config import CONFIG
+from llm.client import call_gemini, call_groq
+from llm.errors import LLMCallFailed, LLMSchemaViolation
+from llm.schemas import GeneratedPostsSchema
 
 
-def _parse_json(text: str) -> dict:
-    try:
-        return json.loads(text.strip())
-    except Exception:
-        pass
-    try:
-        s = text.index("{")
-        e = text.rindex("}") + 1
-        return json.loads(text[s:e])
-    except Exception:
-        pass
-    try:
-        fixed = re.sub(r',\s*([}\]])', r'\1', text)
-        s = fixed.index("{")
-        e = fixed.rindex("}") + 1
-        return json.loads(fixed[s:e])
-    except Exception:
-        pass
-    return {}
+# Local to this file, deliberately NOT added to llm/schemas.py's central
+# registry -- that module's docstring says "Deliberately NOT here: a
+# SelectionSchema... don't rebuild it without a concrete regression-set
+# reason." That note is about not resurrecting the old standalone
+# SelectionAgent's formal schema after Agent 10 was merged into Agent 5.
+# This is smaller: an internal implementation detail of THIS file's own
+# Pass-1 "pick the best N of the fetched items" step, called from
+# nowhere else. Kept local so that distinction stays visible.
+class _SelectionResult(BaseModel):
+    selected_indices: list[int]
 
 
 def _build_fallback_posts(state: TrendForgeState) -> list:
@@ -73,56 +95,6 @@ def _build_fallback_posts(state: TrendForgeState) -> list:
 
 
 class ContentGenerator:
-    def __init__(self):
-        self._gemini_client = None
-
-    def _get_gemini_client(self):
-        if self._gemini_client is None:
-            from google import genai
-            self._gemini_client = genai.Client(api_key=CONFIG.models.gemini_api_key)
-        return self._gemini_client
-
-    _SELECTION_SCHEMA = {
-        "type": "json_schema",
-        "json_schema": {
-            "name": "item_selection",
-            "strict": True,
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "selected_indices": {"type": "array", "items": {"type": "integer"}},
-                },
-                "required": ["selected_indices"],
-                "additionalProperties": False,
-            },
-        },
-    }
-
-    def _call_groq_fallback(self, prompt: str, system_message: str = SYSTEM_PROMPT,
-                             state: TrendForgeState = None, response_format=None) -> str:
-        from groq import Groq
-        groq_client = Groq(api_key=CONFIG.models.groq_api_key)
-
-        model_name = getattr(CONFIG.models, "groq_model_large", "llama-3.3-70b-versatile")
-        if state is not None:
-            add_log(state, f"[GroqFallback] Calling Groq with model={model_name}")
-
-        kwargs = dict(
-            model=model_name,
-            messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.2,
-            reasoning_effort="low",
-        )
-        if response_format is None:
-            response_format = {"type": "json_object"}
-        if response_format:
-            kwargs["response_format"] = response_format
-
-        completion = groq_client.chat.completions.create(**kwargs)
-        return completion.choices[0].message.content
 
     def _select_best_items(self, state: TrendForgeState, all_items: list) -> list:
         count = state.get("post_count", 10)
@@ -144,39 +116,47 @@ Items:
 Pick the {count} most interesting, engaging, and relevant items for building an authority presence on {platform}.
 Return this exact JSON object: {{"selected_indices": [<1-based integers, {count} of them>]}}"""
 
-        raw = None
+        # NOTE: previously the Gemini branch of this call had NO
+        # temperature set at all (provider default) while the Groq
+        # fallback used 0.2 -- an inconsistency, and neither used any
+        # named config value. routing_temperature (0.0) is used for
+        # both here: this is a low-creativity, structural "pick indices"
+        # decision, the same category ModelConfig defines that field for.
+        result = None
         try:
-            client = self._get_gemini_client()
-            response = client.models.generate_content(
+            result = call_gemini(
+                system="Return ONLY a JSON object matching the requested schema.",
+                user=prompt,
                 model=CONFIG.models.gemini_model,
-                contents=prompt,
+                schema=_SelectionResult,
+                temperature=CONFIG.models.routing_temperature,
             )
-            raw = response.text
-        except Exception as e:
+        except (LLMCallFailed, LLMSchemaViolation) as e:
             add_log(state, f"[Generator] Pass 1 Gemini failed ({e}). Trying Groq Fallback...")
             try:
-                raw = self._call_groq_fallback(
-                    prompt, system_message="Return ONLY a JSON object matching the requested schema.",
-                    state=state, response_format=self._SELECTION_SCHEMA,
+                result = call_groq(
+                    system="Return ONLY a JSON object matching the requested schema.",
+                    user=prompt,
+                    model=CONFIG.models.groq_model_large,
+                    schema=_SelectionResult,
+                    temperature=CONFIG.models.routing_temperature,
+                    reasoning_effort="low",
                 )
-            except Exception as groq_err:
+            except (LLMCallFailed, LLMSchemaViolation) as groq_err:
                 add_log(state, f"[Generator] Pass 1 Fallback failed: {groq_err} — Defaulting to top entries.")
 
-        if raw:
-            try:
-                parsed = _parse_json(raw)
-                indices = parsed.get("selected_indices", [])
-                if indices:
-                    selected = []
-                    for idx in indices:
-                        if 1 <= int(idx) <= len(all_items):
-                            selected.append(all_items[int(idx) - 1])
-                    add_log(state, f"[Generator] Pass 1 selected indices: {indices}")
-                    if selected:
-                        return selected[:count]
-                    add_log(state, "[Generator] Pass 1 indices were all out of range — falling back to top entries.")
-            except Exception as parse_err:
-                add_log(state, f"[Generator] Pass 1 failed to parse index JSON: {parse_err}")
+        if result is not None:
+            add_tokens(state, "content_generation", result.tokens_used)
+            indices = result.content.get("selected_indices", [])
+            if indices:
+                selected = []
+                for idx in indices:
+                    if 1 <= int(idx) <= len(all_items):
+                        selected.append(all_items[int(idx) - 1])
+                add_log(state, f"[Generator] Pass 1 selected indices: {indices}")
+                if selected:
+                    return selected[:count]
+                add_log(state, "[Generator] Pass 1 indices were all out of range — falling back to top entries.")
 
         return all_items[:count]
 
@@ -233,71 +213,55 @@ Return this exact JSON object: {{"selected_indices": [<1-based integers, {count}
             state["leftover_fetch_pool"] = []
 
         prompt = compose_prompt(state)
-        raw_response = None
-        tokens_used = 0
+
+        result = None
         engine_used = "None"
 
         try:
             add_log(state, f"[ContentGenerator] Sending generation instruction to {CONFIG.models.gemini_model}...")
-            client = self._get_gemini_client()
-            from google.genai import types
-
-            gen_config = types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
-                response_mime_type="application/json"
-            )
-            if "thinking" in getattr(CONFIG.models, "gemini_model", "").lower():
-                gen_config.thinking_config = types.ThinkingConfig(thinking_level="medium")
-
-            response = client.models.generate_content(
+            result = call_gemini(
+                system=SYSTEM_PROMPT,
+                user=prompt,
                 model=CONFIG.models.gemini_model,
-                contents=prompt,
-                config=gen_config
+                schema=GeneratedPostsSchema,
+                temperature=CONFIG.models.generation_temperature,
             )
-            raw_response = response.text
             engine_used = "Gemini"
-            try:
-                tokens_used = response.usage_metadata.total_token_count
-            except Exception:
-                tokens_used = len(prompt.split()) + len(raw_response.split())
-
-        except Exception as gemini_error:
+        except (LLMCallFailed, LLMSchemaViolation) as gemini_error:
             add_error(state, f"[ContentGenerator] Gemini Service Alert: {gemini_error}")
             add_log(state, "[ContentGenerator] Rerouting operational prompt to Groq (LLaMA3) infrastructure...")
             try:
-                raw_response = self._call_groq_fallback(
-                    prompt=prompt,
-                    system_message="You are a senior social media copywriter. Output your final generation in strict, clean JSON matching the template format exactly.",
-                    state=state,
+                result = call_groq(
+                    system=SYSTEM_PROMPT,
+                    user=prompt,
+                    model=CONFIG.models.groq_model_large,
+                    schema=GeneratedPostsSchema,
+                    temperature=CONFIG.models.generation_temperature,
+                    reasoning_effort="low",
                 )
                 engine_used = "Groq-LLaMA3"
-                tokens_used = len(prompt.split()) + len(raw_response.split())
-            except Exception as groq_error:
+            except (LLMCallFailed, LLMSchemaViolation) as groq_error:
                 add_error(state, f"[ContentGenerator] Critical: Fallback engine failed: {groq_error}")
 
-        result = {}
-        if raw_response:
-            add_log(state, f"[Generator] Raw payload fetched successfully via {engine_used}.")
-            result = _parse_json(raw_response)
-            add_tokens(state, "content_generation", tokens_used)
-
-        posts = result.get("posts", [])
         validated = []
-        for p in posts:
-            if isinstance(p, dict) and p.get("hook") and p.get("caption"):
-                tags = p.get("hashtags", [])
-                p["hashtags"] = [(t if t.startswith("#") else f"#{t}") for t in tags]
-                validated.append(p)
-            else:
-                add_log(state, f"[ContentGenerator] Dropped a post slot — missing hook and/or caption: {p if isinstance(p, dict) else type(p)}")
+        if result is not None:
+            add_log(state, f"[Generator] Raw payload validated successfully via {engine_used}.")
+            add_tokens(state, "content_generation", result.tokens_used)
+            # FIX: hashtag "#" normalization used to happen here by hand
+            # (t if t.startswith("#") else f"#{t}"). PostItem.hashtags now
+            # enforces the "^#" pattern as part of schema validation
+            # itself -- a malformed hashtag is a hard LLMSchemaViolation
+            # on the call above, not something silently patched after.
+            validated = result.content.get("posts", [])
 
         if not validated:
-            add_log(state, "[ContentGenerator] System Warning: Engine outputs empty or malformed — applying safe string builder.")
+            add_log(state, "[ContentGenerator] System Warning: Engine output empty or failed validation — applying safe string builder.")
             validated = _build_fallback_posts(state)
+            engine_used = "None"
 
         state["generated_posts"] = validated
-        state["final_output"] = result.get("series_hook", "")
-        state["trend_insight"] = result.get("trend_insight", "")
+        state["final_output"] = result.content.get("series_hook", "") if result else ""
+        state["trend_insight"] = result.content.get("trend_insight", "") if result else ""
         state["content_generation_engine"] = engine_used
 
         add_log(state, f"[ContentGenerator] Execution ended. Generated {len(validated)} posts via {engine_used}.")
