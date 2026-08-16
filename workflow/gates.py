@@ -150,11 +150,6 @@ def evaluate_post_validation(state: TrendForgeState) -> Dict[str, Any]:
         errors.append("generated_posts is empty")
     else:
         max_caption_chars = PLATFORM_SETTINGS.get(platform, {}).get("max_caption_chars", 2200)
-        # FIX: this used to redeclare a second, identical local
-        # `link_required_intents` set instead of referencing the
-        # module-level LINK_REQUIRED_INTENTS constant already defined
-        # above (and already used by evaluate_fetch_quality) -- two
-        # copies of the same set that could silently drift apart.
         seen_titles = set()
 
         for i, post in enumerate(posts):
@@ -206,15 +201,6 @@ def evaluate_post_validation(state: TrendForgeState) -> Dict[str, Any]:
 
 
 def evaluate_generation_combined(state: TrendForgeState) -> Dict[str, Any]:
-    """
-    NEW. Combines evaluate_post_validation + evaluate_item_kind_match into
-    one retry decision -- OR on should_retry, exactly as workflow/nodes.py
-    ::node_evaluate_generation already did inline. Extracted here so the
-    graph path (node_evaluate_generation) and the non-graph generate_more/
-    targeted_refetch retry loop in orchestration/dispatch.py (added to
-    close the validation-gate gap documented in CLAUDE.md/ARCHITECTURE.md)
-    share one implementation instead of two copies that could drift apart.
-    """
     v1 = evaluate_post_validation(state)
     v2 = evaluate_item_kind_match(state)
     return {

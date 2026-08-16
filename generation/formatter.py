@@ -1,7 +1,3 @@
-"""
-generation/formatter.py — Final Output Formatter
-"""
-
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -63,10 +59,6 @@ def format_output(state: TrendForgeState) -> TrendForgeState:
         lines.append(f"{'─'*60}")
         lines.append(f"  {trend_insight}\n")
 
-    # FIX: gen_engine == "None" (both providers failed schema validation,
-    # _build_fallback_posts() ran) used to fall into the `else` branch
-    # below and get mislabeled as CONFIG.models.gemini_model -- claiming
-    # a successful Gemini generation for a total-failure/template run.
     gen_engine = state.get("content_generation_engine", "")
     gen_engine_lower = gen_engine.lower()
     if not gen_engine or gen_engine_lower == "none":

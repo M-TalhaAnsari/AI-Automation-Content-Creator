@@ -1,26 +1,3 @@
-"""
-conversation/actions.py — Phase 2 Split B: action implementations
-
-FIX (this session, two separate items):
-
-1. GATEWAY COMPLIANCE: _edit_via_gemini/_edit_via_groq used to import
-   `groq`/`google.genai` directly -- a second rule #3 violation besides
-   content_generator.py's (now fixed separately). Routed through
-   llm/client.py using llm/schemas.py's EditSchema, which that module's
-   own docstring confirms was built specifically for this call site.
-   generation.content_generator._parse_json is no longer imported here
-   -- the gateway's model_validate_json() replaces it entirely.
-
-2. CONFIRMED BUG FIX (flagged in CLAUDE.md/ARCHITECTURE.md/FLOW.md
-   across multiple sessions): targeted_refetch() hardcoded
-   content_intent="showcase" in both the gate-check state and the real
-   fetch input state, silently discarding whatever content_intent the
-   conversation was actually using. Now takes content_intent as a
-   parameter (default "showcase" preserved for any other caller/test
-   that doesn't pass one) -- orchestration/dispatch.py threads the
-   conversation's real value through.
-"""
-
 import re
 from typing import List, Dict, Any
 
@@ -50,14 +27,9 @@ hashtags) — only change what the instruction actually asks for. Keep each
 post's original "number" value unchanged. Do not add or remove posts.
 Return ONLY this JSON object, nothing else:
 {{"posts": [<same {len(targeted)} posts, edited, same field structure>]}}"""
-    # FIX: "number" added to the enumerated field list above. EditSchema's
-    # PostItem requires "number" (int, no default) -- the old prompt only
-    # named title/hook/summary/link/caption/hashtags, which risked the
-    # model dropping "number" and failing schema validation on every
-    # edit call now that this goes through the gateway's hard-error path.
 
 
-def _edit_via_gemini(prompt: str) -> "tuple[list, int]":
+def _edit_via_gemini(prompt: str):
     result = call_gemini(
         system="You are a senior social media copywriter editing existing posts. "
                "Output your final result in strict, clean JSON matching the requested schema.",
@@ -69,7 +41,7 @@ def _edit_via_gemini(prompt: str) -> "tuple[list, int]":
     return result.content.get("posts", []), result.tokens_used
 
 
-def _edit_via_groq(prompt: str) -> "tuple[list, int]":
+def _edit_via_groq(prompt: str):
     result = call_groq(
         system="You are a senior social media copywriter editing existing posts. "
                "Output your final result in strict, clean JSON matching the requested schema.",
@@ -83,11 +55,6 @@ def _edit_via_groq(prompt: str) -> "tuple[list, int]":
 
 
 def edit_existing(target_posts, instruction: str, last_generated_posts: List[Dict]) -> dict:
-    """
-    On total failure (both providers): returns the posts UNCHANGED, and
-    ALSO returns "error" with a human-readable reason so the caller can
-    distinguish this from success.
-    """
     if not last_generated_posts:
         return {"edited_posts": last_generated_posts, "tokens_used": 0, "error": "no_posts_to_edit"}
 
@@ -119,8 +86,6 @@ def edit_existing(target_posts, instruction: str, last_generated_posts: List[Dic
             errors.append(f"groq: {e}")
 
     if not isinstance(edited, list) or len(edited) != len(targeted):
-        # Both providers failed, or a schema-valid response still had
-        # the wrong post count -- degrade to unedited posts, say so.
         return {
             "edited_posts": last_generated_posts,
             "tokens_used": tokens_used or 0,
@@ -171,7 +136,6 @@ def targeted_refetch(topic_delta: str, current_topic: str,
         "total_items_fetched": len(filtered_pool),
         "sources_used": sources_present,
         "fetch_retry_count": 0,
-        # FIX: was hardcoded "showcase" -- now the conversation's real intent.
         "content_intent": content_intent,
         "fetched_data": {"leftover": filtered_pool},
     }
@@ -187,15 +151,18 @@ def targeted_refetch(topic_delta: str, current_topic: str,
     scoped_query = f"{combined_topic} {exclude_text}".strip() if exclude_text else combined_topic
 
     from research.fetchers.fetcher_orchestrator import FetcherOrchestrator
-    fetch_input_state = {
-        "core_topic": combined_topic,
-        "fetch_summary": scoped_query,
-        "search_queries": [scoped_query],
-        # FIX: was hardcoded "showcase" here too.
-        "content_intent": content_intent,
-        "selected_sources": ["github", "tavily", "google_trends", "youtube", "hackernews"],
-        "errors": [],
-    }
+    from core.state import create_initial_state
+    import uuid as _uuid
+    # FIX (found by actually running this path -- see orchestration/
+    # dispatch.py's matching fix for the full explanation): was a bare
+    # dict missing "logs", which crashed with KeyError the moment
+    # FetcherOrchestrator.fetch() called add_log() on it.
+    fetch_input_state = create_initial_state(raw_prompt=combined_topic, session_id=str(_uuid.uuid4())[:8])
+    fetch_input_state["core_topic"] = combined_topic
+    fetch_input_state["fetch_summary"] = scoped_query
+    fetch_input_state["search_queries"] = [scoped_query]
+    fetch_input_state["content_intent"] = content_intent
+    fetch_input_state["selected_sources"] = ["github", "tavily", "google_trends", "youtube", "hackernews"]
     fetch_result_state = FetcherOrchestrator().fetch(fetch_input_state)
     return {"fetched_data": fetch_result_state.get("fetched_data", {}), "used_leftover_pool": False}
 

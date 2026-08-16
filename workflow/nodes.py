@@ -1,18 +1,3 @@
-"""
-workflow/nodes.py — thin LangGraph node wrappers
-
-IMPORTANT (see core/state.py::state_without_reducer_keys' docstring for
-the full reasoning): every node below now returns through
-state_without_reducer_keys() instead of the raw `state` dict, EXCEPT
-node_fetch, which is the only node that actually owns the fetched_data
-channel. This isn't stylistic — LangGraph re-runs a channel's reducer
-on every node return that includes that key, so returning the full
-state naively from any other node silently duplicates fetched_data on
-every hop. Confirmed by test, not assumed. If you add a new node here,
-it needs this too, unless it's specifically responsible for writing a
-reducer-owned key (see core/state.py::REDUCER_OWNED_KEYS).
-"""
-
 from core.state import TrendForgeState, add_log, state_without_reducer_keys
 
 
@@ -112,14 +97,6 @@ def node_evaluate_fetch(state: TrendForgeState) -> TrendForgeState:
 
 
 def node_evaluate_generation(state: TrendForgeState) -> TrendForgeState:
-    """
-    FIX (this session): the OR-combination logic previously lived only
-    here, inline. Extracted to workflow.gates.evaluate_generation_combined
-    so orchestration/dispatch.py's generate_more/targeted_refetch retry
-    loop (added to close the validation-gate gap documented in
-    CLAUDE.md) shares this exact logic instead of a second hand-written
-    copy. Log output and retry-count behavior are unchanged.
-    """
     from workflow.gates import evaluate_generation_combined, MAX_GENERATION_RETRIES
 
     result = evaluate_generation_combined(state)
