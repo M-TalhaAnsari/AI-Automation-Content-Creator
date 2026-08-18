@@ -1,54 +1,62 @@
-# AI-Automation-Content-Creator# TrendForge — Architecture Reference
+# TrendForge — Multi-Agent Trend Intelligence & Content Generation
 
-> **Purpose of this document:** Give any developer or AI assistant enough context to work on one feature without reading the whole codebase. When asking an AI for help, share this file + the specific module folder you are working on. Nothing else should be needed.
+> **TrendForge** is an AI-powered pipeline that transforms raw content ideas into high-performing, platform-ready social media posts backed by real-time web research, automated quality validation, and interactive conversational editing.
 
 ---
 
-## 1. What TrendForge Does (One Paragraph)
+## 1. System Overview
 
-TrendForge takes a user's natural-language content idea ("generate 5 instagram posts about docker deployment"), fetches real live data from multiple sources (GitHub, Reddit, Tavily, HackerNews, Google Trends, YouTube, PapersWithCode), selects the best items, generates platform-ready posts using an LLM, and returns structured post objects the frontend renders as a chat conversation. It has a web API with JWT auth, a Redis-backed session system, Postgres for permanent history, and an RQ background job queue for the slow pipeline steps.
+TrendForge takes a user's natural-language content prompt (e.g., *"5 LinkedIn posts on the latest Python 3.13 features"*), gathers real-time data from multi-source APIs (GitHub, Google Trends, HackerNews, Tavily, YouTube, PapersWithCode), selects the highest-signal insights, and crafts structured, platform-optimized posts.
+
+### Core Capabilities
+- **Multi-Source Real-Time Research**: Queries multiple platforms concurrently or by category matching.
+- **LangGraph Retry Loops**: Two-tier evaluation gates (fetch quality floor & post structure/item-kind validation) that loop back and retry until quality thresholds are satisfied.
+- **Unified LLM Gateway**: Centralized API gateway (`llm/client.py`) with Pydantic schema validation and automatic fallback between Google Gemini and Groq (LLaMA-3).
+- **Conversational Refinement**: Direct-dispatch conversational actions for incremental additions (`generate_more`), targeting revisions (`edit_existing`, `targeted_refetch`), and rollbacks (`undo`).
+- **Production Backend**: FastAPI / ASGI web app with JWT authentication, Redis session store, PostgreSQL persistence, and RQ background job queues.
 
 ---
 
 ## 2. System-Level Data Flow
 
 ```
-User message (HTTP POST /chat)
+User message (HTTP POST /chat or CLI)
         │
         ▼
-api/web/app.py          ← JWT auth (verify_identity), rate limiting, session resolution
+api/web/app.py (FastAPI, JWT Auth, Rate Limiting)
         │
-        ├─ INLINE actions (add_constraint, remove_constraint, clarify)
-        │   └── conversation/orchestrator.py → conversation/actions.py → reply immediately
+        ├─ INLINE Actions (add_constraint, remove_constraint, clarify)
+        │   └── orchestration/conversation_agent.py → conversation/actions.py
         │
-        └─ SLOW actions (run_new_request, edit_existing, targeted_refetch)
-            └── RQ job enqueued → api/web/jobs.py (worker process)
+        └─ ASYNC / SLOW Actions (run_new_request, generate_more, edit_existing, targeted_refetch)
+            └── RQ Background Job (api/web/jobs.py)
                     │
                     ▼
-            main.py:run()
+            orchestration/dispatch.py
                     │
-          ┌─────────┼──────────────────────┐
-          ▼         ▼                      ▼
-    understanding  research            generation
-    PromptParser   FetcherOrchestrator  ContentGenerator
-    (Groq, ~200t)  (HTTP APIs, 0t)      (Gemini/Groq, ~8000t)
-          │         │                      │
-          │         └──────────────────────┘
-          │                   │
-          └──────────────────►│
-                         workflow/gates.py
-                         (retry loops, quality checks)
-                              │
-                              ▼
-                      generation/formatter.py
-                              │
-                    ┌─────────┴──────────────┐
-                    ▼                        ▼
-             memory/session_store      memory/redis_session_store
-             (permanent JSON history)  (active Redis+Postgres state)
-                              │
-                              ▼
-                     reply → frontend
+            ┌───────┴───────────────────────────────┐
+            ▼                                       ▼
+     run_new_request                         Interactive Actions
+     (pipeline/generate.py)                  (generate_more, edit_existing,
+            │                                 targeted_refetch, undo)
+            ▼
+ ╔═════════════════════════════════════════════════════════════════════╗
+ ║                     LangGraph Execution Engine                      ║
+ ║                                                                     ║
+ ║   [parse] ──► [route] ──► [fetch] ──► [evaluate_fetch]              ║
+ ║                              ▲               │                      ║
+ ║                              └── (Retry) ────┤                      ║
+ ║                                              ▼ (Proceed)            ║
+ ║   [format] ◄── [evaluate_generation] ◄── [generate]                 ║
+ ║       │                │                     ▲                      ║
+ ║      END               └── (Retry) ──────────┘                      ║
+ ╚═════════════════════════════════════════════════════════════════════╝
+            │
+            ▼
+  memory/session_store & memory/redis_session_store
+            │
+            ▼
+    Structured Post Output & Frontend Response
 ```
 
 ---
