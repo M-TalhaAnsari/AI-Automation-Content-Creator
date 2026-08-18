@@ -83,7 +83,7 @@ Return this exact JSON object: {{"selected_indices": [<1-based integers, {count}
                 user=prompt,
                 model=CONFIG.models.gemini_model,
                 schema=_SelectionResult,
-                temperature=CONFIG.models.routing_temperature,
+                temperature=0.2,
             )
         except (LLMCallFailed, LLMSchemaViolation) as e:
             add_log(state, f"[Generator] Pass 1 Gemini failed ({e}). Trying Groq Fallback...")
@@ -93,10 +93,11 @@ Return this exact JSON object: {{"selected_indices": [<1-based integers, {count}
                     user=prompt,
                     model=CONFIG.models.groq_model_large,
                     schema=_SelectionResult,
-                    temperature=CONFIG.models.routing_temperature,
+                    temperature=0.2,
                     reasoning_effort="low",
                 )
             except (LLMCallFailed, LLMSchemaViolation) as groq_err:
+                add_tokens(state, "content_generation", getattr(groq_err, "tokens_used", 0))
                 add_log(state, f"[Generator] Pass 1 Fallback failed: {groq_err} — Defaulting to top entries.")
 
         if result is not None:
@@ -178,10 +179,11 @@ Return this exact JSON object: {{"selected_indices": [<1-based integers, {count}
                 user=prompt,
                 model=CONFIG.models.gemini_model,
                 schema=GeneratedPostsSchema,
-                temperature=CONFIG.models.generation_temperature,
+                temperature=0.2,
             )
             engine_used = "Gemini"
         except (LLMCallFailed, LLMSchemaViolation) as gemini_error:
+            add_tokens(state, "content_generation", getattr(gemini_error, "tokens_used", 0))
             add_error(state, f"[ContentGenerator] Gemini Service Alert: {gemini_error}")
             add_log(state, "[ContentGenerator] Rerouting operational prompt to Groq (LLaMA3) infrastructure...")
             try:
@@ -190,11 +192,12 @@ Return this exact JSON object: {{"selected_indices": [<1-based integers, {count}
                     user=prompt,
                     model=CONFIG.models.groq_model_large,
                     schema=GeneratedPostsSchema,
-                    temperature=CONFIG.models.generation_temperature,
+                    temperature=0.2,
                     reasoning_effort="low",
                 )
                 engine_used = "Groq-LLaMA3"
             except (LLMCallFailed, LLMSchemaViolation) as groq_error:
+                add_tokens(state, "content_generation", getattr(groq_error, "tokens_used", 0))
                 add_error(state, f"[ContentGenerator] Critical: Fallback engine failed: {groq_error}")
 
         validated = []

@@ -1,61 +1,3 @@
-"""
-llm/client.py — The LLM Gateway (ARCHITECTURE.md §2).
-
-This is the ONLY file in the codebase allowed to import `groq` or
-`google.genai`. Every other file gets an LLM response through
-call_groq() / call_gemini() below — see ARCHITECTURE.md principle #3.
-
-Design decisions baked into this file:
-
-  Schemas are Pydantic models (llm/schemas.py), not hand-written
-  JSON-schema dicts. We generate the provider-facing JSON schema from
-  the model (`schema.model_json_schema()`), but we ALSO always
-  re-validate the raw response against that same model locally before
-  returning — provider-side enforcement is treated as a latency/cost
-  optimization, not a substitute for local validation:
-    - Groq's structured outputs are "strict" (constrained decoding,
-      guaranteed schema-compliant) only on supported models; other
-      models get "best-effort" support, which can still error.
-    - Gemini's response_schema historically has been a subset of
-      OpenAPI/JSON Schema, and keyword support has been a moving
-      target across SDK versions — not something to trust blindly for
-      a constraint like the hashtag "^#" pattern without checking your
-      pinned SDK version actually enforces it.
-  Local validation via model_validate_json() is what actually delivers
-  the "hard error on violation, no prose-repair" contract this module
-  promises — not the provider's own claim of enforcement.
-
-  LLMResult.content is a plain dict (`model.model_dump()`), not the
-  Pydantic instance. Every existing call site in ARCHITECTURE.md §3
-  reads `.get(...)` off `llm_result.content` (e.g.
-  intent_extractor.py's `llm.get("core_topic")`) and is expected to
-  keep doing so — this file changes how validation happens internally,
-  not the shape callers see. That's a deliberate scope limit: making
-  LLMResult.content a typed Pydantic object would be strictly nicer for
-  callers but would ripple into a call-site change in nearly every
-  file §3 touches, which cuts against "make only the change the entry
-  says." Revisit only as a deliberate, separately-scoped follow-up.
-
-  Token tracking: this module returns `tokens_used`; it does NOT call
-  add_tokens() itself. Callers own writing to their own state's token
-  category ("prompt_parsing", "content_generation", etc.) — only the
-  caller knows which category applies.
-
-Retry policy (PERFORMANCE_AND_RESILIENCE.md §2.3): one policy, defined
-once, here — not a try/except per call site. It only covers
-TRANSIENT/SYSTEMIC failures (network errors, timeouts, rate limits,
-5xx). It never retries on LLMSchemaViolation; that's a hard error the
-caller decides how to handle (see agents/02_intent_agent.md's "Must
-NOT do" — no prose-repair cascades).
-
-ASSUMPTION FLAGGED, NOT VERIFIED: `Config.config.CONFIG.models` is
-assumed to expose `groq_api_key` (confirmed — used as-is in the current
-understanding/intent_extractor.py) and `gemini_api_key` (NOT confirmed
-— config/ is listed in ARCHITECTURE.md §6 as not-yet-audited). If the
-real attribute name differs, only `_lazy_genai_client()` below needs
-to change.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -72,7 +14,6 @@ from llm.errors import LLMCallFailed, LLMSchemaViolation
 
 logger = logging.getLogger("trendforge.llm")
 
-# ── Retry policy ──────────────────────────────────────────────
 _MAX_RETRIES = 2
 _BACKOFF_BASE_SECONDS = 1.5
 
@@ -106,8 +47,6 @@ def _lazy_genai_client() -> "genai.Client":
     return _genai_client
 
 
-# ── Public API ─────────────────────────────────────────────────
-
 def call_groq(
     system: str,
     user: str,
@@ -117,21 +56,18 @@ def call_groq(
     temperature: float = 0.0,
     reasoning_effort: str = "low",
 ) -> LLMResult:
-    """
-    The only path to a Groq completion in the codebase.
-
-    `schema`: requests Structured Outputs (`response_format` /
-    json_schema) built from the Pydantic model, then locally
-    re-validates the response against that same model. Raises
-    LLMSchemaViolation on mismatch — see module docstring.
-
-    `tools`: passed straight through for tool-calling call sites
-    (e.g. orchestration/conversation_agent.py, agents/08 — not yet
-    built against this gateway). This function does NOT parse
-    `tool_calls` out of the response for you; that shape isn't spec'd
-    yet. Ask before assuming it.
-    """
-    client = _lazy_groq_client()
+    # FIX: client construction is now wrapped and re-raised as
+    # LLMCallFailed. Previously a construction-time failure (bad api key
+    # format, SDK-internal validation error, etc.) escaped as whatever
+    # raw exception type the SDK produced -- silently breaking this
+    # module's own documented contract that callers only need to catch
+    # (LLMCallFailed, LLMSchemaViolation). Confirmed by test: a caller
+    # using exactly that narrow except clause did not catch a simulated
+    # construction failure before this fix, and does after it.
+    try:
+        client = _lazy_groq_client()
+    except Exception as e:
+        raise LLMCallFailed(f"groq client construction failed: {e}") from e
 
     kwargs: dict[str, Any] = {
         "model": model,
@@ -159,7 +95,7 @@ def call_groq(
 
     raw_text = response.choices[0].message.content
     content: dict[str, Any] | str = (
-        _validate(raw_text, schema, provider="groq") if schema is not None else raw_text
+        _validate(raw_text, schema, provider="groq", tokens_used=tokens_used) if schema is not None else raw_text
     )
 
     return LLMResult(content=content, tokens_used=tokens_used, raw_response=response)
@@ -172,9 +108,11 @@ def call_gemini(
     schema: type[BaseModel] | None = None,
     temperature: float = 0.0,
 ) -> LLMResult:
-    """The only path to a Gemini completion in the codebase. Same
-    validation contract as call_groq — see module docstring."""
-    client = _lazy_genai_client()
+    # FIX: see call_groq's matching fix note.
+    try:
+        client = _lazy_genai_client()
+    except Exception as e:
+        raise LLMCallFailed(f"gemini client construction failed: {e}") from e
 
     config_kwargs: dict[str, Any] = {
         "temperature": temperature,
@@ -190,13 +128,11 @@ def call_gemini(
 
     raw_text = response.text
     content: dict[str, Any] | str = (
-        _validate(raw_text, schema, provider="gemini") if schema is not None else raw_text
+        _validate(raw_text, schema, provider="gemini", tokens_used=tokens_used) if schema is not None else raw_text
     )
 
     return LLMResult(content=content, tokens_used=tokens_used, raw_response=response)
 
-
-# ── Internals ──────────────────────────────────────────────────
 
 def _do_groq_call(client: Groq, kwargs: dict[str, Any]) -> tuple[Any, int]:
     response = client.chat.completions.create(**kwargs)
@@ -219,8 +155,6 @@ def _do_gemini_call(
 
 
 def _call_with_retry(fn, provider: str) -> Any:
-    """Transient/systemic failures only — never called for schema
-    violations, those are raised separately by _validate()."""
     last_exc: Exception | None = None
     for attempt in range(_MAX_RETRIES + 1):
         try:
@@ -241,23 +175,8 @@ def _call_with_retry(fn, provider: str) -> Any:
 
 
 def _is_retryable(exc: Exception) -> bool:
-    """
-    Deliberately duck-typed rather than importing specific exception
-    classes (e.g. groq.RateLimitError, google.genai.errors.APIError):
-    I don't have your pinned SDK versions confirmed, and guessing wrong
-    class names would be worse than this. Both SDKs raise HTTP-style
-    exceptions that carry a status_code (or code) attribute in current
-    versions — retry only on 429 and 5xx, since retrying a 4xx bad
-    request or auth failure can't succeed on attempt 2.
-
-    Worth tightening to exact exception types once versions are
-    pinned — flagging as a known simplification, not a final design.
-    """
     status = getattr(exc, "status_code", None) or getattr(exc, "code", None)
     if status is None:
-        # No status usually means a connection/timeout-level failure
-        # rather than a well-formed API error response — treat as
-        # transient rather than assume it's unretryable.
         return True
     try:
         status = int(status)
@@ -266,18 +185,41 @@ def _is_retryable(exc: Exception) -> bool:
     return status == 429 or 500 <= status < 600
 
 
-def _validate(raw_text: str | None, schema: type[BaseModel], provider: str) -> dict[str, Any]:
+def _validate(raw_text: str | None, schema: type[BaseModel], provider: str, tokens_used: int = 0) -> dict[str, Any]:
+    """
+    FIX: tokens_used is now attached to any LLMSchemaViolation raised
+    here via a plain attribute set on the exception instance AFTER
+    construction (exc.tokens_used = tokens_used), not via a constructor
+    parameter. This is deliberate: llm/errors.py's real source has never
+    been provided, so this avoids assuming a constructor signature it
+    may not have. Dynamic attribute assignment works on any ordinary
+    exception instance regardless of its __init__.
+
+    Before this fix: a schema-violating response still consumed real
+    API tokens (the call succeeded; only local validation failed), but
+    those tokens were completely unrecoverable -- LLMSchemaViolation
+    carried no token information at all, so no caller could account for
+    that spend. Confirmed by test. Callers that want to record spend
+    even on a failed-validation attempt can now do
+    `getattr(exc, "tokens_used", 0)` in their except block. This is
+    opt-in for callers -- no existing call site's behavior changes
+    unless it's updated to read this new attribute.
+    """
     if not raw_text:
-        raise LLMSchemaViolation(
+        exc = LLMSchemaViolation(
             f"{provider} returned no content to validate against {schema.__name__}",
             raw_response=raw_text,
         )
+        exc.tokens_used = tokens_used
+        raise exc
     try:
         validated = schema.model_validate_json(raw_text)
     except ValidationError as e:
-        raise LLMSchemaViolation(
+        exc = LLMSchemaViolation(
             f"{provider} response failed validation against {schema.__name__}: {e}",
             raw_response=raw_text,
             validation_errors=e.errors(),
-        ) from e
+        )
+        exc.tokens_used = tokens_used
+        raise exc from e
     return validated.model_dump()

@@ -83,6 +83,7 @@ def edit_existing(target_posts, instruction: str, last_generated_posts: List[Dic
         try:
             edited, tokens_used = _edit_via_groq(prompt)
         except (LLMCallFailed, LLMSchemaViolation) as e:
+            tokens_used += getattr(e, "tokens_used", 0)
             errors.append(f"groq: {e}")
 
     if not isinstance(edited, list) or len(edited) != len(targeted):
