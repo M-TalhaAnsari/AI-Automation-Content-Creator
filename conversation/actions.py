@@ -77,6 +77,7 @@ def edit_existing(target_posts, instruction: str, last_generated_posts: List[Dic
     try:
         edited, tokens_used = _edit_via_gemini(prompt)
     except (LLMCallFailed, LLMSchemaViolation) as e:
+        tokens_used += getattr(e, "tokens_used", 0)
         errors.append(f"gemini: {e}")
 
     if not isinstance(edited, list) or len(edited) != len(targeted):
@@ -133,12 +134,20 @@ def targeted_refetch(topic_delta: str, current_topic: str,
 
     filtered_pool = [item for item in leftover_fetch_pool if not _matches_exclusion(item)]
     sources_present = sorted({item.get("_source", item.get("source", "unknown")) for item in filtered_pool})
+
+    # FIX (Bug 5): Compute combined_topic early so fake_state_for_gate can
+    # include search_queries. evaluate_fetch_quality reads
+    # state.get("search_queries", []) when building a next_query for retries;
+    # without this key the gate always returned next_query=None from this path.
+    combined_topic = f"{current_topic} {topic_delta}".strip()
+
     fake_state_for_gate = {
         "total_items_fetched": len(filtered_pool),
         "sources_used": sources_present,
         "fetch_retry_count": 0,
         "content_intent": content_intent,
         "fetched_data": {"leftover": filtered_pool},
+        "search_queries": [combined_topic],
     }
 
     from workflow.gates import evaluate_fetch_quality
@@ -147,7 +156,6 @@ def targeted_refetch(topic_delta: str, current_topic: str,
     if result["sufficient"]:
         return {"fetched_data": {"leftover": filtered_pool}, "used_leftover_pool": True}
 
-    combined_topic = f"{current_topic} {topic_delta}".strip()
     exclude_text = " ".join(_sanitize_constraint_for_query(v) for v in exclude_values)
     scoped_query = f"{combined_topic} {exclude_text}".strip() if exclude_text else combined_topic
 

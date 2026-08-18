@@ -1,8 +1,12 @@
+import logging
 from typing import Dict, Any
 from core.state import TrendForgeState
 from Config.config import PLATFORM_SETTINGS
 from llm.client import call_groq
 from llm.schemas import ItemKindCheckSchema
+
+logger = logging.getLogger("trendforge.workflow.gates")
+
 
 
 MIN_ITEMS_FLOOR = 3
@@ -105,9 +109,18 @@ def evaluate_item_kind_match(state: TrendForgeState) -> Dict[str, Any]:
             schema=ItemKindCheckSchema,
             temperature=0.0,
             reasoning_effort="low",
+            max_tokens=300,
         )
         mismatched = result.content.get("mismatched_indices", [])
-    except Exception:
+    except Exception as e:
+        # Log the failure — a bare silent pass here means item-kind validation
+        # permanently stops working and always returns valid=True, causing
+        # off-topic posts to be silently accepted. Fail open (valid=True) is
+        # still the right degradation policy, but it must be visible.
+        logger.warning(
+            "[gates] evaluate_item_kind_match LLM call failed — "
+            "skipping item-kind check for this batch (valid=True assumed): %s", e
+        )
         return {"valid": True, "errors": [], "should_retry": False}
 
     if not mismatched:

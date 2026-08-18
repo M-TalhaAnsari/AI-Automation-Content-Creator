@@ -77,6 +77,13 @@ class FetcherOrchestrator:
                 state.setdefault("errors", []).append(f"Source [{source}] execution failure: {e}")
 
         state["fetched_data"] = fetched
-        state["total_items_fetched"] = total_items
-        state["sources_used"] = sources_used
+        # FIX (Bug 4): total_items_fetched and sources_used were flat-overwritten
+        # on every call. fetched_data is reducer-merged across retries (by
+        # LangGraph's merge_fetched_data); these two companion fields must
+        # accumulate manually to stay consistent. Without this, after any fetch
+        # retry they reflect only the last attempt's numbers, not the cumulative
+        # total — causing formatter/API response to show an undercount.
+        state["total_items_fetched"] = state.get("total_items_fetched", 0) + total_items
+        # dict.fromkeys preserves insertion order while deduplicating across retries.
+        state["sources_used"] = list(dict.fromkeys(state.get("sources_used", []) + sources_used))
         return state
