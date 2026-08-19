@@ -26,6 +26,7 @@ type Props = {
   activeSessionId: string | null;
   isGuest: boolean;
   guestMessagesLeft: number;
+  userEmail?: string | null;
   collapsible?: boolean;
   onSelectSession: (id: string) => void;
   onNewChat: () => void;
@@ -40,6 +41,7 @@ export function AppSidebar({
   activeSessionId,
   isGuest,
   guestMessagesLeft,
+  userEmail,
   collapsible = true,
   onSelectSession,
   onNewChat,
@@ -185,11 +187,13 @@ export function AppSidebar({
                 type="button"
                 className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 rounded-xl px-2 py-2 text-left transition-colors hover:bg-sidebar-accent/60"
               >
-                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary font-mono text-xs text-foreground">
-                  AK
+                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary font-mono text-xs text-foreground uppercase">
+                  {userEmail ? userEmail.slice(0, 2) : "TF"}
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate text-sm text-foreground">Ahmed K.</span>
+                  <span className="block truncate text-sm text-foreground">
+                    {userEmail || "Workspace"}
+                  </span>
                   <span className="block truncate font-mono text-[10px] text-muted-foreground">
                     Pro workspace
                   </span>
@@ -198,7 +202,7 @@ export function AppSidebar({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" side="top" className="w-52">
-              <DropdownMenuItem>
+              <DropdownMenuItem disabled>
                 <Settings className="size-4" />
                 Settings
               </DropdownMenuItem>

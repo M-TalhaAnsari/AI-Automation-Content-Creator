@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
@@ -12,24 +12,34 @@ import { ContextPanel } from "@/components/aiflick/context-panel";
 import { AuthScreen } from "@/components/aiflick/auth-screen";
 import { PostModal } from "@/components/aiflick/post-modal";
 import {
-  DEMO_MESSAGES,
-  DEMO_SESSIONS,
   type ChatMessage,
   type GeneratedPost,
   type Session,
+  formatTimeAgo,
+  normalizeHistoryEntry,
+  rawPostToGeneratedPost,
 } from "@/components/aiflick/data";
-
+import {
+  deleteSession,
+  getMe,
+  getSession,
+  isLoggedIn,
+  listSessions,
+  logout,
+  sendChatAndWait,
+  type MeResponse,
+} from "@/api";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "AIFlick — AI content workspace" },
+      { title: "TrendForge — AI Content Workspace" },
       {
         name: "description",
         content:
-          "AIFlick turns a plain-language idea into platform-ready social posts, grounded in live signals from GitHub, Reddit, HackerNews and Google Trends.",
+          "TrendForge turns plain-language ideas into platform-ready social posts, grounded in live signals from GitHub, Reddit, HackerNews and Google Trends.",
       },
-      { property: "og:title", content: "AIFlick — AI content workspace" },
+      { property: "og:title", content: "TrendForge — AI Content Workspace" },
       {
         property: "og:description",
         content:
@@ -42,14 +52,23 @@ export const Route = createFileRoute("/")({
   component: Workspace,
 });
 
+const POST_PRODUCING_ACTIONS = new Set([
+  "run_new_request",
+  "generate_more",
+  "edit_existing",
+  "targeted_refetch",
+]);
+
 function Workspace() {
-  const [authenticated, setAuthenticated] = useState(true);
+  const [authChecking, setAuthChecking] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [user, setUser] = useState<MeResponse | null>(null);
   const [showAuthScreen, setShowAuthScreen] = useState(false);
   const [authForced, setAuthForced] = useState(false);
 
-  const [sessions, setSessions] = useState<Session[]>(DEMO_SESSIONS);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>("s1");
-  const [messages, setMessages] = useState<ChatMessage[]>(DEMO_MESSAGES);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [lastSnapshot, setLastSnapshot] = useState<ChatMessage[] | null>(null);
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -58,13 +77,19 @@ function Workspace() {
 
   const [platform, setPlatform] = useState("auto");
   const [postCount, setPostCount] = useState(5);
-  const [constraints, setConstraints] = useState(["no emojis", "technical tone"]);
+  const [constraints, setConstraints] = useState<string[]>([]);
+  const [activeSources, setActiveSources] = useState<string[]>([
+    "GitHub",
+    "HackerNews",
+    "Reddit",
+  ]);
 
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [retryCountdown, setRetryCountdown] = useState(0);
   const [guestMessagesLeft, setGuestMessagesLeft] = useState(3);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
   const [activePost, setActivePost] = useState<{
     post: GeneratedPost;
@@ -74,26 +99,81 @@ function Workspace() {
   const [editingPost, setEditingPost] = useState(false);
   const [regeneratingPostId, setRegeneratingPostId] = useState<string | null>(null);
 
+  // Initialize Authentication State on Load
+  useEffect(() => {
+    async function checkAuth() {
+      if (!isLoggedIn()) {
+        setAuthenticated(false);
+        setUser(null);
+        setAuthChecking(false);
+        return;
+      }
+      try {
+        const me = await getMe();
+        setUser(me);
+        setAuthenticated(true);
+      } catch {
+        logout();
+        setAuthenticated(false);
+        setUser(null);
+      } finally {
+        setAuthChecking(false);
+      }
+    }
+    checkAuth();
+  }, []);
+
+  // Fetch Session History when Authenticated
+  useEffect(() => {
+    if (authenticated) {
+      refreshSessions();
+    } else {
+      setSessions([]);
+    }
+  }, [authenticated]);
+
+  // Handle Retry Countdown Timer for 429 Rate Limits
+  useEffect(() => {
+    if (retryCountdown <= 0) {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+      return;
+    }
+    countdownRef.current = setInterval(() => {
+      setRetryCountdown((s) => {
+        if (s <= 1) {
+          if (countdownRef.current) clearInterval(countdownRef.current);
+          setError("");
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, [retryCountdown]);
+
+  async function refreshSessions() {
+    if (!isLoggedIn()) return;
+    try {
+      const items = await listSessions();
+      const mapped: Session[] = items.map((item) => ({
+        id: item.session_id,
+        title: item.title || "Untitled chat",
+        updatedLabel: formatTimeAgo(item.last_active_at || item.created_at),
+      }));
+      setSessions(mapped);
+    } catch (err: any) {
+      if (err?.status === 401) {
+        setAuthenticated(false);
+        setUser(null);
+        logout();
+      }
+    }
+  }
+
   const activeTitle =
     sessions.find((s) => s.id === activeSessionId)?.title ?? "New chat";
-
-  function updatePost(postId: string, updater: (post: GeneratedPost) => GeneratedPost) {
-    setMessages((prev) =>
-      prev.map((message) =>
-        message.posts
-          ? {
-              ...message,
-              posts: message.posts.map((p) => (p.id === postId ? updater(p) : p)),
-            }
-          : message,
-      ),
-    );
-    setActivePost((current) =>
-      current && current.post.id === postId
-        ? { ...current, post: updater(current.post) }
-        : current,
-    );
-  }
 
   function handleViewPost(post: GeneratedPost, index: number) {
     setActivePost({ post, index });
@@ -101,121 +181,261 @@ function Workspace() {
   }
 
   function handleApplyEdit(postId: string, instruction: string) {
-    setLastSnapshot(messages);
     setEditingPost(true);
-    window.setTimeout(() => {
-      updatePost(postId, (post) => ({
-        ...post,
-        hook:
-          instruction.toLowerCase().includes("short") && post.hook.length > 48
-            ? `${post.hook.slice(0, 46).trimEnd()}.`
-            : post.hook,
-        edits: [
-          ...(post.edits ?? []),
-          { id: crypto.randomUUID(), instruction, atLabel: "just now" },
-        ],
-      }));
-      setEditingPost(false);
-      toast("Post updated", { description: `“${instruction}”` });
-    }, 1100);
+    const postIndex = activePost?.index ?? 1;
+    setModalOpen(false);
+    handleSend(`For post ${postIndex}: ${instruction}`);
+    setEditingPost(false);
   }
 
-  function handleRegeneratePost(post: GeneratedPost) {
-    setLastSnapshot(messages);
+  function handleRegeneratePost(post: GeneratedPost, index = 1) {
     setRegeneratingPostId(post.id);
-    window.setTimeout(() => {
-      updatePost(post.id, (p) => ({
-        ...p,
-        edits: [
-          ...(p.edits ?? []),
-          { id: crypto.randomUUID(), instruction: "regenerated", atLabel: "just now" },
-        ],
-      }));
-      setRegeneratingPostId(null);
-      toast("Regenerated with fresh signals");
-    }, 1200);
+    handleSend(`Please regenerate post ${index} with fresh signals and hook.`);
+    setRegeneratingPostId(null);
   }
 
-
-  function handleSend(text?: string) {
+  async function handleSend(text?: string) {
     const value = (text ?? input).trim();
     if (!value || sending) return;
 
     setLastSnapshot(messages);
     setMessages((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), role: "user", content: value },
+      { id: `user-${Date.now()}`, role: "user", content: value },
     ]);
     setInput("");
     setError("");
     setSending(true);
 
-    if (!authenticated) setGuestMessagesLeft((n) => Math.max(0, n - 1));
+    if (!authenticated) {
+      setGuestMessagesLeft((n) => Math.max(0, n - 1));
+    }
 
-    window.setTimeout(() => {
-      setSending(false);
+    try {
+      const chatResult = await sendChatAndWait({
+        message: value,
+        session_id: activeSessionId,
+        platform: platform !== "auto" ? platform : undefined,
+        posts: postCount,
+      });
+
+      const nextSessionId = chatResult.session_id;
+      setActiveSessionId(nextSessionId);
+
+      // Fetch refreshed session details for latest posts, active constraints & sources
+      let postsForMessage: GeneratedPost[] | undefined;
+      try {
+        const sessionView = await getSession(nextSessionId);
+        if (sessionView.active_constraints) {
+          const formattedConstraints = sessionView.active_constraints
+            .map((c) =>
+              typeof c === "string" ? c : c.value || `${c.type || ""}: ${c.value || ""}`
+            )
+            .filter(Boolean);
+          setConstraints(formattedConstraints);
+        }
+
+        if (sessionView.last_platform && platform === "auto") {
+          setPlatform(sessionView.last_platform);
+        }
+
+        if (
+          POST_PRODUCING_ACTIONS.has(chatResult.action) &&
+          sessionView.last_generated_posts &&
+          sessionView.last_generated_posts.length > 0
+        ) {
+          postsForMessage = sessionView.last_generated_posts.map((p, idx) =>
+            rawPostToGeneratedPost(p, sessionView.last_platform || platform, idx + 1)
+          );
+
+          // Extract active sources used
+          const sourcesUsed = new Set<string>();
+          postsForMessage.forEach((p) => {
+            if (p.sourceLabel) sourcesUsed.add(p.sourceLabel);
+          });
+          if (sourcesUsed.size > 0) {
+            setActiveSources(Array.from(sourcesUsed));
+          }
+        }
+      } catch {
+        // Non-fatal — reply text will still render
+      }
+
       setMessages((prev) => [
         ...prev,
         {
-          id: crypto.randomUUID(),
+          id: `assistant-${Date.now()}`,
           role: "assistant",
-          content:
-            "Here's what I found. I pulled live items from **GitHub** and **HackerNews**, ranked them, and drafted the posts below. Ask me to change any of them and I'll rewrite in place.",
-          posts: (DEMO_MESSAGES[1]?.posts ?? []).map((p) => ({
-            ...p,
-            id: crypto.randomUUID(),
-            platform: platform === "auto" ? p.platform : platform,
-            edits: [],
-          })),
+          content: chatResult.reply || "Done.",
+          posts: postsForMessage,
         },
-
       ]);
-    }, 1400);
+
+      if (authenticated) {
+        refreshSessions();
+      }
+    } catch (err: any) {
+      if (err?.code === "signup_required") {
+        setAuthForced(true);
+        setShowAuthScreen(true);
+        // Remove optimistic user bubble
+        setMessages((prev) => prev.slice(0, -1));
+      } else if (err?.status === 429) {
+        setError(`Rate limited — please try again in ${err.retryAfterSeconds || 10}s`);
+        setRetryCountdown(err.retryAfterSeconds || 10);
+      } else {
+        setError(err?.detail || err?.message || "Failed to process request");
+        if (err?.status === 401) {
+          setAuthenticated(false);
+          setUser(null);
+        }
+      }
+    } finally {
+      setSending(false);
+    }
   }
 
   function handleNewChat() {
     setActiveSessionId(null);
     setMessages([]);
+    setConstraints([]);
     setLastSnapshot(null);
     setError("");
   }
 
-  function handleSelectSession(id: string) {
+  async function handleSelectSession(id: string) {
+    setError("");
     setActiveSessionId(id);
-    setMessages(id === "s1" ? DEMO_MESSAGES : []);
     setLastSnapshot(null);
-    setError("");
+    try {
+      const sessionView = await getSession(id);
+      if (sessionView.last_platform) {
+        setPlatform(sessionView.last_platform);
+      }
+
+      if (sessionView.active_constraints) {
+        const formattedConstraints = sessionView.active_constraints
+          .map((c) =>
+            typeof c === "string" ? c : c.value || `${c.type || ""}: ${c.value || ""}`
+          )
+          .filter(Boolean);
+        setConstraints(formattedConstraints);
+      }
+
+      const generatedPosts = (sessionView.last_generated_posts || []).map((p, idx) =>
+        rawPostToGeneratedPost(p, sessionView.last_platform || "instagram", idx + 1)
+      );
+
+      if (generatedPosts.length > 0) {
+        const sourcesUsed = new Set<string>();
+        generatedPosts.forEach((p) => {
+          if (p.sourceLabel) sourcesUsed.add(p.sourceLabel);
+        });
+        if (sourcesUsed.size > 0) {
+          setActiveSources(Array.from(sourcesUsed));
+        }
+      }
+
+      const chatMessages: ChatMessage[] = [];
+      const history = sessionView.message_history || [];
+      for (const entry of history) {
+        const normalized = normalizeHistoryEntry(entry);
+        if (normalized) {
+          chatMessages.push(normalized);
+        }
+      }
+
+      if (generatedPosts.length > 0) {
+        const lastAssistantIndex = chatMessages.findLastIndex((m) => m.role === "assistant");
+        if (lastAssistantIndex !== -1) {
+          chatMessages[lastAssistantIndex].posts = generatedPosts;
+        } else if (sessionView.last_output) {
+          chatMessages.push({
+            id: `msg-${Date.now()}`,
+            role: "assistant",
+            content: sessionView.last_output,
+            posts: generatedPosts,
+          });
+        }
+      }
+
+      setMessages(chatMessages);
+    } catch (err: any) {
+      setError(err?.detail || err?.message || "Failed to load session history");
+    }
   }
 
-  function handleDeleteSession(id: string) {
-    setSessions((prev) => prev.filter((s) => s.id !== id));
-    if (id === activeSessionId) handleNewChat();
-    toast("Chat deleted");
+  async function handleDeleteSession(id: string) {
+    try {
+      await deleteSession(id);
+      setSessions((prev) => prev.filter((s) => s.id !== id));
+      if (id === activeSessionId) {
+        handleNewChat();
+      }
+      toast("Chat deleted");
+    } catch (err: any) {
+      toast.error(err?.detail || err?.message || "Failed to delete chat session");
+    }
   }
 
   function handleUndo() {
     if (!lastSnapshot) return;
     setMessages(lastSnapshot);
     setLastSnapshot(null);
+    handleSend("undo");
     toast("Reverted to the previous state");
   }
 
-  function handleClearChat() {
-    setMessages([]);
-    setLastSnapshot(null);
+  async function handleClearChat() {
+    if (activeSessionId) {
+      try {
+        await deleteSession(activeSessionId);
+      } catch {
+        // Continue clearing locally
+      }
+    }
+    handleNewChat();
+    if (authenticated) {
+      refreshSessions();
+    }
     toast("Chat cleared");
+  }
+
+  function handleLogout() {
+    logout();
+    setAuthenticated(false);
+    setUser(null);
+    setSessions([]);
+    handleNewChat();
+    toast("Logged out");
+  }
+
+  function handleAuthenticated() {
+    setAuthenticated(true);
+    setShowAuthScreen(false);
+    setAuthForced(false);
+    getMe().then((me) => setUser(me)).catch(() => {});
+    refreshSessions();
+    toast("Signed in successfully");
+  }
+
+  if (authChecking) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background text-sm text-muted-foreground">
+        Loading workspace…
+      </div>
+    );
   }
 
   if (showAuthScreen) {
     return (
       <AuthScreen
         forced={authForced}
-        onAuthenticated={() => {
-          setAuthenticated(true);
+        onAuthenticated={handleAuthenticated}
+        onCancel={() => {
           setShowAuthScreen(false);
           setAuthForced(false);
         }}
-        onCancel={() => setShowAuthScreen(false)}
       />
     );
   }
@@ -238,6 +458,7 @@ function Workspace() {
                   activeSessionId={activeSessionId}
                   isGuest={!authenticated}
                   guestMessagesLeft={guestMessagesLeft}
+                  userEmail={user?.email}
                   onSelectSession={handleSelectSession}
                   onNewChat={handleNewChat}
                   onDeleteSession={handleDeleteSession}
@@ -245,11 +466,7 @@ function Workspace() {
                     setAuthForced(false);
                     setShowAuthScreen(true);
                   }}
-                  onLogout={() => {
-                    setAuthenticated(false);
-                    setSessions([]);
-                    handleNewChat();
-                  }}
+                  onLogout={handleLogout}
                   onCollapse={() => setSidebarOpen(false)}
                 />
               </div>
@@ -268,6 +485,7 @@ function Workspace() {
               activeSessionId={activeSessionId}
               isGuest={!authenticated}
               guestMessagesLeft={guestMessagesLeft}
+              userEmail={user?.email}
               onSelectSession={(id) => {
                 handleSelectSession(id);
                 setMobileNavOpen(false);
@@ -283,9 +501,7 @@ function Workspace() {
                 setMobileNavOpen(false);
               }}
               onLogout={() => {
-                setAuthenticated(false);
-                setSessions([]);
-                handleNewChat();
+                handleLogout();
                 setMobileNavOpen(false);
               }}
               collapsible={false}
@@ -299,7 +515,6 @@ function Workspace() {
             sidebarOpen={sidebarOpen}
             onOpenSidebar={() => setSidebarOpen(true)}
             onOpenMobileNav={() => setMobileNavOpen(true)}
-
             contextOpen={contextOpen}
             onToggleContext={() => setContextOpen((v) => !v)}
             platform={platform}
@@ -339,7 +554,7 @@ function Workspace() {
               onSuggestion={(prompt) => handleSend(prompt)}
               onViewPost={handleViewPost}
               onEditPost={handleViewPost}
-              onRegeneratePost={(post) => handleRegeneratePost(post)}
+              onRegeneratePost={(post, index) => handleRegeneratePost(post, index)}
               regeneratingPostId={regeneratingPostId}
             />
 
@@ -349,7 +564,7 @@ function Workspace() {
                   platform={platform}
                   postCount={postCount}
                   constraints={constraints}
-                  activeSources={["GitHub", "HackerNews", "Reddit"]}
+                  activeSources={activeSources}
                 />
               )}
             </AnimatePresence>
@@ -363,13 +578,12 @@ function Workspace() {
           onOpenChange={setModalOpen}
           onApplyEdit={handleApplyEdit}
           onRegenerate={(postId) => {
-            if (activePost) handleRegeneratePost(activePost.post);
+            if (activePost) handleRegeneratePost(activePost.post, activePost.index);
             else void postId;
           }}
           editing={editingPost}
         />
       </div>
-
     </TooltipProvider>
   );
 }

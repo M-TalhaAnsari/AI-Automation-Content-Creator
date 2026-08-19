@@ -5,6 +5,9 @@ import secrets
 import time
 from typing import Dict, Optional
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import bcrypt
 import jwt
 from fastapi import Header, HTTPException

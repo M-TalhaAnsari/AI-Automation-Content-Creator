@@ -9,7 +9,7 @@ from rq import Queue
 from rq.job import Job
 from rq.exceptions import NoSuchJobError
 
-from conversation.orchestrator import process_turn
+from orchestration.conversation_agent import process_turn
 from memory.redis_session_store import (
     REDIS_URL,
     delete_conversation,
@@ -55,7 +55,9 @@ app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "http://localhost:8080",
         "http://localhost:5173",
+        "http://localhost:3000",
     ],
     allow_credentials=True,
     allow_methods=["*"],

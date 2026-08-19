@@ -13,5 +13,5 @@ What lives here:
     actions.py      -- edit_existing(), add_constraint(), remove_constraint(), targeted_refetch()
                       Pure action implementations, no LLM routing logic here.
 """
-from conversation.orchestrator import process_turn, maybe_summarize, update_last_tool_result
+from orchestration.conversation_agent import process_turn, maybe_summarize, update_last_tool_result
 from conversation.actions import edit_existing, add_constraint, remove_constraint, targeted_refetch

@@ -129,3 +129,90 @@ export const DEMO_MESSAGES: ChatMessage[] = [
     ],
   },
 ];
+
+export function deriveSourceLabel(url: string, sourceHint?: string): string {
+  if (sourceHint) {
+    const hint = sourceHint.toLowerCase();
+    if (hint.includes("github")) return "GitHub";
+    if (hint.includes("hackernews") || hint.includes("hacker_news") || hint.includes("hn")) return "HackerNews";
+    if (hint.includes("reddit")) return "Reddit";
+    if (hint.includes("youtube")) return "YouTube";
+    if (hint.includes("trend")) return "Google Trends";
+    if (hint.includes("tavily")) return "Tavily";
+    if (hint.includes("paper")) return "PapersWithCode";
+  }
+
+  if (!url) return "Web";
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    if (hostname.includes("github.com")) return "GitHub";
+    if (hostname.includes("ycombinator.com")) return "HackerNews";
+    if (hostname.includes("reddit.com")) return "Reddit";
+    if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) return "YouTube";
+    if (hostname.includes("google.com")) return "Google Trends";
+    if (hostname.includes("arxiv.org") || hostname.includes("paperswithcode.com")) return "PapersWithCode";
+    return hostname.replace(/^www\./, "");
+  } catch {
+    return "Source";
+  }
+}
+
+export function rawPostToGeneratedPost(
+  raw: Record<string, any>,
+  fallbackPlatform = "instagram",
+  index = 1
+): GeneratedPost {
+  const url = raw.link || raw.url || raw.source_url || "";
+  const sourceLabel = deriveSourceLabel(url, raw._source || raw.source);
+
+  return {
+    id: raw.id || `post-${raw.number ?? index}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    platform: raw.platform || (fallbackPlatform !== "auto" ? fallbackPlatform : "instagram"),
+    title: raw.title || raw.name || `Post ${index}`,
+    hook: raw.hook || (Array.isArray(raw.summary) ? raw.summary[0] : raw.summary) || "",
+    caption: raw.caption || (Array.isArray(raw.summary) ? raw.summary.join("\n\n") : raw.summary) || "",
+    hashtags: Array.isArray(raw.hashtags) ? raw.hashtags : [],
+    sourceUrl: url,
+    sourceLabel,
+    edits: Array.isArray(raw.edits) ? raw.edits : [],
+  };
+}
+
+export function formatTimeAgo(isoDateString?: string | null): string {
+  if (!isoDateString) return "just now";
+  try {
+    const date = new Date(isoDateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHours = Math.floor(diffMin / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMin < 1) return "just now";
+    if (diffMin < 60) return `${diffMin}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  } catch {
+    return "recently";
+  }
+}
+
+export function normalizeHistoryEntry(
+  entry: Record<string, any>,
+  posts?: GeneratedPost[]
+): ChatMessage | null {
+  if (!entry || typeof entry !== "object") return null;
+  if (entry.role === "tool") return null; // internal dispatch bookkeeping
+  if (!entry.content && !posts?.length) return null;
+
+  return {
+    id: entry.id || `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    role: entry.role === "user" ? "user" : "assistant",
+    content: entry.content || "",
+    posts,
+  };
+}
+

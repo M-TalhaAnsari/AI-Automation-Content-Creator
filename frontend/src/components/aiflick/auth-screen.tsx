@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { motion } from "motion/react";
-import { Flame, X } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { AlertCircle, Flame, Loader2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { login, signup } from "@/api";
 
 type Props = {
   forced: boolean;
@@ -14,6 +15,36 @@ type Props = {
 
 export function AuthScreen({ forced, onAuthenticated, onCancel }: Props) {
   const [mode, setMode] = useState<"login" | "signup">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (loading) return;
+
+    setError(null);
+    setLoading(true);
+
+    try {
+      if (mode === "login") {
+        await login({ email: email.trim(), password });
+      } else {
+        await signup({ email: email.trim(), password });
+      }
+      onAuthenticated();
+    } catch (err: any) {
+      setError(err?.detail || err?.message || "Authentication failed. Please check your credentials.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleSwitchMode(newMode: "login" | "signup") {
+    setMode(newMode);
+    setError(null);
+  }
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
@@ -48,13 +79,21 @@ export function AuthScreen({ forced, onAuthenticated, onCancel }: Props) {
             : "Your chats and generated posts stay saved to your account."}
         </p>
 
-        <form
-          className="mt-6 space-y-3.5"
-          onSubmit={(e) => {
-            e.preventDefault();
-            onAuthenticated();
-          }}
-        >
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-4 flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive"
+            >
+              <AlertCircle className="size-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <form className="mt-6 space-y-3.5" onSubmit={handleSubmit}>
           <div className="space-y-1.5">
             <Label htmlFor="email" className="label-mono">
               Email
@@ -63,6 +102,9 @@ export function AuthScreen({ forced, onAuthenticated, onCancel }: Props) {
               id="email"
               type="email"
               required
+              disabled={loading}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
               placeholder="you@company.com"
               className="h-10 rounded-xl border-border/80 bg-surface-raised/60"
@@ -76,6 +118,9 @@ export function AuthScreen({ forced, onAuthenticated, onCancel }: Props) {
               id="password"
               type="password"
               required
+              disabled={loading}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               autoComplete={mode === "login" ? "current-password" : "new-password"}
               placeholder="••••••••"
               className="h-10 rounded-xl border-border/80 bg-surface-raised/60"
@@ -83,9 +128,19 @@ export function AuthScreen({ forced, onAuthenticated, onCancel }: Props) {
           </div>
           <Button
             type="submit"
+            disabled={loading}
             className="h-10 w-full rounded-xl bg-primary text-primary-foreground shadow-ember hover:bg-primary-hover"
           >
-            {mode === "login" ? "Log in" : "Create account"}
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="size-4 animate-spin" />
+                {mode === "login" ? "Logging in…" : "Creating account…"}
+              </span>
+            ) : mode === "login" ? (
+              "Log in"
+            ) : (
+              "Create account"
+            )}
           </Button>
         </form>
 
@@ -93,8 +148,9 @@ export function AuthScreen({ forced, onAuthenticated, onCancel }: Props) {
           {mode === "login" ? "No account yet?" : "Already have an account?"}{" "}
           <button
             type="button"
-            onClick={() => setMode(mode === "login" ? "signup" : "login")}
-            className="font-medium text-primary hover:text-primary-hover"
+            disabled={loading}
+            onClick={() => handleSwitchMode(mode === "login" ? "signup" : "login")}
+            className="font-medium text-primary hover:text-primary-hover disabled:opacity-50"
           >
             {mode === "login" ? "Sign up" : "Log in"}
           </button>
@@ -103,8 +159,9 @@ export function AuthScreen({ forced, onAuthenticated, onCancel }: Props) {
         {!forced && (
           <button
             type="button"
+            disabled={loading}
             onClick={onCancel}
-            className="mt-3 w-full text-center text-xs text-muted-foreground hover:text-foreground"
+            className="mt-3 w-full text-center text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
           >
             Continue as guest
           </button>
@@ -113,3 +170,4 @@ export function AuthScreen({ forced, onAuthenticated, onCancel }: Props) {
     </div>
   );
 }
+
