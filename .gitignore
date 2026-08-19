@@ -55,4 +55,4 @@ dist-ssr
 *.txt
 
 
-*/sessions.json
+**/sessions.json
