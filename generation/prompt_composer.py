@@ -29,11 +29,13 @@ def compose_prompt(state: dict) -> str:
     already_covered = state.get("already_covered", [])
 
     data_sections = []
+    total_items_count = sum(len(items) for items in fetched.values())
+    per_source_cap = 6 if total_items_count <= 20 else 4
     for source, items in fetched.items():
         if not items:
             continue
         lines = [f"[{source.upper()}]"]
-        for item in items[:5]:
+        for item in items[:per_source_cap]:
             title = item.get("title", item.get("name", ""))
             url = item.get("link", "")
             desc = item.get("summary", item.get("description", item.get("snippet", "")))
@@ -43,7 +45,7 @@ def compose_prompt(state: dict) -> str:
                 title = title[:97].rstrip() + "..."
             stars = item.get("stars", "")
             star_str = f" (Rating/Stars: {stars})" if stars else ""
-            lines.append(f"  - {title}{star_str}: {str(desc)[:500]} | {url}")
+            lines.append(f"  - {title}{star_str}: {str(desc)[:350]} | {url}")
         data_sections.append("\n".join(lines))
     data_block = "\n\n".join(data_sections) if data_sections else f"Topic: {topic} (No live web data available — use your internal knowledge base)"
 
@@ -111,11 +113,12 @@ def compose_prompt(state: dict) -> str:
     {correction_block}
 
     **CORE INSTRUCTIONS:**
-    1. **Analyze User Intent:** Completely read the raw request above. If they asked to include specific lines like "This docker's concept will never fail you interview", build the post architecture specifically around that constraint.
-    2. {item_instruction}
-    3. **Structured Caption Layout:** Write clean, spaced, highly comprehensive paragraphs. Do not skip engineering details to save space.
-    4. **Enforce JSON Array Boundaries:** Do NOT print hashtags inside the "caption" text field. Put all generated tags cleanly inside the "hashtags" array.
-    5. **MANDATORY:** You must fill out exactly {post_count} post slots matching the JSON structure.
+    1. **Curate & Prioritize Highest-Signal Items:** Thoroughly review all the real research items provided above. Select the top {post_count} most compelling, high-signal, and relevant items that best answer the user request. Generate exactly {post_count} posts corresponding to your top selections.
+    2. **Analyze User Intent:** Completely read the raw request above. If they asked to include specific lines like "This docker's concept will never fail you interview", build the post architecture specifically around that constraint.
+    3. {item_instruction}
+    4. **Structured Caption Layout:** Write clean, spaced, highly comprehensive paragraphs. Do not skip engineering details to save space.
+    5. **Enforce JSON Array Boundaries:** Do NOT print hashtags inside the "caption" text field. Put all generated tags cleanly inside the "hashtags" array.
+    6. **MANDATORY:** You must fill out exactly {post_count} post slots matching the JSON structure.
 
     Return your exact output using this JSON template — fill all {post_count} slots cleanly:
     {{

@@ -76,7 +76,8 @@ def interactive_mode(verbose: bool = False):
                              prompt=prompt, platform=platform, posts=posts)
 
             update_last_tool_result(conversation, conversation.get("last_output") or "")
-            maybe_summarize(conversation)
+            import threading
+            threading.Thread(target=maybe_summarize, args=(conversation,), daemon=True).start()
 
         except KeyboardInterrupt:
             print("\n  Goodbye!")

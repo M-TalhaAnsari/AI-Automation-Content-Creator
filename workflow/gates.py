@@ -213,13 +213,38 @@ def evaluate_post_validation(state: TrendForgeState) -> Dict[str, Any]:
     }
 
 
+# ─────────────────────────────────────────────
+# FORMAL GATE REGISTRY
+# ─────────────────────────────────────────────
+# Contract: Each registered gate is a callable (TrendForgeState) -> Dict[str, Any]
+# returning {"valid": bool, "errors": list, "should_retry": bool}.
+GENERATION_GATE_REGISTRY = [
+    ("post_validation", evaluate_post_validation),
+    ("item_kind", evaluate_item_kind_match),
+]
+
+
 def evaluate_generation_combined(state: TrendForgeState) -> Dict[str, Any]:
-    v1 = evaluate_post_validation(state)
-    v2 = evaluate_item_kind_match(state)
+    all_valid = True
+    all_errors = []
+    should_retry = False
+    details: Dict[str, list] = {}
+
+    for name, gate_fn in GENERATION_GATE_REGISTRY:
+        res = gate_fn(state)
+        gate_errors = res.get("errors", [])
+        details[f"{name}_errors"] = gate_errors
+        if not res.get("valid", True):
+            all_valid = False
+        if res.get("should_retry", False):
+            should_retry = True
+        all_errors.extend(gate_errors)
+
     return {
-        "valid": v1["valid"] and v2["valid"],
-        "errors": v1["errors"] + v2["errors"],
-        "should_retry": v1["should_retry"] or v2["should_retry"],
-        "post_validation_errors": v1["errors"],
-        "item_kind_errors": v2["errors"],
-    }
+        "valid": all_valid,
+        "errors": all_errors,
+        "should_retry": should_retry,
+        "post_validation_errors": details.get("post_validation_errors", []),
+        "item_kind_errors": details.get("item_kind_errors", []),
+        **details,
+    }

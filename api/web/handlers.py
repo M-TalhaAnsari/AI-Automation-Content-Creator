@@ -19,5 +19,9 @@ def finalize_turn(
     in place. Returns the reply string the caller should send back."""
     dispatch.dispatch_action(action, args, conversation, verbose, prompt=prompt, platform=platform, posts=posts)
     update_last_tool_result(conversation, conversation.get("last_output") or "")
-    maybe_summarize(conversation)
+    
+    # Run conversation summarization in background daemon thread so user receives reply immediately
+    import threading
+    threading.Thread(target=maybe_summarize, args=(conversation,), daemon=True).start()
+    
     return conversation.get("last_output") or ""
