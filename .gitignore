@@ -50,3 +50,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+*.txt
+
+
+*/sessions.json

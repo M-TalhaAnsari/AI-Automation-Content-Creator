@@ -35,7 +35,7 @@ class ShowcaseIntent(BaseIntentStrategy):
                 "Each slot must focus entirely on ONE individual project implementation. Every single caption must end with a highly "
                 "specific comment-bait CTA forcing engineers to comment a keyword to receive the repository link in their DMs."
             )
-            link_guide = "MUST be a real URL copied exactly from the source data above — never empty for showcase mode, never invented"
+            link_guide = "MUST be a real URL copied exactly from the source data above — if you describe a GitHub project, this MUST be a valid github.com URL from the sources. Never invented."
             caption_guide = (
                 "Full multi-paragraph caption structured with: Project Overview, Tech Stack breakdown, Core System Architecture, "
                 "and a high-conversion Call-To-Action explicitly inviting users to comment a key word to get the GitHub link auto-sent to their DMs. Do not output hashtags here."

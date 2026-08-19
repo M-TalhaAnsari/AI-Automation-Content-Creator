@@ -2049,6 +2049,106 @@
           "link": ""
         }
       ]
+    },
+    {
+      "session_id": "4c6ad21e",
+      "timestamp": "2026-08-19T16:50:55.689055",
+      "prompt": "5 Instagram posts about Docker deployment",
+      "topic": "Docker deployment",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 8454,
+      "errors": [],
+      "posts": [
+        {
+          "title": "Portainer Enterprise-Grade Container Management",
+          "link": "https://github.com/portainer/portainer"
+        },
+        {
+          "title": "Dockge Reactive Docker Compose Stack Manager",
+          "link": "https://github.com/louislam/dockge"
+        },
+        {
+          "title": "Yacht Decentralized Server App Store",
+          "link": "https://github.com/Yacht-sh/Yacht"
+        },
+        {
+          "title": "DPanel Lightweight Docker & Podman Panel",
+          "link": "https://github.com/donknap/dpanel"
+        },
+        {
+          "title": "JupyterHub Multi-User Docker Environment",
+          "link": "https://github.com/jupyterhub/jupyterhub-deploy-docker"
+        }
+      ]
+    },
+    {
+      "session_id": "2209e15f",
+      "timestamp": "2026-08-19T16:51:24.070231",
+      "prompt": "5 Instagram posts about docker deployment?",
+      "topic": "docker deployment",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 5,
+      "total_tokens": 9444,
+      "errors": [],
+      "posts": [
+        {
+          "title": "The Ultimate Curated Blueprint for Production-Grade Docker Architectures",
+          "link": "https://github.com/veggiemonk/awesome-docker"
+        },
+        {
+          "title": "Next-Gen AI-Driven Container Workflows in 2025",
+          "link": "https://medium.com/@sumonigupta/why-i-am-excited-about-docker-in-2025-ba028badc2ca"
+        },
+        {
+          "title": "The \u20ac3.79/mo High-Performance Docker VPS Setup",
+          "link": "https://dev.to/code42cate/5-cheap-ways-to-deploy-docker-containers-2025-edition-3lak"
+        },
+        {
+          "title": "Zero-Downtime Continuous Deployment Pipeline",
+          "link": "https://www.prioxis.com/blog/docker-use-cases"
+        },
+        {
+          "title": "The Ultimate Reactive Compose Stack Controller",
+          "link": "https://github.com/louislam/dockge"
+        }
+      ]
+    },
+    {
+      "session_id": "ae55269a",
+      "timestamp": "2026-08-19T16:53:31.922577",
+      "prompt": "I need 3 beginner friendly project of AI engineer that i can upload on Instagram...",
+      "topic": "AI engineer projects",
+      "platform": "instagram",
+      "sources_used": [
+        "github",
+        "tavily"
+      ],
+      "posts_count": 3,
+      "total_tokens": 8283,
+      "errors": [],
+      "posts": [
+        {
+          "title": "Multi-Agent AI Data Science Team",
+          "link": "https://github.com/business-science/ai-data-science-team"
+        },
+        {
+          "title": "Production-Grade RAG Engine",
+          "link": "https://github.com/KalyanKS-NLP/rag-zero-to-hero-guide"
+        },
+        {
+          "title": "Enterprise LLM-Powered Document Parser",
+          "link": "https://github.com/KalyanKS-NLP/llm-engineer-toolkit"
+        }
+      ]
     }
   ]
 }
