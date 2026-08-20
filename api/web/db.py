@@ -2,8 +2,11 @@
 import os
 from typing import Optional, List, Dict, Any
 
+from dotenv import load_dotenv
 import psycopg
 from psycopg.types.json import Json
+
+load_dotenv()
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
@@ -78,9 +81,39 @@ def _conn():
     return psycopg.connect(DATABASE_URL)
 
 
+def ensure_default_visual_profile(conn=None) -> None:
+    """Seed system default brand visual profile if it doesn't exist."""
+    seed_sql = """
+    INSERT INTO visual_profiles (
+        id, user_id, name, description, color_palette, typography_style,
+        visual_mood, default_layout, platform_overrides, is_default, created_at, updated_at
+    ) VALUES (
+        'default-trendforge-profile',
+        NULL,
+        'TrendForge Standard',
+        'Default informative & clean visual identity',
+        '{"primary": "#3B82F6", "secondary": "#10B981", "accent": "#F59E0B", "background": "#0F172A", "text": "#FFFFFF"}'::jsonb,
+        'minimal-sans',
+        'clean-informative',
+        'minimal_clean',
+        '{}'::jsonb,
+        TRUE,
+        now(),
+        now()
+    )
+    ON CONFLICT (id) DO NOTHING;
+    """
+    if conn:
+        conn.execute(seed_sql)
+    else:
+        with _conn() as c:
+            c.execute(seed_sql)
+
+
 def init_db() -> None:
     with _conn() as conn:
         conn.execute(_SCHEMA)
+        ensure_default_visual_profile(conn)
 
 
 def parse_user_id(client_name: str) -> int:
@@ -197,6 +230,16 @@ def create_visual_profile_in_db(profile_data: Dict[str, Any]) -> str:
                 id, user_id, name, description, color_palette, typography_style,
                 visual_mood, default_layout, platform_overrides, is_default, created_at, updated_at
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), now())
+            ON CONFLICT (id) DO UPDATE SET
+                name = EXCLUDED.name,
+                description = EXCLUDED.description,
+                color_palette = EXCLUDED.color_palette,
+                typography_style = EXCLUDED.typography_style,
+                visual_mood = EXCLUDED.visual_mood,
+                default_layout = EXCLUDED.default_layout,
+                platform_overrides = EXCLUDED.platform_overrides,
+                is_default = EXCLUDED.is_default,
+                updated_at = now()
             """,
             (
                 profile_data["id"],
@@ -304,7 +347,18 @@ def delete_visual_profile_from_db(profile_id: str) -> bool:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def create_image_asset_in_db(asset_data: Dict[str, Any]) -> str:
+    profile_id = asset_data.get("visual_profile_id")
     with _conn() as conn:
+        if profile_id:
+            if profile_id == "default-trendforge-profile":
+                ensure_default_visual_profile(conn)
+            else:
+                exists = conn.execute(
+                    "SELECT 1 FROM visual_profiles WHERE id = %s", (profile_id,)
+                ).fetchone()
+                if not exists:
+                    profile_id = None
+
         conn.execute(
             """
             INSERT INTO image_assets (
@@ -316,6 +370,13 @@ def create_image_asset_in_db(asset_data: Dict[str, Any]) -> str:
             ) VALUES (
                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), now()
             )
+            ON CONFLICT (id) DO UPDATE SET
+                status = EXCLUDED.status,
+                file_size_bytes = COALESCE(EXCLUDED.file_size_bytes, image_assets.file_size_bytes),
+                storage_key = COALESCE(EXCLUDED.storage_key, image_assets.storage_key),
+                provider_metadata = COALESCE(EXCLUDED.provider_metadata, image_assets.provider_metadata),
+                error_message = EXCLUDED.error_message,
+                updated_at = now()
             """,
             (
                 asset_data["id"],
@@ -325,7 +386,7 @@ def create_image_asset_in_db(asset_data: Dict[str, Any]) -> str:
                 asset_data.get("mode", "text_to_image"),
                 asset_data.get("prompt", ""),
                 asset_data.get("negative_prompt", ""),
-                asset_data.get("visual_profile_id"),
+                profile_id,
                 Json(asset_data.get("visual_brief") or {}) if asset_data.get("visual_brief") else None,
                 asset_data.get("provider_name", "mock"),
                 asset_data.get("model_name", ""),

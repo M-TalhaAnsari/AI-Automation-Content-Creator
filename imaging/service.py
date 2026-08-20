@@ -17,7 +17,9 @@ Post data + Platform + Brand Profile
 
 from __future__ import annotations
 
+import glob
 import logging
+import os
 import uuid
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -251,13 +253,25 @@ class ImageService:
     def get_asset_bytes(self, asset_id: str) -> Optional[Tuple[bytes, str]]:
         """Retrieve raw image bytes and content-type for an asset."""
         asset = self.get_asset(asset_id)
-        if not asset or not asset.storage_key:
-            return None
+        if asset and asset.storage_key:
+            data = self.storage.get(asset.storage_key)
+            if data:
+                return data, asset.content_type
 
-        data = self.storage.get(asset.storage_key)
-        if not data:
-            return None
-        return data, asset.content_type
+        # Fallback for local filesystem storage (e.g. if DB write failed or was skipped)
+        if hasattr(self.storage, "base_directory"):
+            import glob
+            matches = glob.glob(os.path.join(self.storage.base_directory, "**", f"{asset_id}.*"), recursive=True)
+            if matches:
+                try:
+                    with open(matches[0], "rb") as f:
+                        data = f.read()
+                    content_type = "image/png" if matches[0].endswith(".png") else "image/jpeg"
+                    return data, content_type
+                except Exception:
+                    pass
+
+        return None
 
     def list_session_assets(self, session_id: str) -> List[ImageAsset]:
         """List all image assets generated in a session."""

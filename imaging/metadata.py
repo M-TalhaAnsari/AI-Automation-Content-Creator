@@ -222,6 +222,18 @@ class MetadataRepository:
 
     def get_default_profile(self) -> BrandVisualProfile:
         """Return the default system visual profile."""
+        # Try DB first
+        try:
+            from api.web.db import get_visual_profile_from_db, ensure_default_visual_profile
+            ensure_default_visual_profile()
+            row = get_visual_profile_from_db("default-trendforge-profile")
+            if row:
+                profile = BrandVisualProfile.model_validate(row)
+                _MEM_PROFILES[profile.id] = profile
+                return profile
+        except Exception:
+            pass
+
         # Check if default profile is cached
         for p in _MEM_PROFILES.values():
             if p.is_default:
@@ -233,5 +245,4 @@ class MetadataRepository:
             description="Default informative & clean visual identity",
             is_default=True,
         )
-        _MEM_PROFILES[default.id] = default
-        return default
+        return self.save_profile(default)
