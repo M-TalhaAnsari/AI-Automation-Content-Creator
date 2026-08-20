@@ -3,11 +3,67 @@ config.py — TrendForge Central Configuration
 """
 
 import os
-from dataclasses import dataclass
-from typing import List
+from dataclasses import dataclass, field
+from typing import List, Optional
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+@dataclass
+class ImagingConfig:
+    """
+    Configuration for the image generation subsystem.
+
+    All values are read from environment variables so you can switch providers,
+    models, or storage backends without touching code.
+
+    Provider selection:
+      IMAGE_PROVIDER — Active provider name. Options:
+                        "mock"          → Synthetic PNG (dev/test, no external calls)
+                        "pollinations"  → FREE, Flux/SDXL via pollinations.ai, no key needed
+                        "huggingface"   → FREE, any HF Inference API model, optional token
+                        "gemini_imagen" → Google Imagen 3/4, requires GEMINI_API_KEY
+                       Default: "pollinations" (free, works out of the box)
+
+    Storage backend:
+      IMAGE_STORAGE_BACKEND — "local" (default), "s3", "gcs"
+    """
+
+    # ── Active provider ────────────────────────────────────────────────────────
+    provider: str = os.getenv("IMAGE_PROVIDER", "pollinations")
+    # ^ Change to "gemini_imagen" or "huggingface" in .env for production
+
+    # ── Gemini Imagen settings ─────────────────────────────────────────────────
+    # GEMINI_API_KEY is shared with the text generation config (ModelConfig)
+    imagen_model: str = os.getenv("IMAGEN_MODEL", "imagen-3.0-generate-002")
+    # Alternative: "imagen-4.0-generate-preview-05-20"
+
+    # ── Pollinations settings (FREE — no key needed) ───────────────────────────
+    pollinations_model: str = os.getenv("POLLINATIONS_MODEL", "flux")
+    # Options: "flux", "flux-pro", "flux-realism", "turbo", "dreamshaper", "any-dark"
+    pollinations_timeout: int = int(os.getenv("POLLINATIONS_TIMEOUT", "90"))
+    pollinations_seed: Optional[int] = (
+        int(os.getenv("POLLINATIONS_SEED"))
+        if os.getenv("POLLINATIONS_SEED", "").isdigit()
+        else None
+    )
+
+    # ── Hugging Face settings (FREE with optional token) ───────────────────────
+    hf_token: str = os.getenv("HF_TOKEN", "")
+    hf_model: str = os.getenv("HF_MODEL", "black-forest-labs/FLUX.1-schnell")
+    # Options: see imaging/providers/huggingface.py::HUGGINGFACE_FREE_MODELS
+    hf_timeout: int = int(os.getenv("HF_TIMEOUT", "120"))
+
+    # ── Storage settings ───────────────────────────────────────────────────────
+    storage_backend: str = os.getenv("IMAGE_STORAGE_BACKEND", "local")
+    # Local storage root — images saved to {local_storage_root}/{user_id}/{asset_id}.png
+    local_storage_root: str = os.getenv("IMAGE_STORAGE_ROOT", "storage/images")
+
+    # ── Job / worker settings ──────────────────────────────────────────────────
+    image_queue_name: str = os.getenv("IMAGE_QUEUE_NAME", "trendforge-images")
+    max_image_job_timeout: int = int(os.getenv("IMAGE_JOB_TIMEOUT", "300"))
+    # Seconds before a stuck image job is considered failed
 
 
 @dataclass
@@ -99,6 +155,7 @@ class TrendForgeConfig:
         self.models = ModelConfig()
         self.sources = SourceConfig()
         self.system = SystemConfig()
+        self.imaging = ImagingConfig()
 
     @property
     def GROQ_API_KEY(self):
@@ -138,6 +195,20 @@ class TrendForgeConfig:
             warnings.append("REDDIT credentials missing — Reddit source disabled.")
         if not self.sources.github_token:
             warnings.append("GITHUB_TOKEN missing — GitHub limited to 60 req/hour (still works).")
+
+        # Image provider validation
+        provider = self.imaging.provider
+        if provider == "gemini_imagen" and not self.models.gemini_api_key:
+            warnings.append(
+                "IMAGE_PROVIDER=gemini_imagen but GEMINI_API_KEY is missing. "
+                "Image generation will fail. Falling back to mock."
+            )
+        elif provider == "huggingface" and not self.imaging.hf_token:
+            warnings.append(
+                "IMAGE_PROVIDER=huggingface but HF_TOKEN is not set. "
+                "Requests will be severely rate-limited. "
+                "Get a free token at https://huggingface.co/settings/tokens"
+            )
         return warnings
 
     def available_sources(self) -> List[str]:

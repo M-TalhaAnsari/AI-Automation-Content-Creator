@@ -27,6 +27,10 @@ import {
   listSessions,
   logout,
   sendChatAndWait,
+  generateImage,
+  generateBatchImages,
+  pollImageJob,
+  getImageUrl,
   type MeResponse,
 } from "@/api";
 
@@ -77,6 +81,7 @@ function Workspace() {
 
   const [platform, setPlatform] = useState("auto");
   const [postCount, setPostCount] = useState(5);
+  const [visualMood, setVisualMood] = useState("clean-informative");
   const [constraints, setConstraints] = useState<string[]>([]);
   const [activeSources, setActiveSources] = useState<string[]>([
     "GitHub",
@@ -192,6 +197,135 @@ function Workspace() {
     setRegeneratingPostId(post.id);
     handleSend(`Please regenerate post ${index} with fresh signals and hook.`);
     setRegeneratingPostId(null);
+  }
+
+  async function handleGenerateImage(post: GeneratedPost, customPrompt?: string, index?: number) {
+    if (!activeSessionId) {
+      toast.error("Please start a session first");
+      return;
+    }
+
+    const targetPostNumber = post.number ?? index ?? (activePost?.index ?? 1);
+
+    // Optimistically mark post as generating
+    setMessages((prev) =>
+      prev.map((msg) => {
+        if (!msg.posts) return msg;
+        return {
+          ...msg,
+          posts: msg.posts.map((p) =>
+            p.id === post.id ? { ...p, isGeneratingImage: true, imageError: undefined } : p
+          ),
+        };
+      })
+    );
+
+    if (activePost && activePost.post.id === post.id) {
+      setActivePost({
+        ...activePost,
+        post: { ...activePost.post, isGeneratingImage: true, imageError: undefined },
+      });
+    }
+
+    try {
+      const job = await generateImage({
+        session_id: activeSessionId,
+        post_number: targetPostNumber,
+        post_data: {
+          title: post.title,
+          hook: post.hook,
+          caption: post.caption,
+          hashtags: post.hashtags,
+          platform: post.platform,
+          source_url: post.sourceUrl,
+          source_label: post.sourceLabel,
+        },
+        platform: post.platform,
+        custom_prompt: customPrompt,
+      });
+
+      toast.info("Visual generation started in background...", { duration: 3000 });
+
+      // Poll until done
+      const status = await pollImageJob(job.job_id);
+
+      const resolvedUrl = status.image_url || (status.asset_id ? getImageUrl(status.asset_id) : "");
+
+      // Update post state
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (!msg.posts) return msg;
+          return {
+            ...msg,
+            posts: msg.posts.map((p) =>
+              p.id === post.id
+                ? {
+                    ...p,
+                    isGeneratingImage: false,
+                    imageUrl: resolvedUrl,
+                    imageAssetId: status.asset_id || undefined,
+                  }
+                : p
+            ),
+          };
+        })
+      );
+
+      if (activePost && activePost.post.id === post.id) {
+        setActivePost({
+          ...activePost,
+          post: {
+            ...activePost.post,
+            isGeneratingImage: false,
+            imageUrl: resolvedUrl,
+            imageAssetId: status.asset_id || undefined,
+          },
+        });
+      }
+
+      toast.success("Visual generated successfully!");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to generate visual");
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (!msg.posts) return msg;
+          return {
+            ...msg,
+            posts: msg.posts.map((p) =>
+              p.id === post.id
+                ? { ...p, isGeneratingImage: false, imageError: err?.message || "Failed" }
+                : p
+            ),
+          };
+        })
+      );
+      if (activePost && activePost.post.id === post.id) {
+        setActivePost({
+          ...activePost,
+          post: { ...activePost.post, isGeneratingImage: false },
+        });
+      }
+    }
+  }
+
+  async function handleBatchGenerateImages(posts: GeneratedPost[]) {
+    if (!activeSessionId) {
+      toast.error("Please start a session first");
+      return;
+    }
+
+    const ungenerated = posts.filter((p) => !p.imageUrl && !p.imageAssetId && !p.isGeneratingImage);
+    if (ungenerated.length === 0) {
+      toast("All posts already have generated visuals");
+      return;
+    }
+
+    toast.info(`Generating ${ungenerated.length} visuals in parallel...`);
+
+    // Run concurrently across worker pool
+    await Promise.all(
+      ungenerated.map((p, idx) => handleGenerateImage(p, undefined, p.number ?? idx + 1))
+    );
   }
 
   async function handleSend(text?: string) {
@@ -555,6 +689,8 @@ function Workspace() {
               onViewPost={handleViewPost}
               onEditPost={handleViewPost}
               onRegeneratePost={(post, index) => handleRegeneratePost(post, index)}
+              onGenerateImage={(post, index) => handleGenerateImage(post, undefined, index)}
+              onBatchGenerateImages={handleBatchGenerateImages}
               regeneratingPostId={regeneratingPostId}
             />
 
@@ -565,6 +701,8 @@ function Workspace() {
                   postCount={postCount}
                   constraints={constraints}
                   activeSources={activeSources}
+                  visualMood={visualMood}
+                  onVisualMoodChange={setVisualMood}
                 />
               )}
             </AnimatePresence>
@@ -579,6 +717,10 @@ function Workspace() {
           onApplyEdit={handleApplyEdit}
           onRegenerate={(postId) => {
             if (activePost) handleRegeneratePost(activePost.post, activePost.index);
+            else void postId;
+          }}
+          onGenerateImage={(postId, customPrompt) => {
+            if (activePost) handleGenerateImage(activePost.post, customPrompt, activePost.index);
             else void postId;
           }}
           editing={editingPost}

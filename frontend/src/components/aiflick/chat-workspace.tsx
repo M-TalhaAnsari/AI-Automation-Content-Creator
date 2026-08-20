@@ -5,6 +5,7 @@ import {
   CornerDownLeft,
   Flame,
   AlertTriangle,
+  Sparkles,
   Undo2,
 } from "lucide-react";
 
@@ -30,9 +31,10 @@ type Props = {
   onViewPost: (post: GeneratedPost, index: number) => void;
   onEditPost: (post: GeneratedPost, index: number) => void;
   onRegeneratePost: (post: GeneratedPost, index: number) => void;
+  onGenerateImage?: (post: GeneratedPost, index: number) => void;
+  onBatchGenerateImages?: (posts: GeneratedPost[]) => void;
   regeneratingPostId: string | null;
 };
-
 
 export function ChatWorkspace({
   messages,
@@ -49,8 +51,9 @@ export function ChatWorkspace({
   onViewPost,
   onEditPost,
   onRegeneratePost,
+  onGenerateImage,
+  onBatchGenerateImages,
   regeneratingPostId,
-
 }: Props) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -81,9 +84,10 @@ export function ChatWorkspace({
                   onViewPost={onViewPost}
                   onEditPost={onEditPost}
                   onRegeneratePost={onRegeneratePost}
+                  onGenerateImage={onGenerateImage}
+                  onBatchGenerateImages={onBatchGenerateImages}
                   regeneratingPostId={regeneratingPostId}
                 />
-
               ))}
               {sending && <ThinkingRow />}
             </div>
@@ -189,9 +193,9 @@ function EmptyState({ onSuggestion }: { onSuggestion: (prompt: string) => void }
         What should we make today?
       </h2>
       <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-        Describe an idea in plain language. AIFlick pulls live signals from GitHub,
-        Reddit, HackerNews, Google Trends and more, then writes posts you can edit right in
-        the conversation.
+        Describe an idea in plain language. TrendForge pulls live signals from GitHub,
+        Reddit, HackerNews, Google Trends and more, then writes posts and generates visuals
+        you can edit right in the conversation.
       </p>
 
       <div className="mt-7 grid gap-2 sm:grid-cols-2">
@@ -220,6 +224,8 @@ type RowProps = {
   onViewPost: (post: GeneratedPost, index: number) => void;
   onEditPost: (post: GeneratedPost, index: number) => void;
   onRegeneratePost: (post: GeneratedPost, index: number) => void;
+  onGenerateImage?: (post: GeneratedPost, index: number) => void;
+  onBatchGenerateImages?: (posts: GeneratedPost[]) => void;
   regeneratingPostId: string | null;
 };
 
@@ -228,6 +234,8 @@ function MessageRow({
   onViewPost,
   onEditPost,
   onRegeneratePost,
+  onGenerateImage,
+  onBatchGenerateImages,
   regeneratingPostId,
 }: RowProps) {
   if (message.role === "user") {
@@ -245,6 +253,9 @@ function MessageRow({
     );
   }
 
+  const hasPosts = message.posts && message.posts.length > 0;
+  const anyPostMissingImage = hasPosts && message.posts?.some((p) => !p.imageUrl && !p.imageAssetId);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -259,26 +270,48 @@ function MessageRow({
         <div className="text-sm text-foreground/90">
           <Markdown content={message.content} />
         </div>
-        {message.posts && message.posts.length > 0 && (
-          <div className="mt-4 grid gap-2.5">
-            {message.posts.map((post, i) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                index={i + 1}
-                regenerating={regeneratingPostId === post.id}
-                onView={() => onViewPost(post, i + 1)}
-                onEdit={() => onEditPost(post, i + 1)}
-                onRegenerate={() => onRegeneratePost(post, i + 1)}
-              />
-            ))}
+        {hasPosts && (
+          <div className="mt-4 space-y-3">
+            {/* Batch Action Bar */}
+            {onBatchGenerateImages && (
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-surface-raised/40 px-3 py-2">
+                <span className="text-xs text-muted-foreground font-mono">
+                  {message.posts?.length} platform-ready posts generated
+                </span>
+                {anyPostMissingImage && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => onBatchGenerateImages(message.posts!)}
+                    className="h-7 gap-1.5 px-2.5 text-xs text-primary hover:bg-primary/10"
+                  >
+                    <Sparkles className="size-3.5" />
+                    Generate All Visuals
+                  </Button>
+                )}
+              </div>
+            )}
+
+            <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-2">
+              {message.posts!.map((post, i) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  index={i + 1}
+                  regenerating={regeneratingPostId === post.id}
+                  onView={() => onViewPost(post, i + 1)}
+                  onEdit={() => onEditPost(post, i + 1)}
+                  onRegenerate={() => onRegeneratePost(post, i + 1)}
+                  onGenerateImage={onGenerateImage ? () => onGenerateImage(post, i + 1) : undefined}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>
     </motion.div>
   );
 }
-
 
 function ThinkingRow() {
   return (
@@ -305,6 +338,5 @@ function ThinkingRow() {
         </div>
       </div>
     </div>
-
   );
 }

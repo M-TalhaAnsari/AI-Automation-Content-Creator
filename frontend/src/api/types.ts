@@ -1,5 +1,5 @@
 /**
- * API Data Contracts matching FastAPI Backend Pydantic Models
+ * frontend/src/api/types.ts — API Data Contracts matching FastAPI Backend Pydantic Models
  */
 
 export interface SignupRequest {
@@ -38,6 +38,8 @@ export interface RawPost {
   caption: string;
   hashtags: string[];
   _source?: string;
+  image_url?: string;
+  image_asset_id?: string;
 }
 
 export interface SessionView {
@@ -86,4 +88,101 @@ export interface ApiErrorDetail {
   detail?: string | Array<{ loc: string[]; msg: string; type: string }>;
   message?: string;
   retry_after?: number;
+}
+
+// ── Image Subsystem API Contracts ──────────────────────────────────────────
+
+export interface ImageGenerateRequest {
+  session_id: string;
+  post_number: number;
+  post_data: Record<string, any>;
+  platform?: string;
+  visual_profile_id?: string | null;
+  custom_prompt?: string | null;
+  reference_asset_id?: string | null;
+  reference_strength?: number;
+  generation_params?: Record<string, any>;
+}
+
+export interface BatchImageGenerateRequest {
+  session_id: string;
+  posts?: Array<Record<string, any>>;
+  platform?: string;
+  visual_profile_id?: string | null;
+}
+
+export interface ImageJobResponse {
+  job_id: string;
+  asset_id: string;
+  status: "queued" | "generating" | "completed" | "failed" | string;
+  message: string;
+}
+
+export interface BatchImageJobResponse {
+  session_id: string;
+  jobs: Array<{
+    post_number: number;
+    job_id: string;
+    asset_id: string;
+  }>;
+  total_enqueued: number;
+}
+
+export interface ImageJobStatusResponse {
+  job_id: string;
+  status: "queued" | "generating" | "completed" | "failed" | string;
+  asset_id?: string | null;
+  image_url?: string | null;
+  error?: string | null;
+  progress_message?: string;
+}
+
+export interface ImageAssetMeta {
+  id: string;
+  user_id?: number | null;
+  session_id: string;
+  post_number: number;
+  mode: string;
+  prompt: string;
+  negative_prompt: string;
+  visual_profile_id?: string | null;
+  provider_name: string;
+  model_name: string;
+  storage_backend: string;
+  storage_key: string;
+  content_type: string;
+  file_size_bytes?: number | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  url: string;
+}
+
+export interface ColorPalette {
+  primary: string;
+  secondary: string;
+  accent: string;
+  text: string;
+  surface: string;
+}
+
+export interface VisualProfileResponse {
+  id: string;
+  name: string;
+  description: string;
+  color_palette: ColorPalette;
+  typography_style: string;
+  visual_mood: string;
+  default_layout: string;
+  is_default: boolean;
+}
+
+export interface VisualProfileCreateRequest {
+  name: string;
+  description?: string;
+  color_palette?: Partial<ColorPalette>;
+  typography_style?: string;
+  visual_mood?: string;
+  default_layout?: string;
+  is_default?: boolean;
 }

@@ -8,6 +8,7 @@ export type PostEdit = {
 
 export type GeneratedPost = {
   id: string;
+  number?: number;
   platform: string;
   title: string;
   hook: string;
@@ -15,6 +16,10 @@ export type GeneratedPost = {
   hashtags: string[];
   sourceUrl: string;
   sourceLabel: string;
+  imageUrl?: string;
+  imageAssetId?: string;
+  isGeneratingImage?: boolean;
+  imageError?: string;
   edits?: PostEdit[];
 };
 
@@ -164,9 +169,11 @@ export function rawPostToGeneratedPost(
 ): GeneratedPost {
   const url = raw.link || raw.url || raw.source_url || "";
   const sourceLabel = deriveSourceLabel(url, raw._source || raw.source);
+  const postNum = raw.number ?? index;
 
   return {
-    id: raw.id || `post-${raw.number ?? index}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: raw.id || `post-${postNum}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    number: postNum,
     platform: raw.platform || (fallbackPlatform !== "auto" ? fallbackPlatform : "instagram"),
     title: raw.title || raw.name || `Post ${index}`,
     hook: raw.hook || (Array.isArray(raw.summary) ? raw.summary[0] : raw.summary) || "",
@@ -174,6 +181,8 @@ export function rawPostToGeneratedPost(
     hashtags: Array.isArray(raw.hashtags) ? raw.hashtags : [],
     sourceUrl: url,
     sourceLabel,
+    imageUrl: raw.image_url || raw.imageUrl || undefined,
+    imageAssetId: raw.image_asset_id || raw.imageAssetId || undefined,
     edits: Array.isArray(raw.edits) ? raw.edits : [],
   };
 }

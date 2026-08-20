@@ -77,6 +77,32 @@ services:
             - postgres_data/
             - redis_data/
 
+  image-worker:
+    build: .
+    command: python -m api.web.image_worker
+    env_file:
+      - .env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql://trendforge:${POSTGRES_PASSWORD}@postgres:5432/trendforge
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
+          ignore:
+            - .git/
+            - __pycache__/
+            - .venv/
+            - .pytest_cache/
+            - postgres_data/
+            - redis_data/
+
 volumes:
   redis_data:
   postgres_data:

@@ -45,10 +45,12 @@ from api.web.schemas import (
     TokenResponse,
 )
 from api.web.jobs import run_slow_action
+from api.web.image_routes import router as image_router
 
 logger = logging.getLogger("trendforge.web.app")
 
 app = FastAPI(title="TrendForge Conversation API")
+app.include_router(image_router)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)

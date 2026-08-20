@@ -25,6 +25,52 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
     last_active_at TIMESTAMPTZ DEFAULT now(),
     UNIQUE (user_id, session_id)
 );
+
+CREATE TABLE IF NOT EXISTS visual_profiles (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT,
+    color_palette JSONB,
+    typography_style TEXT,
+    visual_mood TEXT,
+    default_layout TEXT,
+    platform_overrides JSONB,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS image_assets (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    session_id TEXT,
+    post_number INTEGER,
+    mode TEXT NOT NULL DEFAULT 'text_to_image',
+    prompt TEXT NOT NULL,
+    negative_prompt TEXT,
+    visual_profile_id TEXT REFERENCES visual_profiles(id) ON DELETE SET NULL,
+    visual_brief_json JSONB,
+    provider_name TEXT NOT NULL,
+    model_name TEXT,
+    generation_params JSONB,
+    provider_metadata JSONB,
+    reference_asset_id TEXT REFERENCES image_assets(id) ON DELETE SET NULL,
+    source_post_version INTEGER DEFAULT 1,
+    storage_backend TEXT NOT NULL DEFAULT 'local',
+    storage_key TEXT NOT NULL,
+    content_type TEXT DEFAULT 'image/png',
+    file_size_bytes INTEGER,
+    status TEXT NOT NULL DEFAULT 'pending',
+    error_message TEXT,
+    rq_job_id TEXT,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_image_assets_session ON image_assets(session_id, post_number);
+CREATE INDEX IF NOT EXISTS idx_image_assets_user ON image_assets(user_id);
+
 """
 
 
@@ -137,3 +183,278 @@ def load_conversation_from_db(user_id: int, session_id: str) -> Optional[Dict[st
         if not row or row[0] is None:
             return None
         return row[0]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Visual Profiles CRUD
+# ─────────────────────────────────────────────────────────────────────────────
+
+def create_visual_profile_in_db(profile_data: Dict[str, Any]) -> str:
+    with _conn() as conn:
+        conn.execute(
+            """
+            INSERT INTO visual_profiles (
+                id, user_id, name, description, color_palette, typography_style,
+                visual_mood, default_layout, platform_overrides, is_default, created_at, updated_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), now())
+            """,
+            (
+                profile_data["id"],
+                profile_data.get("user_id"),
+                profile_data["name"],
+                profile_data.get("description", ""),
+                Json(profile_data.get("color_palette") or {}),
+                profile_data.get("typography_style", "minimal-sans"),
+                profile_data.get("visual_mood", "clean-informative"),
+                profile_data.get("default_layout", "minimal_clean"),
+                Json(profile_data.get("platform_overrides") or {}),
+                profile_data.get("is_default", False),
+            ),
+        )
+        return profile_data["id"]
+
+
+def get_visual_profile_from_db(profile_id: str) -> Optional[Dict[str, Any]]:
+    with _conn() as conn:
+        row = conn.execute(
+            """
+            SELECT id, user_id, name, description, color_palette, typography_style,
+                   visual_mood, default_layout, platform_overrides, is_default, created_at, updated_at
+            FROM visual_profiles WHERE id = %s
+            """,
+            (profile_id,),
+        ).fetchone()
+        if not row:
+            return None
+        return {
+            "id": row[0],
+            "user_id": row[1],
+            "name": row[2],
+            "description": row[3],
+            "color_palette": row[4],
+            "typography_style": row[5],
+            "visual_mood": row[6],
+            "default_layout": row[7],
+            "platform_overrides": row[8],
+            "is_default": row[9],
+            "created_at": row[10].isoformat() if row[10] else None,
+            "updated_at": row[11].isoformat() if row[11] else None,
+        }
+
+
+def list_visual_profiles_from_db(user_id: int) -> List[Dict[str, Any]]:
+    with _conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, user_id, name, description, color_palette, typography_style,
+                   visual_mood, default_layout, platform_overrides, is_default, created_at, updated_at
+            FROM visual_profiles
+            WHERE user_id = %s OR is_default = TRUE
+            ORDER BY is_default DESC, created_at DESC
+            """,
+            (user_id,),
+        ).fetchall()
+        return [
+            {
+                "id": r[0],
+                "user_id": r[1],
+                "name": r[2],
+                "description": r[3],
+                "color_palette": r[4],
+                "typography_style": r[5],
+                "visual_mood": r[6],
+                "default_layout": r[7],
+                "platform_overrides": r[8],
+                "is_default": r[9],
+                "created_at": r[10].isoformat() if r[10] else None,
+                "updated_at": r[11].isoformat() if r[11] else None,
+            }
+            for r in rows
+        ]
+
+
+def update_visual_profile_in_db(profile_id: str, updates: Dict[str, Any]) -> bool:
+    with _conn() as conn:
+        set_clauses = []
+        values = []
+        for k, v in updates.items():
+            if k in ("color_palette", "platform_overrides"):
+                set_clauses.append(f"{k} = %s")
+                values.append(Json(v))
+            elif k in ("name", "description", "typography_style", "visual_mood", "default_layout", "is_default"):
+                set_clauses.append(f"{k} = %s")
+                values.append(v)
+        if not set_clauses:
+            return False
+        set_clauses.append("updated_at = now()")
+        values.append(profile_id)
+        query = f"UPDATE visual_profiles SET {', '.join(set_clauses)} WHERE id = %s"
+        res = conn.execute(query, tuple(values))
+        return res.rowcount > 0
+
+
+def delete_visual_profile_from_db(profile_id: str) -> bool:
+    with _conn() as conn:
+        res = conn.execute("DELETE FROM visual_profiles WHERE id = %s", (profile_id,))
+        return res.rowcount > 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Image Assets CRUD
+# ─────────────────────────────────────────────────────────────────────────────
+
+def create_image_asset_in_db(asset_data: Dict[str, Any]) -> str:
+    with _conn() as conn:
+        conn.execute(
+            """
+            INSERT INTO image_assets (
+                id, user_id, session_id, post_number, mode, prompt, negative_prompt,
+                visual_profile_id, visual_brief_json, provider_name, model_name,
+                generation_params, provider_metadata, reference_asset_id,
+                source_post_version, storage_backend, storage_key, content_type,
+                file_size_bytes, status, error_message, rq_job_id, created_at, updated_at
+            ) VALUES (
+                %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), now()
+            )
+            """,
+            (
+                asset_data["id"],
+                asset_data.get("user_id"),
+                asset_data.get("session_id", ""),
+                asset_data.get("post_number", 1),
+                asset_data.get("mode", "text_to_image"),
+                asset_data.get("prompt", ""),
+                asset_data.get("negative_prompt", ""),
+                asset_data.get("visual_profile_id"),
+                Json(asset_data.get("visual_brief") or {}) if asset_data.get("visual_brief") else None,
+                asset_data.get("provider_name", "mock"),
+                asset_data.get("model_name", ""),
+                Json(asset_data.get("generation_params") or {}),
+                Json(asset_data.get("provider_metadata") or {}),
+                asset_data.get("reference_asset_id"),
+                asset_data.get("source_post_version", 1),
+                asset_data.get("storage_backend", "local"),
+                asset_data.get("storage_key", ""),
+                asset_data.get("content_type", "image/png"),
+                asset_data.get("file_size_bytes"),
+                asset_data.get("status", "pending"),
+                asset_data.get("error_message"),
+                asset_data.get("rq_job_id"),
+            ),
+        )
+        return asset_data["id"]
+
+
+def get_image_asset_from_db(asset_id: str) -> Optional[Dict[str, Any]]:
+    with _conn() as conn:
+        row = conn.execute(
+            """
+            SELECT id, user_id, session_id, post_number, mode, prompt, negative_prompt,
+                   visual_profile_id, visual_brief_json, provider_name, model_name,
+                   generation_params, provider_metadata, reference_asset_id,
+                   source_post_version, storage_backend, storage_key, content_type,
+                   file_size_bytes, status, error_message, rq_job_id, created_at, updated_at
+            FROM image_assets WHERE id = %s
+            """,
+            (asset_id,),
+        ).fetchone()
+        if not row:
+            return None
+        return {
+            "id": row[0],
+            "user_id": row[1],
+            "session_id": row[2],
+            "post_number": row[3],
+            "mode": row[4],
+            "prompt": row[5],
+            "negative_prompt": row[6],
+            "visual_profile_id": row[7],
+            "visual_brief": row[8],
+            "provider_name": row[9],
+            "model_name": row[10],
+            "generation_params": row[11],
+            "provider_metadata": row[12],
+            "reference_asset_id": row[13],
+            "source_post_version": row[14],
+            "storage_backend": row[15],
+            "storage_key": row[16],
+            "content_type": row[17],
+            "file_size_bytes": row[18],
+            "status": row[19],
+            "error_message": row[20],
+            "rq_job_id": row[21],
+            "created_at": row[22].isoformat() if row[22] else None,
+            "updated_at": row[23].isoformat() if row[23] else None,
+        }
+
+
+def update_image_asset_status_in_db(
+    asset_id: str,
+    status: str,
+    error_message: Optional[str] = None,
+    file_size_bytes: Optional[int] = None,
+    storage_key: Optional[str] = None,
+    provider_metadata: Optional[Dict[str, Any]] = None,
+) -> bool:
+    with _conn() as conn:
+        set_clauses = ["status = %s", "updated_at = now()"]
+        values: List[Any] = [status]
+
+        if error_message is not None:
+            set_clauses.append("error_message = %s")
+            values.append(error_message)
+        if file_size_bytes is not None:
+            set_clauses.append("file_size_bytes = %s")
+            values.append(file_size_bytes)
+        if storage_key is not None:
+            set_clauses.append("storage_key = %s")
+            values.append(storage_key)
+        if provider_metadata is not None:
+            set_clauses.append("provider_metadata = %s")
+            values.append(Json(provider_metadata))
+
+        values.append(asset_id)
+        query = f"UPDATE image_assets SET {', '.join(set_clauses)} WHERE id = %s"
+        res = conn.execute(query, tuple(values))
+        return res.rowcount > 0
+
+
+def list_image_assets_for_session_from_db(session_id: str) -> List[Dict[str, Any]]:
+    with _conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, user_id, session_id, post_number, mode, prompt,
+                   visual_profile_id, provider_name, model_name,
+                   reference_asset_id, source_post_version, storage_backend,
+                   storage_key, content_type, file_size_bytes, status, error_message,
+                   created_at, updated_at
+            FROM image_assets
+            WHERE session_id = %s
+            ORDER BY post_number ASC, created_at DESC
+            """,
+            (session_id,),
+        ).fetchall()
+        return [
+            {
+                "id": r[0],
+                "user_id": r[1],
+                "session_id": r[2],
+                "post_number": r[3],
+                "mode": r[4],
+                "prompt": r[5],
+                "visual_profile_id": r[6],
+                "provider_name": r[7],
+                "model_name": r[8],
+                "reference_asset_id": r[9],
+                "source_post_version": r[10],
+                "storage_backend": r[11],
+                "storage_key": r[12],
+                "content_type": r[13],
+                "file_size_bytes": r[14],
+                "status": r[15],
+                "error_message": r[16],
+                "created_at": r[17].isoformat() if r[17] else None,
+                "updated_at": r[18].isoformat() if r[18] else None,
+            }
+            for r in rows
+        ]

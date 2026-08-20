@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { Database, Sliders, Sparkle } from "lucide-react";
+import { Database, Image as ImageIcon, Palette, Sliders, Sparkle } from "lucide-react";
 
 import { SOURCES } from "./data";
 import { PLATFORMS } from "./data";
@@ -9,9 +9,25 @@ type Props = {
   postCount: number;
   constraints: string[];
   activeSources: string[];
+  visualMood?: string;
+  onVisualMoodChange?: (mood: string) => void;
 };
 
-export function ContextPanel({ platform, postCount, constraints, activeSources }: Props) {
+const VISUAL_MOODS = [
+  { id: "clean-informative", label: "Clean Informative", color: "#00d2ff" },
+  { id: "dark-tech", label: "Dark Tech & Cyber", color: "#e94560" },
+  { id: "bold-contrast", label: "Bold High Contrast", color: "#ffb703" },
+  { id: "minimal-light", label: "Minimalist Editorial", color: "#10b981" },
+];
+
+export function ContextPanel({
+  platform,
+  postCount,
+  constraints,
+  activeSources,
+  visualMood = "clean-informative",
+  onVisualMoodChange,
+}: Props) {
   const platformLabel =
     PLATFORMS.find((p) => p.value === platform)?.label ?? "Auto-detect";
 
@@ -38,6 +54,50 @@ export function ContextPanel({ platform, postCount, constraints, activeSources }
             <dd className="font-mono text-foreground">{postCount}</dd>
           </div>
         </dl>
+      </section>
+
+      {/* Visual Direction & Brand Style */}
+      <section className="mt-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Palette className="size-3.5 text-muted-foreground" />
+            <h2 className="label-mono">Visual Styling</h2>
+          </div>
+          <span className="text-[10px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+            Modular
+          </span>
+        </div>
+        <div className="mt-3 space-y-1.5">
+          {VISUAL_MOODS.map((mood) => {
+            const isSelected = visualMood === mood.id;
+            return (
+              <button
+                key={mood.id}
+                type="button"
+                onClick={() => onVisualMoodChange?.(mood.id)}
+                className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-xs transition-all ${
+                  isSelected
+                    ? "border-primary/50 bg-primary/10 text-foreground font-medium"
+                    : "border-border/50 bg-surface-raised/30 text-muted-foreground hover:border-border hover:text-foreground"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: mood.color }}
+                  />
+                  <span>{mood.label}</span>
+                </div>
+                {isSelected && (
+                  <span className="font-mono text-[10px] text-primary">Active</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+          Visual prompts and color palettes adapt automatically based on the active style profile.
+        </p>
       </section>
 
       <section className="mt-6">
