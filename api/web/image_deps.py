@@ -47,22 +47,35 @@ def get_image_queue(conn: Redis = Depends(get_image_redis_conn)) -> Queue:
     return _IMAGE_QUEUE
 
 
-def _build_provider_kwargs() -> dict:
+def _build_provider_kwargs(provider_name: str) -> dict:
     """
-    Build provider constructor kwargs from CONFIG.imaging.
-    Each provider only reads the kwargs it cares about; extras are ignored.
+    Build provider constructor kwargs specifically tailored for the selected provider.
+    Prevents passing Gemini model names to Pollinations or HuggingFace.
     """
     img = CONFIG.imaging
-    return {
-        # gemini_imagen
-        "api_key":     CONFIG.models.gemini_api_key or None,
-        "model_name":  img.imagen_model or None,
-        # pollinations
-        "timeout":     img.pollinations_timeout,
-        "seed":        img.pollinations_seed,
-        # huggingface
-        "api_token":   img.hf_token or None,
-    }
+    if provider_name == "gemini_imagen":
+        return {
+            "api_key": CONFIG.models.gemini_api_key or None,
+            "model_name": img.imagen_model or "imagen-3.0-generate-002",
+        }
+    elif provider_name == "pollinations":
+        return {
+            "model_name": img.pollinations_model or "flux",
+            "timeout": img.pollinations_timeout,
+            "seed": img.pollinations_seed,
+        }
+    elif provider_name == "huggingface":
+        return {
+            "api_token": img.hf_token or None,
+            "model_name": img.hf_model or "black-forest-labs/FLUX.1-schnell",
+            "timeout": img.hf_timeout,
+        }
+    elif provider_name == "fal_ai":
+        return {
+            "api_key": img.fal_key or None,
+            "model_name": img.fal_model or "fal-ai/recraft-v3",
+        }
+    return {}
 
 
 def get_image_service() -> ImageService:
@@ -78,8 +91,8 @@ def get_image_service() -> ImageService:
         provider_name = CONFIG.imaging.provider
         logger.info("Initialising ImageService with provider: %s", provider_name)
 
-        # Build provider with config-driven constructor args
-        provider = get_provider(provider_name, **_build_provider_kwargs())
+        # Build provider with provider-specific constructor args
+        provider = get_provider(provider_name, **_build_provider_kwargs(provider_name))
 
         _IMAGE_SERVICE_INSTANCE = ImageService(provider=provider)
         logger.info(

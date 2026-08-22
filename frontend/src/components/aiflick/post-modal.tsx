@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { PlatformBadge } from "./platform-badge";
+import { SocialPostCanvas } from "./social-post-canvas";
 import { getImageUrl } from "@/api";
 import type { GeneratedPost } from "./data";
 
@@ -249,116 +250,59 @@ export function PostModal({
                 transition={{ duration: 0.18 }}
                 className="space-y-5"
               >
-                {post.isGeneratingImage ? (
-                  <div className="flex flex-col items-center justify-center rounded-2xl border border-primary/40 bg-primary/5 p-12 text-center">
-                    <Loader2 className="size-8 animate-spin text-primary" />
-                    <h4 className="mt-4 text-base font-medium text-foreground">
-                      Rendering Image Asset...
-                    </h4>
-                    <p className="mt-1 max-w-sm text-xs text-muted-foreground">
-                      Our modular background worker is extracting structured visual briefs and executing with the active provider (FLUX / Imagen).
-                    </p>
-                  </div>
-                ) : displayImgUrl ? (
-                  <div className="space-y-4">
-                    <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-background/80 shadow-md">
-                      <img
-                        src={displayImgUrl}
-                        alt={post.title}
-                        className="w-full object-contain max-h-[480px] mx-auto"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between gap-2 rounded-xl bg-secondary/40 p-3 border border-border/50">
-                      <div className="space-y-0.5">
-                        <span className="text-xs font-medium text-foreground">Generated Visual Asset</span>
-                        <p className="text-[11px] font-mono text-muted-foreground">
-                          Platform: {post.platform} · Mode: text_to_image
-                        </p>
+                <div className="space-y-4">
+                  <SocialPostCanvas
+                    backgroundImageUrl={displayImgUrl}
+                    title={post.title}
+                    hook={post.hook}
+                    summary={post.summary || post.caption}
+                    platform={post.platform}
+                    authorHandle="@trendforge"
+                    onRegenerateBg={() => submitVisualGeneration()}
+                    isGeneratingBg={post.isGeneratingImage}
+                  />
+
+                  {/* Custom Visual Prompt Override Section */}
+                  {onGenerateImage && (
+                    <div className="rounded-xl border border-border/70 bg-surface-raised/60 p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="label-mono text-muted-foreground">Regenerate AI Art with Custom Prompt</span>
+                        <span className="text-[11px] text-muted-foreground">Overrides auto-prompt builder</span>
                       </div>
+
+                      <div className="flex flex-wrap gap-1.5">
+                        {QUICK_VISUAL_PROMPTS.map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => setVisualPrompt(p)}
+                            className="rounded-full border border-border/70 px-2.5 py-0.5 text-[10px] text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                          >
+                            {p}
+                          </button>
+                        ))}
+                      </div>
+
                       <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={visualPrompt}
+                          onChange={(e) => setVisualPrompt(e.target.value)}
+                          placeholder="e.g. 3D holographic neural network blueprint on dark obsidian slate"
+                          className="h-8 flex-1 rounded-lg border border-border/70 bg-background/60 px-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+                        />
                         <Button
                           size="sm"
-                          variant="secondary"
-                          onClick={handleDownloadImage}
-                          className="h-8 gap-1.5 text-xs"
+                          onClick={submitVisualGeneration}
+                          disabled={post.isGeneratingImage}
+                          className="h-8 gap-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary-hover"
                         >
-                          <Download className="size-3.5" /> Download PNG
+                          <Sparkles className="size-3" /> {post.isGeneratingImage ? "Generating..." : "Generate AI Art"}
                         </Button>
-                        {onGenerateImage && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setShowVisualPromptInput(!showVisualPromptInput)}
-                            className="h-8 gap-1.5 text-xs"
-                          >
-                            <RefreshCw className="size-3.5" /> Regenerate Visual
-                          </Button>
-                        )}
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-secondary/20 p-10 text-center">
-                    <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <ImageIcon className="size-6" />
-                    </div>
-                    <h4 className="mt-3 text-sm font-medium text-foreground">
-                      No Visual Generated Yet
-                    </h4>
-                    <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-                      Generate an AI visual tailored specifically for {post.platform} using brand layouts and high-signal prompt synthesis.
-                    </p>
-                    {onGenerateImage && (
-                      <Button
-                        size="sm"
-                        onClick={() => submitVisualGeneration()}
-                        className="mt-4 gap-1.5 bg-primary text-primary-foreground hover:bg-primary-hover"
-                      >
-                        <Sparkles className="size-3.5" /> Generate Visual Now
-                      </Button>
-                    )}
-                  </div>
-                )}
-
-                {/* Custom Visual Prompt Override Section */}
-                {(showVisualPromptInput || !displayImgUrl) && onGenerateImage && !post.isGeneratingImage && (
-                  <div className="rounded-xl border border-border/70 bg-surface-raised/60 p-3 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="label-mono text-muted-foreground">Custom Visual Prompt (Optional)</span>
-                      <span className="text-[11px] text-muted-foreground">Overrides auto-prompt builder</span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1.5">
-                      {QUICK_VISUAL_PROMPTS.map((p) => (
-                        <button
-                          key={p}
-                          type="button"
-                          onClick={() => setVisualPrompt(p)}
-                          className="rounded-full border border-border/70 px-2.5 py-0.5 text-[10px] text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                        >
-                          {p}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={visualPrompt}
-                        onChange={(e) => setVisualPrompt(e.target.value)}
-                        placeholder="e.g. Minimal dark card with neon cyan terminal and Python architecture diagram"
-                        className="h-8 flex-1 rounded-lg border border-border/70 bg-background/60 px-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
-                      />
-                      <Button
-                        size="sm"
-                        onClick={submitVisualGeneration}
-                        className="h-8 gap-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary-hover"
-                      >
-                        <Sparkles className="size-3" /> Generate
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

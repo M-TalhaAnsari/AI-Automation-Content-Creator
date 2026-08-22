@@ -55,6 +55,11 @@ class ImagingConfig:
     # Options: see imaging/providers/huggingface.py::HUGGINGFACE_FREE_MODELS
     hf_timeout: int = int(os.getenv("HF_TIMEOUT", "120"))
 
+    # ── fal.ai settings (Recraft V3 & FLUX.1) ──────────────────────────────────
+    fal_key: str = os.getenv("FAL_KEY", "")
+    fal_model: str = os.getenv("FAL_MODEL", "fal-ai/recraft-v3")
+    # Options: "fal-ai/recraft-v3", "fal-ai/flux/schnell", "fal-ai/flux-redux"
+
     # ── Storage settings ───────────────────────────────────────────────────────
     storage_backend: str = os.getenv("IMAGE_STORAGE_BACKEND", "local")
     # Local storage root — images saved to {local_storage_root}/{user_id}/{asset_id}.png

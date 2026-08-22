@@ -24,36 +24,37 @@ def _build_layout_prompt_chunk(layout: LayoutType) -> str:
     """Provides style and composition phrasing based on the layout archetype."""
     mapping = {
         LayoutType.TEXT_CARD: (
-            "Modern minimalist UI card design, sleek typography layout, crisp vector geometric accents, "
-            "ample negative space, clean grid structure, dark mode aesthetic"
+            "Premium social media tech showcase graphic, modern glassmorphism container with subtle glowing neon borders, "
+            "vibrant futuristic 3D tech icons and isometric badges, sleek dark obsidian slate background, "
+            "editorial Dribbble design, trending on Behance, dramatic studio backlighting, ultra-detailed 8k render"
         ),
         LayoutType.DIAGRAM: (
-            "Clean technical architecture diagram, isometric system components, connecting data flows, "
-            "minimalist node structure, blueprint style, precise vector lines"
+            "Clean futuristic system architecture visualization, glowing isometric data nodes, laser flow paths, "
+            "holographic tech interface elements, blueprint style on dark carbon fiber backdrop, ultra-sharp vector details"
         ),
         LayoutType.MINIMAL_CLEAN: (
-            "Ultra-clean minimalist graphic illustration, elegant typography focal point, generous whitespace, "
-            "subtle modern gradient, high-end editorial tech design"
+            "High-end tech brand visual identity, central glowing 3D geometric abstract asset, deep midnight blue background, "
+            "soft ambient volumetric light, elegant visual hierarchy, Apple keynote style presentation visual"
         ),
         LayoutType.BOLD_CONTRAST: (
-            "High-contrast dynamic graphic, bold typographic focal point, striking dual-tone color accents, "
-            "dramatic lighting, modern cyber-minimalist vibe"
+            "High-contrast dynamic tech visual, striking electric cyan and deep violet duotone accents, "
+            "cyberpunk minimalist aesthetic, dramatic edge lighting, bold futuristic composition"
         ),
         LayoutType.THUMBNAIL: (
-            "High-impact YouTube thumbnail composition, high contrast, prominent central focal element, "
-            "bold vibrant depth, studio lighting, crisp edges"
+            "High-impact YouTube thumbnail composition, cinematic central 3D focal element, "
+            "bold vibrant depth, studio lighting, crisp edges, glowing volumetric light, high CTR style"
         ),
         LayoutType.PHOTO_REALISTIC: (
-            "Modern developer workspace photography, sleek laptop terminal on wooden desk, moody ambient lighting, "
-            "cinematic depth of field, 8k resolution"
+            "Modern developer setup photography, sleek ultra-wide monitors displaying glowing code and system telemetry, "
+            "cozy ambient neon lighting, clean wooden desk, cinematic bokeh depth of field, 8k resolution"
         ),
         LayoutType.ABSTRACT_TECH: (
-            "Abstract geometric data visualization, glowing network nodes, subtle cybernetic patterns, "
-            "sophisticated dark slate background with neon accents"
+            "Abstract neural network visualization, glowing synapses and flowing cybernetic data streams, "
+            "sophisticated dark slate background with electric cyan, emerald and violet accents, octane render"
         ),
         LayoutType.INFORMATIVE_INFOGRAPHIC: (
-            "Clean technical infographic layout, structured sequential steps, modern iconography, "
-            "clear hierarchy, vector quality"
+            "High-end technology roadmap infographic visual, 3D floating sequential milestone platforms, "
+            "glowing pipeline connectors, futuristic dashboard aesthetic, crisp vector elements, ultra-detailed 4k"
         ),
     }
     return mapping.get(layout, mapping[LayoutType.MINIMAL_CLEAN])

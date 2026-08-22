@@ -71,6 +71,14 @@ def _bootstrap_providers() -> None:
     except ImportError as exc:
         logger.warning("huggingface provider unavailable: %s", exc)
 
+    # ── fal.ai (Recraft V3 & FLUX.1) ──────────────────────────────────────────
+    try:
+        from imaging.providers.fal_ai import FalAIProvider
+        _PROVIDER_REGISTRY["fal_ai"] = FalAIProvider
+        logger.debug("Registered provider: fal_ai")
+    except ImportError as exc:
+        logger.warning("fal_ai provider unavailable: %s", exc)
+
 
 # Run bootstrap at module load time (safe — only does class registration, no I/O)
 _bootstrap_providers()

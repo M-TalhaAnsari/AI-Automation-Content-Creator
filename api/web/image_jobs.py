@@ -25,11 +25,11 @@ def run_image_generation_job(
     """
     Background job function executed by the image RQ worker.
     """
-    from imaging.service import ImageService
+    from api.web.image_deps import get_image_service
     from imaging.models import ImageAssetStatus
     from memory.redis_session_store import load_conversation, save_conversation
 
-    service = ImageService()
+    service = get_image_service()
     user_id = None
     if client_name.startswith("user:"):
         try:

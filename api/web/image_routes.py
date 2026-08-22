@@ -8,7 +8,7 @@ import logging
 import uuid
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile, status
 from fastapi.responses import Response as RawBinaryResponse
 from rq import Queue
 from rq.exceptions import NoSuchJobError
@@ -167,6 +167,37 @@ def get_image_job_status(
     return ImageJobStatusResponse(status="queued", job_id=job_id, post_number=post_number)
 
 
+@router.post("/upload-reference", status_code=status.HTTP_201_CREATED)
+async def upload_reference_image(
+    file: UploadFile = File(...),
+    client_name: str = Depends(verify_identity),
+    service: ImageService = Depends(get_image_service),
+):
+    """
+    Upload a user reference post image for style transfer.
+    Returns the reference asset_id.
+    """
+    user_id = extract_user_id(client_name)
+    ref_id = str(uuid.uuid4())
+    content = await file.read()
+
+    # Determine extension and content type
+    ext = file.filename.split(".")[-1].lower() if file.filename and "." in file.filename else "png"
+    if ext not in ("png", "jpg", "jpeg", "webp"):
+        ext = "png"
+    content_type = file.content_type or f"image/{ext}"
+
+    key = service.storage.build_key(user_id=user_id, asset_id=ref_id, extension=ext)
+    service.storage.save(key, content, content_type=content_type)
+
+    logger.info("Uploaded user reference image %s (%d bytes)", ref_id, len(content))
+    return {
+        "reference_asset_id": ref_id,
+        "image_url": f"/images/{ref_id}",
+        "file_size_bytes": len(content),
+    }
+
+
 @router.get("/{asset_id}")
 def serve_image_asset(
     asset_id: str,
@@ -185,6 +216,8 @@ def serve_image_asset(
         media_type=content_type,
         headers={
             "Cache-Control": "public, max-age=86400, immutable",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
             "Content-Disposition": f'inline; filename="{asset_id}.png"',
         },
     )
