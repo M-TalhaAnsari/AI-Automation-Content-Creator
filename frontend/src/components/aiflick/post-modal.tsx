@@ -246,6 +246,10 @@ export function PostModal({
                     isGeneratingBg={post.isGeneratingImage}
                     onTitleChange={(v) => handleTitleChange(v)}
                     onHookChange={(v) => handleHookChange(v)}
+                    onSummaryChange={(bullets) => {
+                      setEditableBullets(bullets);
+                      updateField({ summary: bullets });
+                    }}
                   />
                 </div>
 

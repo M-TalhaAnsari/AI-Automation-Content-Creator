@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { motion } from "motion/react";
 import {
   Check,
@@ -51,6 +51,11 @@ export function PostCard({
   // Local editing states
   const [inlineTitle, setInlineTitle] = useState(post.title);
   const [inlineHook, setInlineHook] = useState(post.hook);
+
+  useEffect(() => {
+    setInlineTitle(post.title);
+    setInlineHook(post.hook);
+  }, [post.title, post.hook]);
 
   const displayImgUrl = post.imageUrl
     ? getImageUrl(post.imageUrl)
@@ -142,6 +147,10 @@ export function PostCard({
               <Input
                 value={inlineTitle}
                 onChange={(e) => setInlineTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveInline();
+                  if (e.key === "Escape") handleCancelInline();
+                }}
                 className="h-9 text-xs font-bold bg-black/40 text-white rounded-lg border-white/15"
                 placeholder="Slide headline"
               />
@@ -151,6 +160,10 @@ export function PostCard({
               <Input
                 value={inlineHook}
                 onChange={(e) => setInlineHook(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveInline();
+                  if (e.key === "Escape") handleCancelInline();
+                }}
                 className="h-9 text-xs bg-black/40 text-white rounded-lg border-white/15"
                 placeholder="Subtitle hook"
               />

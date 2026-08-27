@@ -52,6 +52,7 @@ export interface SocialPostCanvasProps {
   isGeneratingBg?: boolean;
   onTitleChange?: (newTitle: string) => void;
   onHookChange?: (newHook: string) => void;
+  onSummaryChange?: (newSummary: string[]) => void;
 }
 
 const ZOOM_LEVELS = [0.35, 0.5, 0.65, 0.75, 1.0, 1.25];
@@ -67,6 +68,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
   isGeneratingBg = false,
   onTitleChange,
   onHookChange,
+  onSummaryChange,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
@@ -294,12 +296,6 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
         editable: true,
         selectable: true,
         hoverCursor: "text",
-        shadow: new fabric.Shadow({
-          color: "rgba(0,0,0,0.6)",
-          blur: 10,
-          offsetX: 0,
-          offsetY: 2,
-        }),
       });
       titleFab.on("changed", () => {
         if (onTitleChange) onTitleChange((titleFab as any).text || "");
@@ -396,6 +392,12 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
           editable: true,
           selectable: true,
           hoverCursor: "text",
+        });
+        bulletContent.on("changed", () => {
+          if (onSummaryChange) {
+            const updatedBullets = bulletObjRefs.current.map((b) => (b as any).text || "");
+            onSummaryChange(updatedBullets);
+          }
         });
         bulletObjRefs.current.push(bulletContent);
         canvas.add(bulletContent);
@@ -520,6 +522,15 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     fc.on("selection:cleared", () => {
       setHasSelection(false);
       setSelectedFontSize(null);
+    });
+
+    fc.on("mouse:dblclick", (opt) => {
+      const target = opt.target;
+      if (target && target instanceof fabric.Textbox && (target as any).editable) {
+        target.enterEditing();
+        target.selectAll();
+        fc.renderAll();
+      }
     });
 
     fc.on("object:modified", saveStateToHistory);
