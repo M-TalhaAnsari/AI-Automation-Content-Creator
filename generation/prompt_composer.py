@@ -1,5 +1,5 @@
-"""generation/prompt_composer.py -- combines one IntentStrategy's guidance
-with one PlatformStrategy's structure into the single final prompt string
+﻿"""generation/prompt_composer.py -- combines one IntentStrategy guidance
+with one PlatformStrategy structure into the single final prompt string
 sent to the LLM. This is the ONLY file that knows about both strategy
 families at once -- individual intent/platform strategies never reference
 each other, keeping the two axes genuinely independent.
@@ -47,7 +47,7 @@ def compose_prompt(state: dict) -> str:
             star_str = f" (Rating/Stars: {stars})" if stars else ""
             lines.append(f"  - {title}{star_str}: {str(desc)[:350]} | {url}")
         data_sections.append("\n".join(lines))
-    data_block = "\n\n".join(data_sections) if data_sections else f"Topic: {topic} (No live web data available — use your internal knowledge base)"
+    data_block = "\n\n".join(data_sections) if data_sections else f"Topic: {topic} (No live web data available -- use your internal knowledge base)"
 
     caption_guide = platform_strategy.wrap_caption_guide(guidance.caption_guide)
 
@@ -56,7 +56,7 @@ def compose_prompt(state: dict) -> str:
     if item_kind:
         item_instruction += (
             f" Each of the {post_count} slots MUST be a distinct, individually-nameable "
-            f"{item_kind} — not a related practice, technique, or adjacent concept that merely "
+            f"{item_kind} -- not a related practice, technique, or adjacent concept that merely "
             f"relates to the topic."
         )
 
@@ -80,7 +80,7 @@ def compose_prompt(state: dict) -> str:
 
     **AVOID REPEATING THESE (already covered in recent sessions on this topic/platform):**
     {covered_lines}
-    Do not reuse these exact titles or angles — find distinct ones."""
+    Do not reuse these exact titles or angles -- find distinct ones."""
 
     correction_block = ""
     retry_count = state.get("generation_retry_count", 0)
@@ -91,9 +91,10 @@ def compose_prompt(state: dict) -> str:
 
     **FIX THESE SPECIFIC ISSUES FROM YOUR PREVIOUS ATTEMPT (retry {retry_count}):**
     {errors_text}
-    Correct every issue listed above in this new attempt — do not repeat the same mistakes."""
+    Correct every issue listed above in this new attempt -- do not repeat the same mistakes."""
 
-    return f"""You are an elite technical content strategist. Create {post_count} distinct {platform_name} posts based on the real data provided below.
+    return f"""You are an elite viral social media creator and copywriter. Your posts regularly drive 500K+ organic impressions.
+Create {post_count} distinct, platform-ready {platform_name} posts based on the real data provided below.
 
     PLATFORM: {platform_name}
     TONE ARCHETYPE: {ps['tone']}
@@ -107,24 +108,36 @@ def compose_prompt(state: dict) -> str:
     CONTENT STRATEGY:
     {guidance.intent_instruction}
 
+    **VIRAL CREATOR QUALITY GATES -- EVERY POST MUST PASS ALL OF THESE:**
+    - HOOK: Opens with a curiosity gap, bold claim, or pattern interrupt. NOT a generic intro.
+    - BULLETS in summary: Each bullet is ultra-short (max 15 words), punchy, and delivers standalone value.
+      Use emoji anchors + bold keyword starters. NEVER write "Underlying mechanism" or "Sub-Concept X" filler.
+    - CAPTION: Visual-first, mobile-card layout. Hard line breaks between sections. NO walls of text.
+    - CTA: Ends with a strong call-to-action matching the intent (save, comment, DM for repo).
+    - HASHTAGS: Placed ONLY in the hashtags array. NEVER in the caption text.
+    - LANGUAGE: Active voice. Creator voice. Human. Never corporate, academic, or passive.
+
     **REAL SOURCE DATA:**
     {data_block}
     {avoid_block}
     {correction_block}
 
     **CORE INSTRUCTIONS:**
-    1. **Curate & Prioritize Highest-Signal Items:** Thoroughly review all the real research items provided above. Select the top {post_count} most compelling, high-signal, and relevant items that best answer the user request. Generate exactly {post_count} posts corresponding to your top selections.
-    2. **Analyze User Intent:** Completely read the raw request above. If they asked to include specific lines like "This docker's concept will never fail you interview", build the post architecture specifically around that constraint.
+    1. **Curate & Prioritize Highest-Signal Items:** Review all research items. Select the top {post_count} most
+       compelling, high-signal items. Generate exactly {post_count} posts corresponding to your top selections.
+    2. **Obey the Raw Request:** Read the user intent above completely. If they specified a phrasing,
+       angle, or hook, honor it in every post.
     3. {item_instruction}
-    4. **Structured Caption Layout:** Write clean, spaced, highly comprehensive paragraphs. Do not skip engineering details to save space.
-    5. **Enforce JSON Array Boundaries:** Do NOT print hashtags inside the "caption" text field. Put all generated tags cleanly inside the "hashtags" array.
-    6. **MANDATORY:** You must fill out exactly {post_count} post slots matching the JSON structure.
+    4. **Viral Caption Layout:** Structure every caption with: HOOK -> BULLETS/INSIGHT -> CONTEXT -> CTA.
+       Hard line breaks. No paragraph walls. Write for a 6-second mobile scroll attention span.
+    5. **Hashtag Discipline:** Hashtags belong ONLY in the "hashtags" array. Never in "caption".
+    6. **MANDATORY:** Fill exactly {post_count} post slots matching the JSON structure below.
 
-    Return your exact output using this JSON template — fill all {post_count} slots cleanly:
+    Return your exact output using this JSON template -- fill all {post_count} slots cleanly:
     {{
     "posts": [
     {post_slots}
     ],
-    "series_hook": "<1-sentence teaser for the entire series>",
-    "trend_insight": "<2-3 sentences explaining why this specific topic drives high organic saves right now>"
+    "series_hook": "<1-sentence curiosity-gap teaser for the entire series that makes someone want to binge all posts>",
+    "trend_insight": "<2-3 sentences explaining why this specific topic drives high organic saves RIGHT NOW -- be specific, not generic>"
     }}"""

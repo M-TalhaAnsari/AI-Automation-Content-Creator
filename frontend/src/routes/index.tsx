@@ -249,7 +249,7 @@ function Workspace() {
       // Poll until done
       const status = await pollImageJob(job.job_id);
 
-      const resolvedUrl = status.image_url || (status.asset_id ? getImageUrl(status.asset_id) : "");
+      const resolvedUrl = status.image_url || (status.asset_id ? getImageUrl(status.asset_id, true) : "");
 
       // Update post state
       setMessages((prev) =>

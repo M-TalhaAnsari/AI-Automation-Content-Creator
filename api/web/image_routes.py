@@ -215,7 +215,7 @@ def serve_image_asset(
         content=data,
         media_type=content_type,
         headers={
-            "Cache-Control": "public, max-age=86400, immutable",
+            "Cache-Control": "public, max-age=3600, must-revalidate",
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, OPTIONS",
             "Content-Disposition": f'inline; filename="{asset_id}.png"',

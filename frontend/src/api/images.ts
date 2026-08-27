@@ -18,14 +18,17 @@ const BASE_URL = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").repla
 
 /**
  * Return direct URL to stream raw PNG/JPEG bytes from backend asset storage.
+ * Appends a cache-busting timestamp to prevent stale cached images from showing
+ * when a post's background is regenerated.
  */
-export function getImageUrl(assetId: string): string {
+export function getImageUrl(assetId: string, cacheBust = false): string {
   if (!assetId) return "";
-  // If it's already an absolute URL or data URI, return as-is
+  // If it is already an absolute URL or data URI, return as-is
   if (assetId.startsWith("http://") || assetId.startsWith("https://") || assetId.startsWith("data:")) {
     return assetId;
   }
-  return `${BASE_URL}/images/${assetId}`;
+  const base = `${BASE_URL}/images/${assetId}`;
+  return cacheBust ? `${base}?t=${Date.now()}` : base;
 }
 
 /**
