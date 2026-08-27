@@ -37,13 +37,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "TrendForge — AI Content Workspace" },
+      { title: "AIFlick — AI Social Content Workspace" },
       {
         name: "description",
         content:
-          "TrendForge turns plain-language ideas into platform-ready social posts, grounded in live signals from GitHub, Reddit, HackerNews and Google Trends.",
+          "AIFlick turns plain-language ideas into platform-ready social posts, grounded in live signals from GitHub, Reddit, HackerNews and Google Trends.",
       },
-      { property: "og:title", content: "TrendForge — AI Content Workspace" },
+      { property: "og:title", content: "AIFlick — AI Social Content Workspace" },
       {
         property: "og:description",
         content:
@@ -593,6 +593,8 @@ function Workspace() {
                   isGuest={!authenticated}
                   guestMessagesLeft={guestMessagesLeft}
                   userEmail={user?.email}
+                  userName={user?.name}
+                  userTier={user?.tier}
                   onSelectSession={handleSelectSession}
                   onNewChat={handleNewChat}
                   onDeleteSession={handleDeleteSession}
@@ -620,6 +622,8 @@ function Workspace() {
               isGuest={!authenticated}
               guestMessagesLeft={guestMessagesLeft}
               userEmail={user?.email}
+              userName={user?.name}
+              userTier={user?.tier}
               onSelectSession={(id) => {
                 handleSelectSession(id);
                 setMobileNavOpen(false);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { AlertCircle, Flame, Loader2, X } from "lucide-react";
 
@@ -15,6 +15,7 @@ type Props = {
 
 export function AuthScreen({ forced, onAuthenticated, onCancel }: Props) {
   const [mode, setMode] = useState<"login" | "signup">("login");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,7 +32,7 @@ export function AuthScreen({ forced, onAuthenticated, onCancel }: Props) {
       if (mode === "login") {
         await login({ email: email.trim(), password });
       } else {
-        await signup({ email: email.trim(), password });
+        await signup({ name: name.trim(), email: email.trim(), password });
       }
       onAuthenticated();
     } catch (err: any) {
@@ -70,13 +71,13 @@ export function AuthScreen({ forced, onAuthenticated, onCancel }: Props) {
         <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
           <Flame className="size-4.5" />
         </span>
-        <h1 className="mt-4 text-xl tracking-tight text-foreground">
+        <h1 className="mt-4 text-xl tracking-tight text-foreground font-bold">
           {mode === "login" ? "Welcome back" : "Create your workspace"}
         </h1>
         <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
           {forced
-            ? "You've used your free messages — sign in to keep going."
-            : "Your chats and generated posts stay saved to your account."}
+            ? "You have used your free messages -- sign in to keep going."
+            : "Your chats, brand presets and generated visual studio posts stay saved."}
         </p>
 
         <AnimatePresence>
@@ -94,6 +95,25 @@ export function AuthScreen({ forced, onAuthenticated, onCancel }: Props) {
         </AnimatePresence>
 
         <form className="mt-6 space-y-3.5" onSubmit={handleSubmit}>
+          {mode === "signup" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="name" className="label-mono">
+                Your Name
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                required
+                disabled={loading}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
+                placeholder="e.g. Alex Rivera"
+                className="h-10 rounded-xl border-border/80 bg-surface-raised/60"
+              />
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label htmlFor="email" className="label-mono">
               Email
@@ -110,6 +130,7 @@ export function AuthScreen({ forced, onAuthenticated, onCancel }: Props) {
               className="h-10 rounded-xl border-border/80 bg-surface-raised/60"
             />
           </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="password" className="label-mono">
               Password
@@ -126,15 +147,16 @@ export function AuthScreen({ forced, onAuthenticated, onCancel }: Props) {
               className="h-10 rounded-xl border-border/80 bg-surface-raised/60"
             />
           </div>
+
           <Button
             type="submit"
             disabled={loading}
-            className="h-10 w-full rounded-xl bg-primary text-primary-foreground shadow-ember hover:bg-primary-hover"
+            className="h-10 w-full rounded-xl bg-primary text-primary-foreground shadow-ember hover:bg-primary-hover font-semibold"
           >
             {loading ? (
               <span className="flex items-center gap-2">
                 <Loader2 className="size-4 animate-spin" />
-                {mode === "login" ? "Logging in…" : "Creating account…"}
+                {mode === "login" ? "Logging in..." : "Creating account..."}
               </span>
             ) : mode === "login" ? (
               "Log in"
@@ -170,4 +192,3 @@ export function AuthScreen({ forced, onAuthenticated, onCancel }: Props) {
     </div>
   );
 }
-

@@ -1,6 +1,12 @@
 from typing import Any, Dict, List, Optional
-
 from pydantic import BaseModel, Field
+
+
+class TimingMeta(BaseModel):
+    research_ms: Optional[int] = None
+    routing_ms: Optional[int] = None
+    generation_ms: Optional[int] = None
+    total_turn_ms: Optional[int] = None
 
 
 class ChatRequest(BaseModel):
@@ -18,6 +24,7 @@ class ChatResponse(BaseModel):
     reply: Optional[str] = None
     job_id: Optional[str] = None
     tokens_used: Optional[int] = None
+    timings: Optional[TimingMeta] = None
 
 
 class JobStatusResponse(BaseModel):
@@ -25,6 +32,7 @@ class JobStatusResponse(BaseModel):
     action: Optional[str] = None
     reply: Optional[str] = None
     detail: Optional[str] = None
+    timings: Optional[TimingMeta] = None
 
 
 class SessionView(BaseModel):
@@ -41,9 +49,11 @@ class SessionView(BaseModel):
     gate_tokens_used: int = 0
     post_history: List[List[Dict[str, Any]]] = Field(default_factory=list)
     pending_confirmation: Optional[Dict[str, Any]] = None
+    last_timings: Optional[Dict[str, Any]] = None
 
 
 class SignupRequest(BaseModel):
+    name: Optional[str] = ""
     email: str
     password: str
 
@@ -59,7 +69,9 @@ class TokenResponse(BaseModel):
 
 class MeResponse(BaseModel):
     id: int
+    name: Optional[str] = ""
     email: str
+    tier: Optional[str] = "free"
 
 
 class SessionListItem(BaseModel):

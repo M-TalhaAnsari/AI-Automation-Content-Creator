@@ -13,8 +13,10 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "")
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
+    name TEXT DEFAULT '',
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
+    tier TEXT DEFAULT 'free',
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -73,7 +75,6 @@ CREATE TABLE IF NOT EXISTS image_assets (
 
 CREATE INDEX IF NOT EXISTS idx_image_assets_session ON image_assets(session_id, post_number);
 CREATE INDEX IF NOT EXISTS idx_image_assets_user ON image_assets(user_id);
-
 """
 
 
@@ -113,6 +114,15 @@ def ensure_default_visual_profile(conn=None) -> None:
 def init_db() -> None:
     with _conn() as conn:
         conn.execute(_SCHEMA)
+        # Migrate: ensure name & tier columns exist in users table if table was created earlier
+        try:
+            conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT DEFAULT '';")
+        except Exception:
+            pass
+        try:
+            conn.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS tier TEXT DEFAULT 'free';")
+        except Exception:
+            pass
         ensure_default_visual_profile(conn)
 
 
@@ -122,11 +132,11 @@ def parse_user_id(client_name: str) -> int:
     return int(client_name.split(":", 1)[1])
 
 
-def create_user(email: str, password_hash: str) -> int:
+def create_user(email: str, password_hash: str, name: Optional[str] = None, tier: str = "free") -> int:
     with _conn() as conn:
         row = conn.execute(
-            "INSERT INTO users (email, password_hash) VALUES (%s, %s) RETURNING id",
-            (email, password_hash),
+            "INSERT INTO users (email, password_hash, name, tier) VALUES (%s, %s, %s, %s) RETURNING id",
+            (email, password_hash, name or "", tier or "free"),
         ).fetchone()
         return row[0]
 
@@ -134,19 +144,24 @@ def create_user(email: str, password_hash: str) -> int:
 def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
     with _conn() as conn:
         row = conn.execute(
-            "SELECT id, email, password_hash FROM users WHERE email = %s", (email,)
+            "SELECT id, email, password_hash, COALESCE(name, ''), COALESCE(tier, 'free') FROM users WHERE email = %s", (email,)
         ).fetchone()
         if not row:
             return None
-        return {"id": row[0], "email": row[1], "password_hash": row[2]}
+        return {"id": row[0], "email": row[1], "password_hash": row[2], "name": row[3], "tier": row[4]}
 
 
 def get_user_by_id(user_id: int) -> Optional[Dict[str, Any]]:
     with _conn() as conn:
-        row = conn.execute("SELECT id, email FROM users WHERE id = %s", (user_id,)).fetchone()
+        row = conn.execute("SELECT id, email, COALESCE(name, ''), COALESCE(tier, 'free') FROM users WHERE id = %s", (user_id,)).fetchone()
         if not row:
             return None
-        return {"id": row[0], "email": row[1]}
+        return {"id": row[0], "email": row[1], "name": row[2], "tier": row[3]}
+
+
+def update_user_tier(user_id: int, tier: str) -> None:
+    with _conn() as conn:
+        conn.execute("UPDATE users SET tier = %s WHERE id = %s", (tier, user_id))
 
 
 def upsert_chat_session(user_id: int, session_id: str, title: Optional[str] = None) -> None:
@@ -518,4 +533,4 @@ def list_image_assets_for_session_from_db(session_id: str) -> List[Dict[str, Any
                 "updated_at": r[18].isoformat() if r[18] else None,
             }
             for r in rows
-        ]
+        ]

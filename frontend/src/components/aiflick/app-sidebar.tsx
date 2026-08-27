@@ -27,6 +27,8 @@ type Props = {
   isGuest: boolean;
   guestMessagesLeft: number;
   userEmail?: string | null;
+  userName?: string | null;
+  userTier?: string | null;
   collapsible?: boolean;
   onSelectSession: (id: string) => void;
   onNewChat: () => void;
@@ -42,6 +44,8 @@ export function AppSidebar({
   isGuest,
   guestMessagesLeft,
   userEmail,
+  userName,
+  userTier,
   collapsible = true,
   onSelectSession,
   onNewChat,
@@ -192,10 +196,14 @@ export function AppSidebar({
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-sm text-foreground">
-                    {userEmail || "Workspace"}
+                    {userName || userEmail || "Workspace"}
                   </span>
-                  <span className="block truncate font-mono text-[10px] text-muted-foreground">
-                    Pro workspace
+                  <span className="block truncate font-mono text-[10px] text-primary/90 font-medium">
+                    {userTier === "agency"
+                      ? "Agency Studio"
+                      : userTier === "creator"
+                      ? "Creator Pro"
+                      : "Free Explorer"}
                   </span>
                 </span>
                 <Settings className="size-4 shrink-0 text-muted-foreground" />

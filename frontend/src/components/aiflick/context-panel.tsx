@@ -1,14 +1,12 @@
-import { motion } from "motion/react";
-import { Database, Image as ImageIcon, Palette, Sliders, Sparkle } from "lucide-react";
-
-import { SOURCES } from "./data";
+﻿import { motion } from "motion/react";
+import { Palette, Sliders, Sparkle } from "lucide-react";
 import { PLATFORMS } from "./data";
 
 type Props = {
   platform: string;
   postCount: number;
   constraints: string[];
-  activeSources: string[];
+  activeSources?: string[];
   visualMood?: string;
   onVisualMoodChange?: (mood: string) => void;
 };
@@ -24,7 +22,6 @@ export function ContextPanel({
   platform,
   postCount,
   constraints,
-  activeSources,
   visualMood = "clean-informative",
   onVisualMoodChange,
 }: Props) {
@@ -37,21 +34,21 @@ export function ContextPanel({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 12 }}
       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-      className="hidden h-full w-[300px] shrink-0 overflow-y-auto border-l border-border/70 bg-sidebar px-4 py-5 scroll-quiet lg:block"
+      className="hidden h-full w-[280px] shrink-0 overflow-y-auto border-l border-border/70 bg-sidebar px-4 py-5 scroll-quiet lg:block"
     >
       <section>
         <div className="flex items-center gap-2">
           <Sliders className="size-3.5 text-muted-foreground" />
-          <h2 className="label-mono">Run settings</h2>
+          <h2 className="label-mono">Run Settings</h2>
         </div>
         <dl className="mt-3 space-y-2 text-sm">
           <div className="flex items-center justify-between rounded-lg bg-surface-raised/50 px-3 py-2">
             <dt className="text-muted-foreground">Platform</dt>
-            <dd className="text-foreground">{platformLabel}</dd>
+            <dd className="text-foreground font-medium">{platformLabel}</dd>
           </div>
           <div className="flex items-center justify-between rounded-lg bg-surface-raised/50 px-3 py-2">
-            <dt className="text-muted-foreground">Posts per run</dt>
-            <dd className="font-mono text-foreground">{postCount}</dd>
+            <dt className="text-muted-foreground">Posts / Slides</dt>
+            <dd className="font-mono text-foreground font-semibold">{postCount}</dd>
           </div>
         </dl>
       </section>
@@ -61,10 +58,10 @@ export function ContextPanel({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Palette className="size-3.5 text-muted-foreground" />
-            <h2 className="label-mono">Visual Styling</h2>
+            <h2 className="label-mono">Visual Mood</h2>
           </div>
           <span className="text-[10px] font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-            Modular
+            Adaptive
           </span>
         </div>
         <div className="mt-3 space-y-1.5">
@@ -95,20 +92,16 @@ export function ContextPanel({
             );
           })}
         </div>
-        <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-          Visual prompts and color palettes adapt automatically based on the active style profile.
-        </p>
       </section>
 
       <section className="mt-6">
         <div className="flex items-center gap-2">
           <Sparkle className="size-3.5 text-muted-foreground" />
-          <h2 className="label-mono">Active constraints</h2>
+          <h2 className="label-mono">Creator Rules</h2>
         </div>
         {constraints.length === 0 ? (
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-            None yet. Tell the assistant things like "avoid emojis" and they'll persist
-            across this session.
+            None yet. Tell the assistant rules like "use bullet points only" and they will persist across this session.
           </p>
         ) : (
           <ul className="mt-3 space-y-1.5">
@@ -122,36 +115,6 @@ export function ContextPanel({
             ))}
           </ul>
         )}
-      </section>
-
-      <section className="mt-6">
-        <div className="flex items-center gap-2">
-          <Database className="size-3.5 text-muted-foreground" />
-          <h2 className="label-mono">Sources</h2>
-        </div>
-        <ul className="mt-3 space-y-1">
-          {SOURCES.map((source) => {
-            const used = activeSources.includes(source);
-            return (
-              <li
-                key={source}
-                className="flex items-center justify-between px-1 py-1.5 text-xs"
-              >
-                <span className={used ? "text-foreground" : "text-muted-foreground"}>
-                  {source}
-                </span>
-                <span
-                  className={
-                    used
-                      ? "size-1.5 rounded-full bg-success"
-                      : "size-1.5 rounded-full bg-border-strong"
-                  }
-                  aria-label={used ? "used in last run" : "idle"}
-                />
-              </li>
-            );
-          })}
-        </ul>
       </section>
     </motion.aside>
   );

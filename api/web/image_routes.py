@@ -201,6 +201,7 @@ async def upload_reference_image(
 @router.get("/{asset_id}")
 def serve_image_asset(
     asset_id: str,
+    request: Request,
     service: ImageService = Depends(get_image_service),
 ):
     """
@@ -211,15 +212,21 @@ def serve_image_asset(
         raise to_http_exception(ImageNotFoundError(asset_id))
 
     data, content_type = result
+    origin = request.headers.get("origin") or "*"
+    headers = {
+        "Cache-Control": "public, max-age=3600, must-revalidate",
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "*",
+        "Content-Disposition": f'inline; filename="{asset_id}.png"',
+    }
+    if origin != "*":
+        headers["Access-Control-Allow-Credentials"] = "true"
+
     return RawBinaryResponse(
         content=data,
         media_type=content_type,
-        headers={
-            "Cache-Control": "public, max-age=3600, must-revalidate",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, OPTIONS",
-            "Content-Disposition": f'inline; filename="{asset_id}.png"',
-        },
+        headers=headers,
     )
 
 

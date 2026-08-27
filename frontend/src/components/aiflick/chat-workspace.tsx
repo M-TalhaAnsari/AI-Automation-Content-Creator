@@ -72,7 +72,7 @@ export function ChatWorkspace({
       <div className="pointer-events-none absolute inset-x-0 top-0 h-64 ambient-glow" />
 
       <div className="min-h-0 flex-1 overflow-y-auto scroll-quiet">
-        <div className="mx-auto w-full max-w-3xl px-4 pt-10 pb-6 sm:px-6">
+        <div className="mx-auto w-full max-w-5xl px-4 pt-10 pb-6 sm:px-6">
           {isEmpty ? (
             <EmptyState onSuggestion={onSuggestion} />
           ) : (
@@ -97,7 +97,7 @@ export function ChatWorkspace({
       </div>
 
       <div className="border-t border-border/70 bg-background/85 backdrop-blur-xl">
-        <div className="mx-auto w-full max-w-3xl px-4 py-4 sm:px-6">
+        <div className="mx-auto w-full max-w-5xl px-4 py-4 sm:px-6">
           <AnimatePresence initial={false}>
             {error && (
               <motion.div
@@ -267,7 +267,7 @@ function MessageRow({
         <Flame className="size-3.5" />
       </span>
       <div className="min-w-0">
-        <div className="text-sm text-foreground/90">
+        <div className="text-[15px] leading-relaxed text-foreground/95">
           <Markdown content={message.content} />
         </div>
         {hasPosts && (
@@ -292,7 +292,7 @@ function MessageRow({
               </div>
             )}
 
-            <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-2">
+            <div className="grid gap-3 grid-cols-2">
               {message.posts!.map((post, i) => (
                 <PostCard
                   key={post.id}

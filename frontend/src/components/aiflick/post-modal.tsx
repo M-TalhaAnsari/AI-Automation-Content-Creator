@@ -11,6 +11,9 @@ import {
   Loader2,
   RefreshCw,
   Sparkles,
+  Edit3,
+  Sliders,
+  Send,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,24 +26,26 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { PlatformBadge } from "./platform-badge";
 import { SocialPostCanvas } from "./social-post-canvas";
 import { getImageUrl } from "@/api";
 import type { GeneratedPost } from "./data";
 
-const QUICK_EDITS = [
-  "Make the hook punchier",
-  "Shorten the caption",
-  "More technical",
-  "Swap the hashtags",
+const QUICK_TEXT_PROMPTS = [
+  "Convert caption to bullet points",
+  "Make on-screen text punchier & shorter",
+  "Add high-conversion curiosity hook",
+  "Format as 5-step carousel breakdown",
+  "Make it conversational & casual",
 ];
 
 const QUICK_VISUAL_PROMPTS = [
-  "Minimalist dark mode tech card",
-  "High-contrast architecture diagram",
-  "Clean typographic layout with vibrant accent",
-  "Photorealistic developer setup",
+  "Minimalist dark obsidian tech card",
+  "Clean geometric blueprint with glowing cyan accents",
+  "Futuristic 3D isometric abstract render",
+  "Cinematic studio lighting with soft bokeh",
 ];
 
 type Props = {
@@ -66,27 +71,29 @@ export function PostModal({
 }: Props) {
   const [instruction, setInstruction] = useState("");
   const [visualPrompt, setVisualPrompt] = useState("");
-  const [showVisualPromptInput, setShowVisualPromptInput] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<"content" | "visual">("content");
+  const [activeTab, setActiveTab] = useState<"studio" | "text">("studio");
+
+  // Local editable fields for live synchronization
+  const [editableTitle, setEditableTitle] = useState("");
+  const [editableHook, setEditableHook] = useState("");
+  const [editableCaption, setEditableCaption] = useState("");
 
   useEffect(() => {
-    if (open) {
+    if (open && post) {
       setInstruction("");
       setVisualPrompt("");
-      setShowVisualPromptInput(false);
-      // Default to visual tab if image exists and user opened modal
-      if (post?.imageUrl || post?.imageAssetId) {
-        setActiveTab("content");
-      }
+      setEditableTitle(post.title || "");
+      setEditableHook(post.hook || "");
+      setEditableCaption(post.caption || "");
     }
-  }, [open, post?.id]);
+  }, [open, post?.id, post?.title, post?.hook, post?.caption]);
 
   if (!post) return null;
 
-  const displayImgUrl = post.imageUrl || (post.imageAssetId ? getImageUrl(post.imageAssetId) : null);
+  const displayImgUrl = post.imageUrl || (post.imageAssetId ? getImageUrl(post.imageAssetId, true) : null);
 
-  function submitTextEdit() {
+  function submitTextPrompt() {
     const value = instruction.trim();
     if (!value || !post) return;
     onApplyEdit(post.id, value);
@@ -98,328 +105,307 @@ export function PostModal({
     const prompt = visualPrompt.trim() || undefined;
     onGenerateImage(post.id, prompt);
     setVisualPrompt("");
-    setShowVisualPromptInput(false);
-    toast("Image generation queued...");
+    toast.info("Generating AI background in background...");
   }
 
   function handleCopy() {
     if (!post) return;
     void navigator.clipboard.writeText(
-      `${post.hook}\n\n${post.caption}\n\n${post.hashtags.join(" ")}`,
+      `${editableHook || post.hook}\n\n${editableCaption || post.caption}\n\n${post.hashtags.join(" ")}`
     );
     setCopied(true);
-    toast("Post copied to clipboard");
+    toast.success("Full post copied to clipboard!");
     window.setTimeout(() => setCopied(false), 1600);
-  }
-
-  function handleDownloadImage() {
-    if (!displayImgUrl) return;
-    const a = document.createElement("a");
-    a.href = displayImgUrl;
-    a.download = `trendforge-${post?.platform || "post"}-${post?.number || index}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    toast("Image download started");
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex max-h-[92vh] flex-col gap-0 overflow-hidden rounded-2xl border-border/70 bg-surface-raised/95 p-0 shadow-panel backdrop-blur-xl sm:max-h-[90vh] sm:max-w-3xl"
+        className="flex h-[96vh] flex-col gap-0 overflow-hidden rounded-2xl border-border/70 bg-surface-raised/95 p-0 shadow-2xl backdrop-blur-2xl sm:max-w-6xl"
       >
-        <DialogHeader className="space-y-3 border-b border-border/60 px-4 pt-5 pb-4 text-left sm:px-6 sm:pt-6 sm:pb-5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+        {/* Modal Header */}
+        <DialogHeader className="space-y-2 border-b border-border/60 px-5 pt-4 pb-3 text-left sm:px-6">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
               <PlatformBadge platform={post.platform} />
-              <span className="label-mono text-muted-foreground">Post {index}</span>
+              <span className="label-mono text-xs text-muted-foreground font-semibold">Post {index}</span>
+              {post.latencyMs && (
+                <span className="rounded-full bg-secondary/80 px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+                  ⚡ {(post.latencyMs / 1000).toFixed(1)}s
+                </span>
+              )}
             </div>
-            {/* View Tab Switcher */}
-            <div className="flex items-center gap-1 rounded-lg bg-secondary/60 p-0.5 border border-border/50">
+
+            {/* View Mode Switcher */}
+            <div className="flex items-center gap-1 rounded-xl bg-secondary/60 p-1 border border-border/50">
               <button
                 type="button"
-                onClick={() => setActiveTab("content")}
-                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                  activeTab === "content"
-                    ? "bg-background text-foreground shadow-xs"
+                onClick={() => setActiveTab("studio")}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  activeTab === "studio"
+                    ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Post Text
+                <Sparkles className="size-3.5 text-primary" /> Visual Studio & Canvas
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab("visual")}
-                className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                  activeTab === "visual"
-                    ? "bg-background text-foreground shadow-xs"
+                onClick={() => setActiveTab("text")}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  activeTab === "text"
+                    ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Sparkles className="size-3 text-primary" />
-                Visual Asset
-                {displayImgUrl && <span className="size-1.5 rounded-full bg-primary" />}
+                <Edit3 className="size-3.5" /> Full Copy & Description
               </button>
             </div>
           </div>
-          <DialogTitle className="pr-8 text-lg leading-snug tracking-tight sm:text-xl">
-            {post.title}
+
+          <DialogTitle className="text-lg font-bold tracking-tight sm:text-xl text-foreground">
+            {editableTitle || post.title}
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Full generated post with hook, caption, hashtags, source, and visual assets.
+            Post Studio for editing visuals, typography, hooks, descriptions and hashtags.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto scroll-quiet px-4 py-5 sm:px-6">
+        {/* Modal Body */}
+        <div className="min-h-0 flex-1 overflow-y-auto scroll-quiet px-5 py-4 sm:px-6">
           <AnimatePresence mode="wait" initial={false}>
-            {activeTab === "content" ? (
+            {activeTab === "studio" ? (
               <motion.div
-                key="tab-content"
-                initial={{ opacity: 0, y: 6 }}
+                key="tab-studio"
+                initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.18 }}
-                className="space-y-5"
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.15 }}
+                className="grid grid-cols-1 lg:grid-cols-12 gap-6"
               >
-                {/* Visual Banner Preview if available */}
-                {displayImgUrl && (
-                  <div className="relative overflow-hidden rounded-xl border border-border/60 bg-background/50">
-                    <img
-                      src={displayImgUrl}
-                      alt={post.title}
-                      className="max-h-56 w-full object-cover"
-                    />
-                    <div className="absolute top-2 right-2 flex items-center gap-1.5">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => setActiveTab("visual")}
-                        className="h-7 gap-1 rounded-lg bg-background/85 px-2 text-xs backdrop-blur-md hover:bg-background"
-                      >
-                        <Sparkles className="size-3 text-primary" /> View Visual Tab
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                <Field label="Hook">
-                  <p className="text-[15px] leading-relaxed font-medium text-foreground">
-                    {post.hook}
-                  </p>
-                </Field>
-
-                <Field label="Caption">
-                  <div className="space-y-3 text-sm leading-relaxed text-foreground/85">
-                    {post.caption.split("\n\n").map((para, i) => (
-                      <p key={i}>{para}</p>
-                    ))}
-                  </div>
-                </Field>
-
-                <Field label="Hashtags">
-                  <div className="flex flex-wrap gap-1.5">
-                    {post.hashtags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-md bg-secondary/70 px-2 py-1 font-mono text-[11px] text-primary/90 ring-1 ring-border/50"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </Field>
-
-                <Field label="Source">
-                  <a
-                    href={post.sourceUrl}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-4 hover:underline"
-                  >
-                    {post.sourceLabel}
-                    <ExternalLink className="size-3.5" />
-                  </a>
-                </Field>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="tab-visual"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.18 }}
-                className="space-y-5"
-              >
-                <div className="space-y-4">
+                {/* Left 8 Columns: Fabric Canvas Studio */}
+                <div className="lg:col-span-8 space-y-4">
                   <SocialPostCanvas
                     backgroundImageUrl={displayImgUrl}
-                    title={post.title}
-                    hook={post.hook}
+                    title={editableTitle || post.title}
+                    hook={editableHook || post.hook}
                     summary={post.summary || post.caption}
                     platform={post.platform}
-                    authorHandle="@trendforge"
+                    authorHandle="@aiflick"
                     onRegenerateBg={() => submitVisualGeneration()}
                     isGeneratingBg={post.isGeneratingImage}
                   />
+                </div>
 
-                  {/* Custom Visual Prompt Override Section */}
+                {/* Right 4 Columns: Editable Content & AI Text Rewriter */}
+                <div className="lg:col-span-4 flex flex-col gap-4 border-t lg:border-t-0 lg:border-l border-border/60 pt-4 lg:pt-0 lg:pl-6">
+                  {/* Quick AI Rewriter Prompt Bar */}
+                  <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                        <Sparkles className="size-3.5" /> AI Content Assistant
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">Rewrite post in 1-click</span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1">
+                      {QUICK_TEXT_PROMPTS.map((prompt) => (
+                        <button
+                          key={prompt}
+                          type="button"
+                          disabled={editing}
+                          onClick={() => setInstruction(prompt)}
+                          className="rounded-full border border-border/70 bg-background/80 px-2 py-0.5 text-[10px] text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors disabled:opacity-40"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        value={instruction}
+                        onChange={(e) => setInstruction(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            submitTextPrompt();
+                          }
+                        }}
+                        disabled={editing}
+                        placeholder="e.g. Turn into 4 concise bullet points..."
+                        className="h-8 text-xs bg-background/90"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={submitTextPrompt}
+                        disabled={editing || !instruction.trim()}
+                        className="h-8 px-2.5 text-xs bg-primary text-primary-foreground hover:bg-primary-hover shrink-0"
+                      >
+                        {editing ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Live Editable Text Fields */}
+                  <div className="space-y-3 flex-1">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-mono text-muted-foreground font-semibold uppercase">
+                        Slide Headline
+                      </label>
+                      <Input
+                        value={editableTitle}
+                        onChange={(e) => setEditableTitle(e.target.value)}
+                        className="h-8 text-xs font-medium"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-mono text-muted-foreground font-semibold uppercase">
+                        Subtext / Hook
+                      </label>
+                      <Input
+                        value={editableHook}
+                        onChange={(e) => setEditableHook(e.target.value)}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1 flex-1">
+                      <label className="text-[11px] font-mono text-muted-foreground font-semibold uppercase">
+                        Caption / Description (Formatted)
+                      </label>
+                      <Textarea
+                        value={editableCaption}
+                        onChange={(e) => setEditableCaption(e.target.value)}
+                        rows={6}
+                        className="text-xs leading-relaxed resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* AI Visual Prompt Override */}
                   {onGenerateImage && (
-                    <div className="rounded-xl border border-border/70 bg-surface-raised/60 p-3 space-y-3">
+                    <div className="rounded-xl border border-border/70 bg-surface-raised/60 p-3 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="label-mono text-muted-foreground">Regenerate AI Art with Custom Prompt</span>
-                        <span className="text-[11px] text-muted-foreground">Overrides auto-prompt builder</span>
+                        <span className="text-[11px] font-mono text-muted-foreground font-semibold uppercase">
+                          Custom Background Art Prompt
+                        </span>
                       </div>
-
-                      <div className="flex flex-wrap gap-1.5">
-                        {QUICK_VISUAL_PROMPTS.map((p) => (
-                          <button
-                            key={p}
-                            type="button"
-                            onClick={() => setVisualPrompt(p)}
-                            className="rounded-full border border-border/70 px-2.5 py-0.5 text-[10px] text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                          >
-                            {p}
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
+                      <div className="flex items-center gap-1.5">
+                        <Input
                           value={visualPrompt}
                           onChange={(e) => setVisualPrompt(e.target.value)}
-                          placeholder="e.g. 3D holographic neural network blueprint on dark obsidian slate"
-                          className="h-8 flex-1 rounded-lg border border-border/70 bg-background/60 px-2.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+                          placeholder="e.g. Neon cyber grid on dark obsidian..."
+                          className="h-7 text-xs bg-background/80"
                         />
                         <Button
                           size="sm"
+                          variant="secondary"
                           onClick={submitVisualGeneration}
                           disabled={post.isGeneratingImage}
-                          className="h-8 gap-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary-hover"
+                          className="h-7 px-2 text-[11px] shrink-0"
                         >
-                          <Sparkles className="size-3" /> {post.isGeneratingImage ? "Generating..." : "Generate AI Art"}
+                          <Sparkles className="size-3 text-primary mr-1" />
+                          {post.isGeneratingImage ? "Gen..." : "Gen Art"}
                         </Button>
                       </div>
                     </div>
                   )}
                 </div>
               </motion.div>
+            ) : (
+              <motion.div
+                key="tab-text"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.15 }}
+                className="max-w-3xl mx-auto space-y-5"
+              >
+                {displayImgUrl && (
+                  <div className="relative overflow-hidden rounded-xl border border-border/60 bg-background/50">
+                    <img src={displayImgUrl} alt={post.title} className="max-h-60 w-full object-cover" />
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <span className="label-mono block text-muted-foreground">Hook</span>
+                  <p className="text-base font-semibold text-foreground">{editableHook || post.hook}</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="label-mono block text-muted-foreground">Caption & Description</span>
+                  <div className="space-y-2.5 text-sm leading-relaxed text-foreground/90 whitespace-pre-line bg-secondary/30 p-4 rounded-xl border border-border/50 font-sans">
+                    {editableCaption || post.caption}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="label-mono block text-muted-foreground">Hashtags</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {post.hashtags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-md bg-secondary/70 px-2 py-1 font-mono text-xs text-primary ring-1 ring-border/50"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {post.sourceUrl && (
+                  <div className="space-y-1">
+                    <span className="label-mono block text-muted-foreground">Source Reference</span>
+                    <a
+                      href={post.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-4 hover:underline"
+                    >
+                      {post.sourceLabel || post.sourceUrl}
+                      <ExternalLink className="size-3.5" />
+                    </a>
+                  </div>
+                )}
+              </motion.div>
             )}
           </AnimatePresence>
-
-          {activeTab === "content" && post.edits && post.edits.length > 0 && (
-            <>
-              <Separator className="my-5 bg-border/60" />
-              <div className="space-y-2">
-                <span className="label-mono flex items-center gap-1.5 text-muted-foreground">
-                  <History className="size-3" />
-                  Edit history
-                </span>
-                <ul className="space-y-1.5">
-                  {post.edits.map((edit) => (
-                    <li
-                      key={edit.id}
-                      className="flex items-baseline justify-between gap-3 rounded-lg bg-secondary/40 px-3 py-2 text-[13px] text-foreground/80"
-                    >
-                      <span className="min-w-0">“{edit.instruction}”</span>
-                      <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                        {edit.atLabel}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </>
-          )}
         </div>
 
-        {/* Text Edit Footer */}
-        {activeTab === "content" && (
-          <div className="border-t border-border/60 bg-background/60 px-4 py-4 sm:px-6">
-            <span className="label-mono text-muted-foreground">Edit this post</span>
+        {/* Modal Footer */}
+        <div className="border-t border-border/60 bg-background/80 px-5 py-3 sm:px-6 flex items-center justify-between">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onRegenerate(post.id)}
+            disabled={editing}
+            className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <RefreshCw className="size-3.5" /> Regenerate Post
+          </Button>
 
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
-              {QUICK_EDITS.map((quick) => (
-                <button
-                  key={quick}
-                  type="button"
-                  disabled={editing}
-                  onClick={() => setInstruction(quick)}
-                  className="rounded-full border border-border/70 px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:opacity-50"
-                >
-                  {quick}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-3 rounded-xl border border-border/70 bg-surface-raised/60 p-2 transition-colors focus-within:border-primary/50">
-              <Textarea
-                value={instruction}
-                onChange={(e) => setInstruction(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    submitTextEdit();
-                  }
-                }}
-                rows={2}
-                disabled={editing}
-                placeholder="Describe the change — e.g. make the hook shorter and drop the last hashtag"
-                className="max-h-28 min-h-0 resize-none border-0 bg-transparent px-2 py-1.5 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
-              />
-              <div className="flex items-center justify-between gap-2 px-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={editing}
-                  onClick={() => onRegenerate(post.id)}
-                  className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  <RefreshCw className="size-3.5" />
-                  Regenerate
-                </Button>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleCopy}
-                    className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    {copied ? (
-                      <Check className="size-3.5" />
-                    ) : (
-                      <Copy className="size-3.5" />
-                    )}
-                    {copied ? "Copied" : "Copy"}
-                  </Button>
-                  <Button
-                    size="icon"
-                    onClick={submitTextEdit}
-                    disabled={editing || instruction.trim().length === 0}
-                    aria-label="Apply edit"
-                    className="size-8 rounded-lg bg-primary text-primary-foreground hover:bg-primary-hover disabled:opacity-40"
-                  >
-                    {editing ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : (
-                      <ArrowUp className="size-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopy}
+              className="h-8 gap-1.5 text-xs"
+            >
+              {copied ? <Check className="size-3.5 text-emerald-400" /> : <Copy className="size-3.5" />}
+              {copied ? "Copied!" : "Copy Post Text"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              className="h-8 px-4 text-xs font-semibold bg-primary text-primary-foreground"
+            >
+              Done
+            </Button>
           </div>
-        )}
+        </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <section className="space-y-1.5">
-      <span className="label-mono block text-muted-foreground">{label}</span>
-      {children}
-    </section>
   );
 }

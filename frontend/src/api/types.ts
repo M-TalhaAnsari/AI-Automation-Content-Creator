@@ -3,6 +3,7 @@
  */
 
 export interface SignupRequest {
+  name?: string;
   email: string;
   password: string;
 }
@@ -18,7 +19,9 @@ export interface TokenResponse {
 
 export interface MeResponse {
   id: number;
+  name?: string;
   email: string;
+  tier?: string;
 }
 
 export interface SessionListItem {

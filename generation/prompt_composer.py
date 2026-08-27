@@ -1,8 +1,6 @@
-﻿"""generation/prompt_composer.py -- combines one IntentStrategy guidance
-with one PlatformStrategy structure into the single final prompt string
-sent to the LLM. This is the ONLY file that knows about both strategy
-families at once -- individual intent/platform strategies never reference
-each other, keeping the two axes genuinely independent.
+﻿"""generation/prompt_composer.py -- Combines IntentStrategy guidance with PlatformStrategy
+structure into the final prompt sent to the LLM. Enforces viral social media formatting,
+carousel slide sequencing, zero ALL-CAPS shouting, and user-prompt adaptability.
 """
 import html
 
@@ -47,28 +45,23 @@ def compose_prompt(state: dict) -> str:
             star_str = f" (Rating/Stars: {stars})" if stars else ""
             lines.append(f"  - {title}{star_str}: {str(desc)[:350]} | {url}")
         data_sections.append("\n".join(lines))
-    data_block = "\n\n".join(data_sections) if data_sections else f"Topic: {topic} (No live web data available -- use your internal knowledge base)"
+    data_block = "\n\n".join(data_sections) if data_sections else f"Topic: {topic} (No live web data available -- use your deep knowledge base)"
 
     caption_guide = platform_strategy.wrap_caption_guide(guidance.caption_guide)
-
-    item_kind = state.get("item_kind", "")
-    item_instruction = guidance.item_instruction
-    if item_kind:
-        item_instruction += (
-            f" Each of the {post_count} slots MUST be a distinct, individually-nameable "
-            f"{item_kind} -- not a related practice, technique, or adjacent concept that merely "
-            f"relates to the topic."
-        )
 
     def _build_slot(n):
         return f"""    {{
         "number": {n},
-        "title": "<{guidance.title_guide}>",
-        "hook": "<{guidance.hook_guide}>",
-        "summary": {guidance.summary_guide},
+        "title": "<Short, bold, visual-first slide headline (max 7-10 words) -- minimal text for on-screen graphic card>",
+        "hook": "<1 punchy subtitle line (max 12 words) for the on-screen card>",
+        "summary": [
+            "1. <Short key point -- max 8 words>",
+            "2. <Short key point -- max 8 words>",
+            "3. <Short key point -- max 8 words>"
+        ],
         "link": "<{guidance.link_guide}>",
-        "caption": "<{caption_guide}>",
-        "hashtags": ["tag1", "tag2", "tag3"]
+        "caption": "<Full, high-value post description written in natural casing without ALL-CAPS words. Adapts to user instructions (bullet points vs spaced paragraphs).>",
+        "hashtags": ["relevanttag1", "relevanttag2", "relevanttag3"]
         }}"""
 
     post_slots = ",\n".join(_build_slot(i + 1) for i in range(post_count))
@@ -78,23 +71,12 @@ def compose_prompt(state: dict) -> str:
         covered_lines = "\n".join(f"  - {c['title']}" for c in already_covered if c.get("title"))
         avoid_block = f"""
 
-    **AVOID REPEATING THESE (already covered in recent sessions on this topic/platform):**
+    **AVOID REPEATING THESE (already covered in recent sessions):**
     {covered_lines}
-    Do not reuse these exact titles or angles -- find distinct ones."""
+    Do not reuse these exact angles -- deliver distinct value."""
 
-    correction_block = ""
-    retry_count = state.get("generation_retry_count", 0)
-    validation_errors = state.get("generation_validation_errors", [])
-    if retry_count > 0 and validation_errors:
-        errors_text = "\n".join(f"  - {e}" for e in validation_errors[:8])
-        correction_block = f"""
-
-    **FIX THESE SPECIFIC ISSUES FROM YOUR PREVIOUS ATTEMPT (retry {retry_count}):**
-    {errors_text}
-    Correct every issue listed above in this new attempt -- do not repeat the same mistakes."""
-
-    return f"""You are an elite viral social media creator and copywriter. Your posts regularly drive 500K+ organic impressions.
-Create {post_count} distinct, platform-ready {platform_name} posts based on the real data provided below.
+    return f"""You are an elite viral content creator with millions of organic impressions across Instagram, LinkedIn, and TikTok.
+Create {post_count} distinct, platform-ready {platform_name} post cards or carousel slides based on the request and real data below.
 
     PLATFORM: {platform_name}
     TONE ARCHETYPE: {ps['tone']}
@@ -102,42 +84,38 @@ Create {post_count} distinct, platform-ready {platform_name} posts based on the 
     EMOJI RULES: {ps['emoji_usage']}
     STRUCTURE: {platform_strategy.structure_note()}
 
-    **USER'S ORIGINAL RAW REQUEST (Obey all implicit desires, explicit hooks, and phrasing rules hidden here):**
+    **USER'S ORIGINAL RAW REQUEST (Follow every explicit instruction, format preference, and theme requested here):**
     "{raw_user_intent}"
 
-    CONTENT STRATEGY:
+    CONTENT INTENT:
     {guidance.intent_instruction}
 
-    **VIRAL CREATOR QUALITY GATES -- EVERY POST MUST PASS ALL OF THESE:**
-    - HOOK: Opens with a curiosity gap, bold claim, or pattern interrupt. NOT a generic intro.
-    - BULLETS in summary: Each bullet is ultra-short (max 15 words), punchy, and delivers standalone value.
-      Use emoji anchors + bold keyword starters. NEVER write "Underlying mechanism" or "Sub-Concept X" filler.
-    - CAPTION: Visual-first, mobile-card layout. Hard line breaks between sections. NO walls of text.
-    - CTA: Ends with a strong call-to-action matching the intent (save, comment, DM for repo).
-    - HASHTAGS: Placed ONLY in the hashtags array. NEVER in the caption text.
-    - LANGUAGE: Active voice. Creator voice. Human. Never corporate, academic, or passive.
+    **CRITICAL VIRAL CREATOR RULES (STRICT QUALITY GATES):**
+    1. **MINIMAL ON-SCREEN TEXT (Visual Post Card):**
+       On Instagram / social media, visual cards MUST NEVER have walls of text.
+       - "title": Clean, high-impact headline (max 8-10 words).
+       - "hook": Subtitle / curiosity hook (max 12 words).
+       - "summary": 3 ultra-short, punchy bullet points (max 8-10 words each) designed to fit inside a visual graphic without clutter.
+    2. **RICH & ENGAGING CAPTION / DESCRIPTION:**
+       All the deep, valuable, step-by-step information belongs in the "caption" (description).
+       - **Zero ALL-CAPS Words:** DO NOT write capitalized screaming labels like "PROJECT OVERVIEW:", "TECH STACK:", "WHAT HAPPENED:", "KEY INSIGHT:". Write naturally capitalized, human creator copy (e.g. "Here is how it works:", "The tech behind it:", "Why this matters today:").
+       - **Format Adaptability:** If the user asked for bullet points or lists in their prompt, format the caption with clean spaced bullet points. If they asked for a story or breakdown, format with short, breathable 1-2 sentence paragraphs.
+       - **No Walls of Text:** Use double line breaks between sections for effortless mobile readability.
+       - **High-Conversion CTA:** End with an engagement prompt (e.g. "Save this for later", "Drop a comment if you want the link", "Which one is your favorite?").
+    3. **MULTI-SLIDE CAROUSEL COHESION (If {post_count} > 1):**
+       Each post slot can act either as a distinct post or a progressive slide in a carousel (Slide 1: Hook / Big Idea, Slide 2: Core Concept / Problem, Slide 3: Step-by-Step Breakdown, Slide 4: Key Nuance / Insight, Slide 5: Summary & CTA).
+    4. **HASHTAG DISCIPLINE:**
+       Place all hashtags strictly in the "hashtags" array. NEVER put hashtags inside the "caption" field.
 
     **REAL SOURCE DATA:**
     {data_block}
     {avoid_block}
-    {correction_block}
-
-    **CORE INSTRUCTIONS:**
-    1. **Curate & Prioritize Highest-Signal Items:** Review all research items. Select the top {post_count} most
-       compelling, high-signal items. Generate exactly {post_count} posts corresponding to your top selections.
-    2. **Obey the Raw Request:** Read the user intent above completely. If they specified a phrasing,
-       angle, or hook, honor it in every post.
-    3. {item_instruction}
-    4. **Viral Caption Layout:** Structure every caption with: HOOK -> BULLETS/INSIGHT -> CONTEXT -> CTA.
-       Hard line breaks. No paragraph walls. Write for a 6-second mobile scroll attention span.
-    5. **Hashtag Discipline:** Hashtags belong ONLY in the "hashtags" array. Never in "caption".
-    6. **MANDATORY:** Fill exactly {post_count} post slots matching the JSON structure below.
 
     Return your exact output using this JSON template -- fill all {post_count} slots cleanly:
     {{
     "posts": [
     {post_slots}
     ],
-    "series_hook": "<1-sentence curiosity-gap teaser for the entire series that makes someone want to binge all posts>",
-    "trend_insight": "<2-3 sentences explaining why this specific topic drives high organic saves RIGHT NOW -- be specific, not generic>"
+    "series_hook": "<1-sentence curiosity-gap hook for the series that stops the scroll>",
+    "trend_insight": "<2-3 sentences explaining why this topic performs exceptionally well right now>"
     }}"""

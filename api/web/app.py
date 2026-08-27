@@ -1,90 +1,55 @@
+"""api/web/app.py -- FastAPI application entrypoint with modular routing and dependencies."""
 import logging
-import uuid
-from typing import List, Optional
-
-from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from redis import Redis
-from rq import Queue
-from rq.job import Job
-from rq.exceptions import NoSuchJobError
-
-from orchestration.conversation_agent import process_turn
-from memory.redis_session_store import (
-    REDIS_URL,
-    delete_conversation,
-    load_conversation,
-    ping as redis_ping,
-    save_conversation,
-)
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from api.web import anon_trial
-from api.web.auth import create_jwt, hash_password, verify_identity, verify_jwt, verify_password
-from api.web.db import (
-    create_user,
-    delete_chat_session,
-    get_user_by_email,
-    get_user_by_id,
-    init_db,
-    list_chat_sessions,
-    upsert_chat_session,
-)
-from api.web.deps import resolve_session_id
-from api.web.handlers import finalize_turn
-from api.web.rate_limit import limiter, rate_limit_exceeded_handler
-from api.web.schemas import (
-    ChatRequest,
-    ChatResponse,
-    JobStatusResponse,
-    LoginRequest,
-    MeResponse,
-    SessionListItem,
-    SessionView,
-    SignupRequest,
-    TokenResponse,
-)
-from api.web.jobs import run_slow_action
+from memory.redis_session_store import ping as redis_ping
+from api.web.db import init_db
+from api.web.dependencies.rate_limit_deps import limiter, rate_limit_exceeded_handler
+from api.web.routes.auth_routes import router as auth_router
+from api.web.routes.chat_routes import router as chat_router
+from api.web.routes.session_routes import router as session_router
 from api.web.image_routes import router as image_router
 
 logger = logging.getLogger("trendforge.web.app")
 
-app = FastAPI(title="TrendForge Conversation API")
-app.include_router(image_router)
+app = FastAPI(
+    title="TrendForge Social Content & Visual Studio API",
+    description="Production-grade API for generating viral social posts and high-converting graphics",
+    version="2.0.0",
+)
+
+# Rate limiter setup
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
+
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:8080",
+        "http://127.0.0.1:8080",
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
         "http://localhost:3000",
+        "http://127.0.0.1:3000",
     ],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-_redis_conn = Redis.from_url(REDIS_URL)
-_queue = Queue("trendforge", connection=_redis_conn)
-
-INLINE_ACTIONS = {"add_constraint", "remove_constraint", "clarify", "undo"}
 
 
 @app.on_event("startup")
 def _startup():
     try:
         init_db()
+        logger.info("Database initialized successfully")
     except Exception as e:
         logger.error("init_db() failed at startup: %s", e)
-
-
-def _is_user(client_name: str) -> bool:
-    return client_name.startswith("user:")
-
-
-def _user_id(client_name: str) -> int:
-    return int(client_name.split(":", 1)[1])
 
 
 @app.get("/health")
@@ -92,132 +57,8 @@ def health():
     return {"ok": True, "redis": redis_ping()}
 
 
-@app.post("/auth/signup", response_model=TokenResponse, status_code=201)
-def signup(body: SignupRequest):
-    if get_user_by_email(body.email):
-        raise HTTPException(status_code=409, detail="Email already registered")
-    password_hash = hash_password(body.password)
-    user_id = create_user(body.email, password_hash)
-    return TokenResponse(token=create_jwt(user_id))
-
-
-@app.post("/auth/login", response_model=TokenResponse)
-def login(body: LoginRequest):
-    user = get_user_by_email(body.email)
-    if not user or not verify_password(body.password, user["password_hash"]):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    return TokenResponse(token=create_jwt(user["id"]))
-
-
-@app.get("/auth/me", response_model=MeResponse)
-def me(client_name: str = Depends(verify_jwt)):
-    user = get_user_by_id(_user_id(client_name))
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return MeResponse(**user)
-
-
-@app.get("/sessions", response_model=List[SessionListItem])
-def sessions(client_name: str = Depends(verify_jwt)):
-    return [SessionListItem(**row) for row in list_chat_sessions(_user_id(client_name))]
-
-
-@app.post("/chat", response_model=ChatResponse)
-@limiter.limit("10/minute")
-def chat(body: ChatRequest, request: Request, response: Response, client_name: str = Depends(verify_identity)):
-    session_id = resolve_session_id(request, response, body.session_id)
-    conversation = load_conversation(session_id, client_name)
-
-    platform = body.platform or conversation.get("last_platform")
-
-    turn = process_turn(conversation, body.message)
-    save_conversation(session_id, client_name, conversation)
-
-    # Guest usage (Phase 8): every /chat call counts against the trial,
-    # regardless of which action fired -- a clarify or a failed call still
-    # used one of the free tries. Real users are never tracked here.
-    if not _is_user(client_name):
-        anon_id = client_name.split(":", 1)[1]
-        anon_trial.record_message(anon_id, tokens_used=turn.get("tokens_used", 0))
-
-    if _is_user(client_name):
-        title = body.message[:60] if not conversation.get("last_topic") else None
-        try:
-            upsert_chat_session(_user_id(client_name), session_id, title=title)
-        except Exception as e:
-            logger.warning("upsert_chat_session failed for %s/%s: %s", client_name, session_id, e)
-
-    action = turn["action"]
-    args = turn.get("args", {})
-
-    if action in INLINE_ACTIONS:
-        reply = finalize_turn(action, args, conversation, body.verbose, prompt=body.message, platform=platform, posts=body.posts)
-        save_conversation(session_id, client_name, conversation)
-        return ChatResponse(
-            status="done",
-            session_id=session_id,
-            action=action,
-            reply=reply,
-            tokens_used=turn.get("tokens_used", 0),
-        )
-
-    job = _queue.enqueue(
-        run_slow_action,
-        session_id, client_name, action, args, body.message, platform, body.posts, body.verbose,
-        job_timeout=180,
-        result_ttl=3600,
-        meta={"client_name": client_name},
-    )
-    return ChatResponse(
-        status="processing",
-        session_id=session_id,
-        action=action,
-        job_id=job.id,
-        tokens_used=turn.get("tokens_used", 0),
-    )
-
-
-@app.get("/chat/status/{job_id}", response_model=JobStatusResponse)
-@limiter.limit("60/minute")
-def chat_status(request: Request, response: Response, job_id: str, client_name: str = Depends(verify_identity)):
-    try:
-        job = Job.fetch(job_id, connection=_redis_conn)
-    except NoSuchJobError:
-        raise HTTPException(status_code=404, detail="unknown or expired job_id")
-
-    if job.meta.get("client_name") != client_name:
-        raise HTTPException(status_code=404, detail="unknown or expired job_id")
-
-    if job.is_finished:
-        result = job.result or {}
-        # Best-effort: the real generation-call token cost only exists once
-        # the background job finishes, not synchronously in /chat. Depends
-        # on run_slow_action's result including "tokens_used" -- unverified
-        # against the real web/jobs.py, which hasn't been shared yet.
-        if not _is_user(client_name):
-            anon_id = client_name.split(":", 1)[1]
-            anon_trial.add_tokens(anon_id, result.get("tokens_used", 0))
-        return JobStatusResponse(status="done", action=result.get("action"), reply=result.get("reply"))
-    if job.is_failed:
-        return JobStatusResponse(status="error", detail="job failed -- check worker logs")
-    return JobStatusResponse(status="processing")
-
-
-@app.get("/session/{session_id}", response_model=SessionView)
-@limiter.limit("60/minute")
-def get_session(request: Request, response: Response, session_id: str, client_name: str = Depends(verify_identity)):
-    conversation = load_conversation(session_id, client_name)
-    return SessionView(session_id=session_id, **conversation)
-
-
-@app.delete("/session/{session_id}")
-def reset_session(session_id: str, client_name: str = Depends(verify_identity)):
-    ok = delete_conversation(session_id, client_name)
-    if not ok:
-        raise HTTPException(status_code=503, detail="could not reach session store")
-    if _is_user(client_name):
-        try:
-            delete_chat_session(_user_id(client_name), session_id)
-        except Exception as e:
-            logger.warning("delete_chat_session failed for %s/%s: %s", client_name, session_id, e)
-    return {"status": "deleted", "session_id": session_id}
+# Register modular routers
+app.include_router(auth_router)
+app.include_router(chat_router)
+app.include_router(session_router)
+app.include_router(image_router)
