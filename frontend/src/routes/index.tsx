@@ -11,6 +11,8 @@ import { ChatWorkspace } from "@/components/aiflick/chat-workspace";
 import { ContextPanel } from "@/components/aiflick/context-panel";
 import { AuthScreen } from "@/components/aiflick/auth-screen";
 import { PostModal } from "@/components/aiflick/post-modal";
+import { LandingPage } from "@/components/aiflick/landing-page";
+import { SettingsModal } from "@/components/aiflick/settings-modal";
 import {
   type ChatMessage,
   type GeneratedPost,
@@ -104,6 +106,11 @@ function Workspace() {
   const [editingPost, setEditingPost] = useState(false);
   const [regeneratingPostId, setRegeneratingPostId] = useState<string | null>(null);
 
+  const [showLanding, setShowLanding] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [userTier, setUserTier] = useState<string>("free");
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   // Initialize Authentication State on Load
   useEffect(() => {
     async function checkAuth() {
@@ -117,6 +124,7 @@ function Workspace() {
         const me = await getMe();
         setUser(me);
         setAuthenticated(true);
+        if (me.tier) setUserTier(me.tier);
       } catch {
         logout();
         setAuthenticated(false);
@@ -185,6 +193,23 @@ function Workspace() {
     setModalOpen(true);
   }
 
+  function handleUpdatePost(updatedPost: GeneratedPost) {
+    setActivePost((current) =>
+      current && current.post.id === updatedPost.id
+        ? { ...current, post: updatedPost }
+        : current
+    );
+    setMessages((prev) =>
+      prev.map((msg) => {
+        if (!msg.posts) return msg;
+        return {
+          ...msg,
+          posts: msg.posts.map((p) => (p.id === updatedPost.id ? updatedPost : p)),
+        };
+      })
+    );
+  }
+
   function handleApplyEdit(postId: string, instruction: string) {
     setEditingPost(true);
     const postIndex = activePost?.index ?? 1;
@@ -249,7 +274,7 @@ function Workspace() {
       // Poll until done
       const status = await pollImageJob(job.job_id);
 
-      const resolvedUrl = status.image_url || (status.asset_id ? getImageUrl(status.asset_id, true) : "");
+      const resolvedUrl = getImageUrl(status.asset_id || status.image_url || "", true);
 
       // Update post state
       setMessages((prev) =>
@@ -345,13 +370,20 @@ function Workspace() {
       setGuestMessagesLeft((n) => Math.max(0, n - 1));
     }
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
-      const chatResult = await sendChatAndWait({
-        message: value,
-        session_id: activeSessionId,
-        platform: platform !== "auto" ? platform : undefined,
-        posts: postCount,
-      });
+      const chatResult = await sendChatAndWait(
+        {
+          message: value,
+          session_id: activeSessionId,
+          platform: platform !== "auto" ? platform : undefined,
+          posts: postCount,
+        },
+        {},
+        controller.signal
+      );
 
       const nextSessionId = chatResult.session_id;
       setActiveSessionId(nextSessionId);
@@ -409,6 +441,9 @@ function Workspace() {
         refreshSessions();
       }
     } catch (err: any) {
+      if (err?.code === "cancelled") {
+        return;
+      }
       if (err?.code === "signup_required") {
         setAuthForced(true);
         setShowAuthScreen(true);
@@ -425,11 +460,25 @@ function Workspace() {
         }
       }
     } finally {
+      abortControllerRef.current = null;
       setSending(false);
     }
   }
 
+  function handleStop() {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setSending(false);
+    toast("Generation stopped by user");
+  }
+
   function handleNewChat() {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
     setActiveSessionId(null);
     setMessages([]);
     setConstraints([]);
@@ -576,6 +625,20 @@ function Workspace() {
 
   return (
     <TooltipProvider delayDuration={300}>
+      {/* ── Landing Page View ── */}
+      {showLanding && (
+        <LandingPage
+          onGetStarted={() => setShowLanding(false)}
+          onOpenSignIn={() => {
+            setShowLanding(false);
+            setAuthForced(false);
+            setShowAuthScreen(true);
+          }}
+        />
+      )}
+
+      {/* ── Workspace Studio (hidden when landing is shown) ── */}
+      {!showLanding && (
       <div className="flex h-screen w-full overflow-hidden bg-background">
         <AnimatePresence initial={false}>
           {sidebarOpen && (
@@ -594,7 +657,7 @@ function Workspace() {
                   guestMessagesLeft={guestMessagesLeft}
                   userEmail={user?.email}
                   userName={user?.name}
-                  userTier={user?.tier}
+                  userTier={userTier}
                   onSelectSession={handleSelectSession}
                   onNewChat={handleNewChat}
                   onDeleteSession={handleDeleteSession}
@@ -604,6 +667,7 @@ function Workspace() {
                   }}
                   onLogout={handleLogout}
                   onCollapse={() => setSidebarOpen(false)}
+                  onOpenSettings={() => setSettingsOpen(true)}
                 />
               </div>
             </motion.aside>
@@ -623,7 +687,7 @@ function Workspace() {
               guestMessagesLeft={guestMessagesLeft}
               userEmail={user?.email}
               userName={user?.name}
-              userTier={user?.tier}
+              userTier={userTier}
               onSelectSession={(id) => {
                 handleSelectSession(id);
                 setMobileNavOpen(false);
@@ -644,6 +708,10 @@ function Workspace() {
               }}
               collapsible={false}
               onCollapse={() => setMobileNavOpen(false)}
+              onOpenSettings={() => {
+                setSettingsOpen(true);
+                setMobileNavOpen(false);
+              }}
             />
           </SheetContent>
         </Sheet>
@@ -672,6 +740,8 @@ function Workspace() {
             onClearChat={handleClearChat}
             hasActiveSession={messages.length > 0}
             title={activeTitle}
+            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenLanding={() => setShowLanding(true)}
           />
 
           <div className="flex min-h-0 flex-1">
@@ -680,6 +750,7 @@ function Workspace() {
               input={input}
               onInputChange={setInput}
               onSend={() => handleSend()}
+              onStop={handleStop}
               sending={sending}
               error={error}
               retryCountdown={retryCountdown}
@@ -692,6 +763,7 @@ function Workspace() {
               onSuggestion={(prompt) => handleSend(prompt)}
               onViewPost={handleViewPost}
               onEditPost={handleViewPost}
+              onUpdatePost={handleUpdatePost}
               onRegeneratePost={(post, index) => handleRegeneratePost(post, index)}
               onGenerateImage={(post, index) => handleGenerateImage(post, undefined, index)}
               onBatchGenerateImages={handleBatchGenerateImages}
@@ -719,6 +791,7 @@ function Workspace() {
           open={modalOpen}
           onOpenChange={setModalOpen}
           onApplyEdit={handleApplyEdit}
+          onUpdatePost={handleUpdatePost}
           onRegenerate={(postId) => {
             if (activePost) handleRegeneratePost(activePost.post, activePost.index);
             else void postId;
@@ -730,6 +803,15 @@ function Workspace() {
           editing={editingPost}
         />
       </div>
+      )}
+
+      {/* ── Settings Modal (Always Mounted) ── */}
+      <SettingsModal
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        currentTier={userTier}
+        onTierChanged={(newTier) => setUserTier(newTier)}
+      />
     </TooltipProvider>
   );
 }

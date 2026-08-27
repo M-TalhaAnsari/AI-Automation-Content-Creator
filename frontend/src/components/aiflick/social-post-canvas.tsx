@@ -32,6 +32,7 @@ import {
   MoveDown,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getImageUrl } from "@/api";
 import {
   ASPECT_RATIOS,
   PRESET_THEMES,
@@ -49,6 +50,8 @@ export interface SocialPostCanvasProps {
   authorHandle?: string;
   onRegenerateBg?: () => void;
   isGeneratingBg?: boolean;
+  onTitleChange?: (newTitle: string) => void;
+  onHookChange?: (newHook: string) => void;
 }
 
 const ZOOM_LEVELS = [0.35, 0.5, 0.65, 0.75, 1.0, 1.25];
@@ -62,11 +65,18 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
   authorHandle = "@aiflick",
   onRegenerateBg,
   isGeneratingBg = false,
+  onTitleChange,
+  onHookChange,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Refs to named canvas text objects — updated in-place to avoid full rebuilds
+  const titleObjRef = useRef<fabric.Textbox | null>(null);
+  const hookObjRef = useRef<fabric.Textbox | null>(null);
+  const bulletObjRefs = useRef<fabric.Textbox[]>([]);
 
   const historyStackRef = useRef<string[]>([]);
   const historyIndexRef = useRef<number>(-1);
@@ -77,6 +87,8 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
   const [customBgDataUrl, setCustomBgDataUrl] = useState<string | null>(null);
   const [bgSource, setBgSource] = useState<"ai" | "custom" | "preset" | "solid">("ai");
   const [solidColor, setSolidColor] = useState<string>("#0F172A");
+  const [cardOpacity, setCardOpacity] = useState<"subtle" | "medium" | "solid" | "none">("subtle");
+  const [showWatermark, setShowWatermark] = useState<boolean>(true);
 
   const [copied, setCopied] = useState(false);
   const [isReady, setIsReady] = useState(false);
@@ -132,14 +144,16 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
    * Access-Control-Allow-Origin: * (wildcard).
    */
   const loadImageAsDataUrl = useCallback(async (url: string): Promise<string> => {
+    if (!url) return "";
     if (url.startsWith("data:") || url.startsWith("blob:")) return url;
+    const fullUrl = getImageUrl(url, false);
     try {
-      const resp = await fetch(url, { cache: "no-store" });
+      const resp = await fetch(fullUrl, { cache: "no-store", mode: "cors" });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const blob = await resp.blob();
       return URL.createObjectURL(blob);
     } catch {
-      return url; // fall back to original URL on error
+      return fullUrl; // fall back to full URL on error
     }
   }, []);
 
@@ -181,14 +195,36 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
+    // Reset named object refs each time we do a full rebuild
+    titleObjRef.current = null;
+    hookObjRef.current = null;
+    bulletObjRefs.current = [];
+
     const { width, height } = currentDimensions;
     canvas.setWidth(width);
     canvas.setHeight(height);
     canvas.clear();
 
-    const layout = computeAutoLayout(width, height, title, bulletPoints.length);
+    // Use the current prop values via refs so the callback closure stays stable
+    const currentTitle = (titleObjRef.current ? (titleObjRef.current as any).text : title) || title;
+    const currentBullets = bulletPoints;
+
+    const layout = computeAutoLayout(width, height, currentTitle, currentBullets.length);
 
     const buildForegroundLayers = () => {
+      let containerFill = selectedTheme.containerBg;
+      if (bgSource === "ai" || bgSource === "custom") {
+        if (cardOpacity === "subtle") containerFill = "rgba(10, 15, 30, 0.40)";
+        else if (cardOpacity === "medium") containerFill = "rgba(10, 15, 30, 0.70)";
+        else if (cardOpacity === "none") containerFill = "rgba(0, 0, 0, 0.05)";
+        else containerFill = selectedTheme.containerBg;
+      } else {
+        if (cardOpacity === "subtle") containerFill = "rgba(10, 15, 30, 0.45)";
+        else if (cardOpacity === "none") containerFill = "rgba(0, 0, 0, 0.05)";
+        else if (cardOpacity === "medium") containerFill = "rgba(10, 15, 30, 0.70)";
+        else containerFill = selectedTheme.containerBg;
+      }
+
       const container = new fabric.Rect({
         left: layout.horizontalMargin,
         top: layout.topMargin,
@@ -196,13 +232,13 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
         height: layout.containerHeight,
         rx: 28,
         ry: 28,
-        fill: selectedTheme.containerBg,
+        fill: containerFill,
         stroke: selectedTheme.containerBorder,
         strokeWidth: 1.5,
         selectable: false,
         evented: false,
         shadow: new fabric.Shadow({
-          color: "rgba(0,0,0,0.5)",
+          color: "rgba(0,0,0,0.6)",
           blur: 35,
           offsetX: 0,
           offsetY: 16,
@@ -229,7 +265,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
       });
       canvas.add(badgeBg);
 
-      const badgeText = new fabric.Textbox(`# ${platform.toUpperCase()} BLUEPRINT`, {
+      const badgeText = new fabric.Textbox(`✨ ${platform.toUpperCase()} GUIDE`, {
         left: innerLeft + 12,
         top: currentY + 7,
         width: 196,
@@ -244,7 +280,9 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
       canvas.add(badgeText);
       currentY += 56;
 
-      const titleObj = new fabric.Textbox(title, {
+      // --- TITLE: store ref, wire text:changed ---
+      const cleanCanvasTitle = (title || "").replace(/^#+\s*/gm, "").replace(/\*\*(.*?)\*\*/g, "$1");
+      const titleFab = new fabric.Textbox(cleanCanvasTitle, {
         left: innerLeft,
         top: currentY,
         width: innerWidth,
@@ -263,11 +301,17 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
           offsetY: 2,
         }),
       });
-      canvas.add(titleObj);
-      currentY += (titleObj.height || 60) + 16;
+      titleFab.on("changed", () => {
+        if (onTitleChange) onTitleChange((titleFab as any).text || "");
+      });
+      titleObjRef.current = titleFab;
+      canvas.add(titleFab);
+      currentY += (titleFab.height || 60) + 16;
 
+      // --- HOOK: store ref, wire text:changed ---
       if (hook) {
-        const hookObj = new fabric.Textbox(`⚡ ${hook}`, {
+        const cleanHook = (hook || "").replace(/^#+\s*/gm, "").replace(/\*\*(.*?)\*\*/g, "$1");
+        const hookFab = new fabric.Textbox(`⚡ ${cleanHook}`, {
           left: innerLeft,
           top: currentY,
           width: innerWidth,
@@ -280,8 +324,16 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
           selectable: true,
           hoverCursor: "text",
         });
-        canvas.add(hookObj);
-        currentY += (hookObj.height || 30) + 24;
+        hookFab.on("changed", () => {
+          if (onHookChange) {
+            const raw: string = (hookFab as any).text || "";
+            // Strip the leading "⚡ " prefix we added
+            onHookChange(raw.replace(/^⚡\s*/, ""));
+          }
+        });
+        hookObjRef.current = hookFab;
+        canvas.add(hookFab);
+        currentY += (hookFab.height || 30) + 24;
       }
 
       const divider = new fabric.Line(
@@ -305,6 +357,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
               "3. Production Scale & Outcomes",
             ];
 
+      bulletObjRefs.current = [];
       itemsToRender.forEach((bulletText, idx) => {
         const numCircle = new fabric.Circle({
           radius: 14,
@@ -344,28 +397,31 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
           selectable: true,
           hoverCursor: "text",
         });
+        bulletObjRefs.current.push(bulletContent);
         canvas.add(bulletContent);
 
         currentY += Math.max(bulletContent.height || 36, 36) + layout.bulletSpacing;
       });
 
-      const footerY = layout.topMargin + layout.containerHeight - 48;
-      const footerTag = new fabric.Textbox(
-        `✨ Created with AIFlick  •  ${authorHandle}`,
-        {
-          fontSize: 14,
-          fontFamily: "Inter, sans-serif",
-          fontWeight: "500",
-          fill: selectedTheme.badgeTextColor,
-          left: innerLeft,
-          top: footerY,
-          width: innerWidth,
-          editable: true,
-          selectable: true,
-          hoverCursor: "text",
-        }
-      );
-      canvas.add(footerTag);
+      if (showWatermark) {
+        const footerY = layout.topMargin + layout.containerHeight - 48;
+        const footerTag = new fabric.Textbox(
+          `✨ Created with AIFlick  •  ${authorHandle}`,
+          {
+            fontSize: 14,
+            fontFamily: "Inter, sans-serif",
+            fontWeight: "500",
+            fill: selectedTheme.badgeTextColor,
+            left: innerLeft,
+            top: footerY,
+            width: innerWidth,
+            editable: true,
+            selectable: true,
+            hoverCursor: "text",
+          }
+        );
+        canvas.add(footerTag);
+      }
 
       canvas.renderAll();
       setIsReady(true);
@@ -422,15 +478,16 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
         buildForegroundLayers();
       });
     }
+  // ⚠️  title / hook / bulletPoints are NOT in this dep array.
+  // Text is updated in-place via the useEffect hooks below to avoid a full rebuild on every keystroke.
   }, [
     currentDimensions,
-    title,
-    hook,
-    bulletPoints,
     platform,
     authorHandle,
     bgSource,
     solidColor,
+    cardOpacity,
+    showWatermark,
     customBgDataUrl,
     backgroundImageUrl,
     selectedTheme,
@@ -516,6 +573,46 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
   useEffect(() => {
     renderCanvasComposition();
   }, [renderCanvasComposition]);
+
+  // ── Lightweight title updater: patch the title Fabric object in-place ──
+  useEffect(() => {
+    const obj = titleObjRef.current;
+    const canvas = fabricCanvasRef.current;
+    if (!obj || !canvas) return;
+    const clean = (title || "").replace(/^#+\s*/gm, "").replace(/\*\*(.*?)\*\*/g, "$1");
+    // Only update if not currently being edited by the user directly on canvas
+    if (!(obj as any).isEditing && (obj as any).text !== clean) {
+      obj.set("text", clean);
+      canvas.renderAll();
+    }
+  }, [title]);
+
+  // ── Lightweight hook updater: patch the hook Fabric object in-place ──
+  useEffect(() => {
+    const obj = hookObjRef.current;
+    const canvas = fabricCanvasRef.current;
+    if (!obj || !canvas) return;
+    const clean = (hook || "").replace(/^#+\s*/gm, "").replace(/\*\*(.*?)\*\*/g, "$1");
+    const desired = `⚡ ${clean}`;
+    if (!(obj as any).isEditing && (obj as any).text !== desired) {
+      obj.set("text", desired);
+      canvas.renderAll();
+    }
+  }, [hook]);
+
+  // ── Lightweight bullet updater: patch bullet Fabric objects in-place ──
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || bulletObjRefs.current.length === 0) return;
+    const bp: string[] = Array.isArray(bulletPoints) ? bulletPoints : [];
+    bulletObjRefs.current.forEach((obj, idx) => {
+      const newText = bp[idx] ?? "";
+      if (!(obj as any).isEditing && (obj as any).text !== newText) {
+        obj.set("text", newText);
+      }
+    });
+    canvas.renderAll();
+  }, [bulletPoints]);
 
   const handleDeleteSelected = () => {
     const canvas = fabricCanvasRef.current;
@@ -704,6 +801,24 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
         </div>
 
         <div className="flex items-center gap-1">
+          <span className="text-[11px] font-semibold text-muted-foreground mr-1">Glass Card:</span>
+          {(["subtle", "medium", "solid", "none"] as const).map((op) => (
+            <button
+              key={op}
+              type="button"
+              onClick={() => setCardOpacity(op)}
+              className={`rounded-lg px-2 py-1 text-[11px] font-medium capitalize transition-all ${
+                cardOpacity === op
+                  ? "bg-primary text-primary-foreground font-semibold"
+                  : "bg-secondary/60 text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {op === "none" ? "Clear" : op}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-1">
           {backgroundImageUrl && (
             <button
               type="button"
@@ -814,6 +929,19 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
           title="Delete selected item (Delete / Backspace)"
         >
           <Trash2 className="size-3.5" /> Delete
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowWatermark((prev) => !prev)}
+          className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all ${
+            showWatermark
+              ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 font-medium"
+              : "border-border/60 bg-secondary/40 text-muted-foreground hover:text-foreground"
+          }`}
+          title="Toggle AIFlick footer watermark on/off"
+        >
+          <Sparkles className="size-3" /> Watermark: {showWatermark ? "ON" : "OFF"}
         </button>
 
         <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-secondary/40 px-2 py-1">

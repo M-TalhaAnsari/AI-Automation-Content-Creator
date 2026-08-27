@@ -36,6 +36,7 @@ type Props = {
   onSignIn: () => void;
   onLogout: () => void;
   onCollapse: () => void;
+  onOpenSettings?: () => void;
 };
 
 export function AppSidebar({
@@ -53,18 +54,24 @@ export function AppSidebar({
   onSignIn,
   onLogout,
   onCollapse,
+  onOpenSettings,
 }: Props) {
   return (
     <div className="flex h-full flex-col gap-4 bg-sidebar px-3 pt-4 pb-3">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-1">
-        <Link to="/" className="flex min-w-0 items-center gap-2.5">
-          <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
-            <Flame className="size-4" />
-          </span>
-          <span className="truncate font-mono text-sm tracking-tight text-foreground">
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="flex min-w-0 items-center gap-2.5 text-left group"
+          title="Reload AIFlick"
+        >
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-primary to-amber-400 shadow-ember ring-1 ring-primary/40 group-hover:scale-105 transition-transform">
+            <span className="text-xs font-black text-black">△</span>
+          </div>
+          <span className="truncate font-mono text-sm font-bold tracking-tight text-white group-hover:text-primary transition-colors">
             AIFlick
           </span>
-        </Link>
+        </button>
         {collapsible && (
           <Button
             variant="ghost"
@@ -183,6 +190,16 @@ export function AppSidebar({
                 style={{ width: `${(guestMessagesLeft / 3) * 100}%` }}
               />
             </div>
+            <div className="mt-2.5 flex items-center justify-between border-t border-border/40 pt-2">
+              <button
+                type="button"
+                onClick={onOpenSettings}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Settings className="size-3.5 text-primary" />
+                <span>Models & Memory</span>
+              </button>
+            </div>
           </div>
         ) : (
           <DropdownMenu>
@@ -209,13 +226,15 @@ export function AppSidebar({
                 <Settings className="size-4 shrink-0 text-muted-foreground" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" side="top" className="w-52">
-              <DropdownMenuItem disabled>
-                <Settings className="size-4" />
-                Settings
+            <DropdownMenuContent align="start" side="top" className="w-56">
+              <DropdownMenuItem onClick={onOpenSettings} className="cursor-pointer gap-2">
+                <Settings className="size-4 text-primary" />
+                Settings & Brand Memory
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onLogout}>Log out</DropdownMenuItem>
+              <DropdownMenuItem onClick={onLogout} className="cursor-pointer text-destructive focus:text-destructive">
+                Log out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}

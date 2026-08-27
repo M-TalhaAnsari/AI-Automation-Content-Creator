@@ -2,7 +2,9 @@ import {
   PanelLeftOpen,
   PanelRight,
   Hash,
+  Home,
   Layers,
+  Settings,
   Trash2,
   Plus,
   X,
@@ -42,6 +44,8 @@ type Props = {
   onClearChat: () => void;
   hasActiveSession: boolean;
   title: string;
+  onOpenSettings?: () => void;
+  onOpenLanding?: () => void;
 };
 
 export function WorkspaceHeader({
@@ -60,6 +64,8 @@ export function WorkspaceHeader({
   onClearChat,
   hasActiveSession,
   title,
+  onOpenSettings,
+  onOpenLanding,
 }: Props) {
   return (
     <header className="sticky top-0 z-20 border-b border-border/70 bg-background/85 backdrop-blur-xl">
@@ -85,9 +91,19 @@ export function WorkspaceHeader({
               <PanelLeftOpen className="size-4" />
             </Button>
           )}
-          <h1 className="truncate text-sm font-medium tracking-tight text-foreground">
-            {title}
-          </h1>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="flex items-center gap-2 text-left group min-w-0"
+            title="Reload AIFlick"
+          >
+            <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-tr from-primary to-amber-400 shadow-ember ring-1 ring-primary/40 group-hover:scale-105 transition-transform">
+              <span className="text-[10px] font-black text-black">△</span>
+            </div>
+            <h1 className="truncate text-sm font-semibold tracking-tight text-foreground group-hover:text-primary transition-colors">
+              {title}
+            </h1>
+          </button>
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
@@ -165,6 +181,42 @@ export function WorkspaceHeader({
             </TooltipTrigger>
             <TooltipContent>Context panel</TooltipContent>
           </Tooltip>
+
+          <span className="mx-0.5 hidden h-5 w-px bg-border/70 sm:block" />
+
+          {onOpenSettings && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onOpenSettings}
+                  aria-label="Settings & Brand Memory"
+                  className="size-8 text-muted-foreground hover:text-primary"
+                >
+                  <Settings className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Settings & Brand Memory</TooltipContent>
+            </Tooltip>
+          )}
+
+          {onOpenLanding && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onOpenLanding}
+                  aria-label="Back to landing"
+                  className="size-8 text-muted-foreground hover:text-foreground"
+                >
+                  <Home className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>AIFlick Home</TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </div>
 

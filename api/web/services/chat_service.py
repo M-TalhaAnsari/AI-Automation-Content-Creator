@@ -1,4 +1,4 @@
-﻿"""api/web/services/chat_service.py -- Chat orchestration and processing service."""
+"""api/web/services/chat_service.py -- Chat orchestration and processing service."""
 import logging
 import time
 from typing import Dict, Any, Optional
@@ -6,6 +6,9 @@ from api.web import anon_trial, db
 from api.web.handlers import finalize_turn
 from orchestration.conversation_agent import process_turn
 from memory.redis_session_store import load_conversation, save_conversation
+
+from api.web.security.owasp_guardrails import sanitize_and_validate_prompt
+from api.web.services.cache_service import FAST_MEMORY_CACHE
 
 logger = logging.getLogger("trendforge.web.chat_service")
 INLINE_ACTIONS = {"add_constraint", "remove_constraint", "clarify", "undo"}
@@ -20,11 +23,31 @@ def process_chat_message(
     verbose: bool = False,
 ) -> Dict[str, Any]:
     start_time = time.monotonic()
+    
+    # 1. OWASP Prompt Guardrail Sanitization (LLM01 / LLM02)
+    sanitized_message, is_safe, security_warning = sanitize_and_validate_prompt(message)
+    
     conversation = load_conversation(session_id, client_name)
     resolved_platform = platform or conversation.get("last_platform")
 
+    # 2. Inject User Brand Memory & Creator Persona (if logged in)
+    if client_name.startswith("user:"):
+        user_id = int(client_name.split(":", 1)[1])
+        cache_key = f"user_prefs:{user_id}"
+        prefs = FAST_MEMORY_CACHE.get(cache_key)
+        if not prefs:
+            try:
+                prefs = db.get_user_preferences(user_id)
+                FAST_MEMORY_CACHE.set(cache_key, prefs, ttl_sec=120)
+            except Exception as e:
+                logger.debug("Could not fetch user preferences: %s", e)
+                prefs = {}
+        if prefs:
+            conversation["user_preferences"] = prefs
+            conversation["user_brand_memory"] = prefs
+
     routing_start = time.monotonic()
-    turn = process_turn(conversation, message)
+    turn = process_turn(conversation, sanitized_message)
     routing_ms = int((time.monotonic() - routing_start) * 1000)
 
     save_conversation(session_id, client_name, conversation)

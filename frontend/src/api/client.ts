@@ -145,6 +145,9 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
     }
 
     if (error instanceof Error && error.name === "AbortError") {
+      if (options.signal?.aborted) {
+        throw new ApiError(499, "Generation stopped by user.", "cancelled");
+      }
       throw new ApiError(408, "Request timed out. Please try again.", "timeout");
     }
 

@@ -1,4 +1,4 @@
-﻿"""generation/prompt_composer.py -- Combines IntentStrategy guidance with PlatformStrategy
+"""generation/prompt_composer.py -- Combines IntentStrategy guidance with PlatformStrategy
 structure into the final prompt sent to the LLM. Enforces viral social media formatting,
 carousel slide sequencing, zero ALL-CAPS shouting, and user-prompt adaptability.
 """
@@ -75,6 +75,24 @@ def compose_prompt(state: dict) -> str:
     {covered_lines}
     Do not reuse these exact angles -- deliver distinct value."""
 
+    brand_memory_block = ""
+    user_prefs = state.get("user_preferences") or state.get("user_brand_memory")
+    if user_prefs and isinstance(user_prefs, dict):
+        parts = []
+        if user_prefs.get("brand_name"):
+            parts.append(f"- Creator/Brand: {user_prefs['brand_name']} ({user_prefs.get('brand_handle', '@aiflick')})")
+        if user_prefs.get("target_audience"):
+            parts.append(f"- Target Audience: {user_prefs['target_audience']}")
+        if user_prefs.get("tone_of_voice"):
+            parts.append(f"- Custom Brand Voice: {user_prefs['tone_of_voice']}")
+        if user_prefs.get("custom_rules"):
+            parts.append(f"- Creator Long-Term Memory & Rules: {user_prefs['custom_rules']}")
+        if parts:
+            brand_memory_block = f"""
+    **CREATOR BRAND MEMORY & PERSONALIZATION:**
+    {"\n    ".join(parts)}
+"""
+
     return f"""You are an elite viral content creator with millions of organic impressions across Instagram, LinkedIn, and TikTok.
 Create {post_count} distinct, platform-ready {platform_name} post cards or carousel slides based on the request and real data below.
 
@@ -82,7 +100,7 @@ Create {post_count} distinct, platform-ready {platform_name} post cards or carou
     TONE ARCHETYPE: {ps['tone']}
     HOOK PATTERN: {ps['hook_style']}
     EMOJI RULES: {ps['emoji_usage']}
-    STRUCTURE: {platform_strategy.structure_note()}
+    STRUCTURE: {platform_strategy.structure_note()}{brand_memory_block}
 
     **USER'S ORIGINAL RAW REQUEST (Follow every explicit instruction, format preference, and theme requested here):**
     "{raw_user_intent}"
@@ -106,6 +124,9 @@ Create {post_count} distinct, platform-ready {platform_name} post cards or carou
        Each post slot can act either as a distinct post or a progressive slide in a carousel (Slide 1: Hook / Big Idea, Slide 2: Core Concept / Problem, Slide 3: Step-by-Step Breakdown, Slide 4: Key Nuance / Insight, Slide 5: Summary & CTA).
     4. **HASHTAG DISCIPLINE:**
        Place all hashtags strictly in the "hashtags" array. NEVER put hashtags inside the "caption" field.
+    5. **NO MARKDOWN HASHES OR ROBOTIC AI ARTIFACTS:**
+       - NEVER use markdown heading markers (`#`, `##`, `###`) or bold stars inside "title", "hook", or "summary". Write pure, clean human text.
+       - NEVER use cliché AI filler ("In today's fast-paced digital landscape", "Let's delve in", "Game changer"). Write like an elite human creator.
 
     **REAL SOURCE DATA:**
     {data_block}

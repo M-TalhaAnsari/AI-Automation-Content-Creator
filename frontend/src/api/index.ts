@@ -5,3 +5,4 @@ export * from "./sessions";
 export * from "./jobs";
 export * from "./chat";
 export * from "./images";
+export * from "./preferences";

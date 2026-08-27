@@ -31,17 +31,34 @@ def fetch_tavily(state, config) -> List[Dict[str, Any]]:
 
     client = TavilyClient(api_key=config.TAVILY_API_KEY)
     all_results = []
+    content_intent = getattr(state, "content_intent", "") or ""
+    is_news = content_intent == "news" or any(w in getattr(state, "core_topic", "").lower() for w in ["news", "latest", "update", "release", "announced", "today"])
 
     for query in search_queries[:3]:
         try:
-            response = client.search(
-                query=query,
-                search_depth="advanced",
-                max_results=10,
-            )
-            all_results.extend(response.get("results", []))
+            search_kwargs: Dict[str, Any] = {
+                "query": query,
+                "search_depth": "advanced",
+                "max_results": 10,
+                "include_answer": True,
+            }
+            if is_news:
+                search_kwargs["topic"] = "news"
+                search_kwargs["days"] = 7
+
+            response = client.search(**search_kwargs)
+            results = response.get("results", [])
+            # If an overall direct synthesized answer is provided, inject it as top knowledge snippet
+            if response.get("answer") and not any(r.get("url") == "tavily:synthesized_answer" for r in all_results):
+                all_results.append({
+                    "title": f"Tavily Deep Synthesis: {query}",
+                    "url": f"https://tavily.com/search?q={query}",
+                    "content": response.get("answer"),
+                    "score": 1.0,
+                })
+            all_results.extend(results)
         except Exception as e:
-            logger.error(f"Tavily query '{query}' failed: {e}")
+            logger.error(f"Tavily advanced search query '{query}' failed: {e}")
 
     # Deduplicate by URL — different query variants often surface the same page
     seen_urls = set()

@@ -1,19 +1,17 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
-  ArrowUp,
   Check,
   Copy,
-  Download,
   ExternalLink,
-  History,
-  Image as ImageIcon,
   Loader2,
   RefreshCw,
   Sparkles,
   Edit3,
-  Sliders,
   Send,
+  Plus,
+  Trash2,
+  Save,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,7 +25,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { PlatformBadge } from "./platform-badge";
 import { SocialPostCanvas } from "./social-post-canvas";
 import { getImageUrl } from "@/api";
@@ -41,19 +38,13 @@ const QUICK_TEXT_PROMPTS = [
   "Make it conversational & casual",
 ];
 
-const QUICK_VISUAL_PROMPTS = [
-  "Minimalist dark obsidian tech card",
-  "Clean geometric blueprint with glowing cyan accents",
-  "Futuristic 3D isometric abstract render",
-  "Cinematic studio lighting with soft bokeh",
-];
-
 type Props = {
   post: GeneratedPost | null;
   index: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onApplyEdit: (postId: string, instruction: string) => void;
+  onUpdatePost?: (updatedPost: GeneratedPost) => void;
   onRegenerate: (postId: string) => void;
   onGenerateImage?: (postId: string, customPrompt?: string) => void;
   editing: boolean;
@@ -65,6 +56,7 @@ export function PostModal({
   open,
   onOpenChange,
   onApplyEdit,
+  onUpdatePost,
   onRegenerate,
   onGenerateImage,
   editing,
@@ -74,9 +66,10 @@ export function PostModal({
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"studio" | "text">("studio");
 
-  // Local editable fields for live synchronization
+  // Local editable fields
   const [editableTitle, setEditableTitle] = useState("");
   const [editableHook, setEditableHook] = useState("");
+  const [editableBullets, setEditableBullets] = useState<string[]>([]);
   const [editableCaption, setEditableCaption] = useState("");
 
   useEffect(() => {
@@ -85,13 +78,72 @@ export function PostModal({
       setVisualPrompt("");
       setEditableTitle(post.title || "");
       setEditableHook(post.hook || "");
+      
+      const bullets = Array.isArray(post.summary) && post.summary.length > 0
+        ? post.summary
+        : typeof post.summary === "string"
+        ? (post.summary as string).split("\n").filter(Boolean)
+        : [
+            "1. Core Problem & Architecture",
+            "2. Step-by-Step Implementation",
+            "3. Key Takeaways & Results",
+          ];
+      setEditableBullets(bullets);
       setEditableCaption(post.caption || "");
     }
-  }, [open, post?.id, post?.title, post?.hook, post?.caption]);
+  }, [open, post?.id]);
 
   if (!post) return null;
 
-  const displayImgUrl = post.imageUrl || (post.imageAssetId ? getImageUrl(post.imageAssetId, true) : null);
+  const displayImgUrl = post.imageUrl
+    ? getImageUrl(post.imageUrl, true)
+    : post.imageAssetId
+    ? getImageUrl(post.imageAssetId, true)
+    : null;
+
+  // Real-time synchronization helper
+  function updateField(fields: Partial<GeneratedPost>) {
+    if (!post || !onUpdatePost) return;
+    const updated: GeneratedPost = {
+      ...post,
+      ...fields,
+    };
+    onUpdatePost(updated);
+  }
+
+  function handleTitleChange(val: string) {
+    setEditableTitle(val);
+    updateField({ title: val });
+  }
+
+  function handleHookChange(val: string) {
+    setEditableHook(val);
+    updateField({ hook: val });
+  }
+
+  function handleBulletChange(idx: number, val: string) {
+    const updated = [...editableBullets];
+    updated[idx] = val;
+    setEditableBullets(updated);
+    updateField({ summary: updated });
+  }
+
+  function handleAddBullet() {
+    const updated = [...editableBullets, `${editableBullets.length + 1}. Key takeaway`];
+    setEditableBullets(updated);
+    updateField({ summary: updated });
+  }
+
+  function handleRemoveBullet(idx: number) {
+    const updated = editableBullets.filter((_, i) => i !== idx);
+    setEditableBullets(updated);
+    updateField({ summary: updated });
+  }
+
+  function handleCaptionChange(val: string) {
+    setEditableCaption(val);
+    updateField({ caption: val });
+  }
 
   function submitTextPrompt() {
     const value = instruction.trim();
@@ -105,7 +157,7 @@ export function PostModal({
     const prompt = visualPrompt.trim() || undefined;
     onGenerateImage(post.id, prompt);
     setVisualPrompt("");
-    toast.info("Generating AI background in background...");
+    toast.info("Generating AI background art in background...");
   }
 
   function handleCopy() {
@@ -114,37 +166,35 @@ export function PostModal({
       `${editableHook || post.hook}\n\n${editableCaption || post.caption}\n\n${post.hashtags.join(" ")}`
     );
     setCopied(true);
-    toast.success("Full post copied to clipboard!");
+    toast.success("Post copy and caption copied to clipboard!");
     window.setTimeout(() => setCopied(false), 1600);
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex h-[96vh] flex-col gap-0 overflow-hidden rounded-2xl border-border/70 bg-surface-raised/95 p-0 shadow-2xl backdrop-blur-2xl sm:max-w-6xl"
+        className="flex h-[96vh] flex-col gap-0 overflow-hidden rounded-3xl border-white/15 bg-[#0D111A]/95 p-0 shadow-2xl backdrop-blur-2xl sm:max-w-6xl text-foreground"
       >
         {/* Modal Header */}
-        <DialogHeader className="space-y-2 border-b border-border/60 px-5 pt-4 pb-3 text-left sm:px-6">
+        <DialogHeader className="space-y-2 border-b border-white/10 px-6 pt-4 pb-3 text-left">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <PlatformBadge platform={post.platform} />
-              <span className="label-mono text-xs text-muted-foreground font-semibold">Post {index}</span>
-              {post.latencyMs && (
-                <span className="rounded-full bg-secondary/80 px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-                  ⚡ {(post.latencyMs / 1000).toFixed(1)}s
-                </span>
-              )}
+              <span className="font-mono text-xs text-primary font-bold">Post {index}</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 font-mono text-[10px] text-emerald-400">
+                <Check className="size-3" /> Live Real-Time Sync
+              </span>
             </div>
 
             {/* View Mode Switcher */}
-            <div className="flex items-center gap-1 rounded-xl bg-secondary/60 p-1 border border-border/50">
+            <div className="flex items-center gap-1 rounded-2xl bg-white/5 p-1 border border-white/10">
               <button
                 type="button"
                 onClick={() => setActiveTab("studio")}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
                   activeTab === "studio"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-white text-black shadow-md"
+                    : "text-slate-400 hover:text-white"
                 }`}
               >
                 <Sparkles className="size-3.5 text-primary" /> Visual Studio & Canvas
@@ -152,10 +202,10 @@ export function PostModal({
               <button
                 type="button"
                 onClick={() => setActiveTab("text")}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
                   activeTab === "text"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-white text-black shadow-md"
+                    : "text-slate-400 hover:text-white"
                 }`}
               >
                 <Edit3 className="size-3.5" /> Full Copy & Description
@@ -163,7 +213,7 @@ export function PostModal({
             </div>
           </div>
 
-          <DialogTitle className="text-lg font-bold tracking-tight sm:text-xl text-foreground">
+          <DialogTitle className="text-xl font-bold tracking-tight text-white sm:text-2xl">
             {editableTitle || post.title}
           </DialogTitle>
           <DialogDescription className="sr-only">
@@ -172,7 +222,7 @@ export function PostModal({
         </DialogHeader>
 
         {/* Modal Body */}
-        <div className="min-h-0 flex-1 overflow-y-auto scroll-quiet px-5 py-4 sm:px-6">
+        <div className="min-h-0 flex-1 overflow-y-auto scroll-quiet px-6 py-5">
           <AnimatePresence mode="wait" initial={false}>
             {activeTab === "studio" ? (
               <motion.div
@@ -183,46 +233,48 @@ export function PostModal({
                 transition={{ duration: 0.15 }}
                 className="grid grid-cols-1 lg:grid-cols-12 gap-6"
               >
-                {/* Left 8 Columns: Fabric Canvas Studio */}
-                <div className="lg:col-span-8 space-y-4">
+                {/* Left 7 Columns: Fabric Canvas Studio */}
+                <div className="lg:col-span-7 space-y-4">
                   <SocialPostCanvas
                     backgroundImageUrl={displayImgUrl}
-                    title={editableTitle || post.title}
-                    hook={editableHook || post.hook}
-                    summary={post.summary || post.caption}
+                    title={editableTitle}
+                    hook={editableHook}
+                    summary={editableBullets}
                     platform={post.platform}
                     authorHandle="@aiflick"
                     onRegenerateBg={() => submitVisualGeneration()}
                     isGeneratingBg={post.isGeneratingImage}
+                    onTitleChange={(v) => handleTitleChange(v)}
+                    onHookChange={(v) => handleHookChange(v)}
                   />
                 </div>
 
-                {/* Right 4 Columns: Editable Content & AI Text Rewriter */}
-                <div className="lg:col-span-4 flex flex-col gap-4 border-t lg:border-t-0 lg:border-l border-border/60 pt-4 lg:pt-0 lg:pl-6">
-                  {/* Quick AI Rewriter Prompt Bar */}
-                  <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2.5">
+                {/* Right 5 Columns: Large Editable Fields & AI Assistant */}
+                <div className="lg:col-span-5 flex flex-col gap-5 border-t lg:border-t-0 lg:border-l border-white/10 pt-4 lg:pt-0 lg:pl-6">
+                  {/* Quick AI Content Assistant */}
+                  <div className="rounded-2xl border border-primary/40 bg-primary/5 p-4 space-y-3 shadow-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-primary flex items-center gap-1.5 uppercase font-mono">
                         <Sparkles className="size-3.5" /> AI Content Assistant
                       </span>
-                      <span className="text-[10px] text-muted-foreground">Rewrite post in 1-click</span>
+                      <span className="text-[11px] text-slate-400">1-click rewrite</span>
                     </div>
 
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1.5">
                       {QUICK_TEXT_PROMPTS.map((prompt) => (
                         <button
                           key={prompt}
                           type="button"
                           disabled={editing}
                           onClick={() => setInstruction(prompt)}
-                          className="rounded-full border border-border/70 bg-background/80 px-2 py-0.5 text-[10px] text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors disabled:opacity-40"
+                          className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-slate-300 hover:border-primary/50 hover:text-white transition-colors disabled:opacity-40"
                         >
                           {prompt}
                         </button>
                       ))}
                     </div>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       <Input
                         value={instruction}
                         onChange={(e) => setInstruction(e.target.value)}
@@ -233,121 +285,144 @@ export function PostModal({
                           }
                         }}
                         disabled={editing}
-                        placeholder="e.g. Turn into 4 concise bullet points..."
-                        className="h-8 text-xs bg-background/90"
+                        placeholder="e.g. Make headline punchier, format in 3 clear steps..."
+                        className="h-10 text-xs bg-black/40 border-white/15 text-white placeholder:text-slate-500 rounded-xl"
                       />
                       <Button
                         size="sm"
                         onClick={submitTextPrompt}
                         disabled={editing || !instruction.trim()}
-                        className="h-8 px-2.5 text-xs bg-primary text-primary-foreground hover:bg-primary-hover shrink-0"
+                        className="h-10 px-3.5 text-xs bg-primary text-black font-bold hover:bg-primary-hover shrink-0 rounded-xl shadow-ember"
                       >
-                        {editing ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3" />}
+                        {editing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-3.5" />}
                       </Button>
                     </div>
                   </div>
 
-                  {/* Live Editable Text Fields */}
-                  <div className="space-y-3 flex-1">
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-mono text-muted-foreground font-semibold uppercase">
+                  {/* Spacious Live Editable Text Inputs */}
+                  <div className="space-y-4 flex-1">
+                    {/* Headline Box */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">
                         Slide Headline
                       </label>
                       <Input
                         value={editableTitle}
-                        onChange={(e) => setEditableTitle(e.target.value)}
-                        className="h-8 text-xs font-medium"
+                        onChange={(e) => handleTitleChange(e.target.value)}
+                        placeholder="Main on-screen headline"
+                        className="h-12 text-sm font-bold bg-white/5 border-white/15 text-white rounded-xl focus:border-primary"
                       />
                     </div>
 
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-mono text-muted-foreground font-semibold uppercase">
-                        Subtext / Hook
+                    {/* Subtext / Hook Box */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">
+                        Subtext / Hook (On-Screen)
                       </label>
                       <Input
                         value={editableHook}
-                        onChange={(e) => setEditableHook(e.target.value)}
-                        className="h-8 text-xs"
+                        onChange={(e) => handleHookChange(e.target.value)}
+                        placeholder="Subtitle hook"
+                        className="h-12 text-sm bg-white/5 border-white/15 text-white rounded-xl focus:border-primary"
                       />
                     </div>
 
-                    <div className="space-y-1 flex-1">
-                      <label className="text-[11px] font-mono text-muted-foreground font-semibold uppercase">
-                        Caption / Description (Formatted)
+                    {/* Bullet Points Box */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">
+                          Key Points (Card Bullets)
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleAddBullet}
+                          className="inline-flex items-center gap-1 text-[11px] font-mono text-primary hover:underline"
+                        >
+                          <Plus className="size-3" /> Add Point
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {editableBullets.map((bullet, bIdx) => (
+                          <div key={bIdx} className="flex items-center gap-2">
+                            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary/20 text-[11px] font-mono text-primary font-bold">
+                              {bIdx + 1}
+                            </span>
+                            <Input
+                              value={bullet}
+                              onChange={(e) => handleBulletChange(bIdx, e.target.value)}
+                              className="h-10 text-xs bg-white/5 border-white/15 text-white rounded-xl"
+                            />
+                            {editableBullets.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveBullet(bIdx)}
+                                className="grid size-8 shrink-0 place-items-center rounded-lg text-slate-500 hover:text-destructive hover:bg-destructive/10"
+                                title="Remove point"
+                              >
+                                <Trash2 className="size-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Caption / Description Box */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider">
+                        Full Caption / Description (Rich Content)
                       </label>
                       <Textarea
                         value={editableCaption}
-                        onChange={(e) => setEditableCaption(e.target.value)}
-                        rows={6}
-                        className="text-xs leading-relaxed resize-none"
+                        onChange={(e) => handleCaptionChange(e.target.value)}
+                        rows={8}
+                        placeholder="Write the full in-depth post caption..."
+                        className="text-sm leading-relaxed bg-white/5 border-white/15 text-slate-200 rounded-2xl resize-none p-3.5 focus:border-primary"
                       />
                     </div>
                   </div>
-
-                  {/* AI Visual Prompt Override */}
-                  {onGenerateImage && (
-                    <div className="rounded-xl border border-border/70 bg-surface-raised/60 p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-mono text-muted-foreground font-semibold uppercase">
-                          Custom Background Art Prompt
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Input
-                          value={visualPrompt}
-                          onChange={(e) => setVisualPrompt(e.target.value)}
-                          placeholder="e.g. Neon cyber grid on dark obsidian..."
-                          className="h-7 text-xs bg-background/80"
-                        />
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={submitVisualGeneration}
-                          disabled={post.isGeneratingImage}
-                          className="h-7 px-2 text-[11px] shrink-0"
-                        >
-                          <Sparkles className="size-3 text-primary mr-1" />
-                          {post.isGeneratingImage ? "Gen..." : "Gen Art"}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </motion.div>
             ) : (
+              /* TAB 2: Full Copy View */
               <motion.div
                 key="tab-text"
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 transition={{ duration: 0.15 }}
-                className="max-w-3xl mx-auto space-y-5"
+                className="max-w-3xl mx-auto space-y-6"
               >
                 {displayImgUrl && (
-                  <div className="relative overflow-hidden rounded-xl border border-border/60 bg-background/50">
-                    <img src={displayImgUrl} alt={post.title} className="max-h-60 w-full object-cover" />
+                  <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/50">
+                    <img src={displayImgUrl} alt={post.title} className="max-h-64 w-full object-cover" />
                   </div>
                 )}
 
-                <div className="space-y-1.5">
-                  <span className="label-mono block text-muted-foreground">Hook</span>
-                  <p className="text-base font-semibold text-foreground">{editableHook || post.hook}</p>
+                <div className="space-y-2">
+                  <span className="font-mono text-xs text-primary uppercase font-bold">Headline</span>
+                  <p className="text-xl font-bold text-white">{editableTitle || post.title}</p>
                 </div>
 
-                <div className="space-y-1.5">
-                  <span className="label-mono block text-muted-foreground">Caption & Description</span>
-                  <div className="space-y-2.5 text-sm leading-relaxed text-foreground/90 whitespace-pre-line bg-secondary/30 p-4 rounded-xl border border-border/50 font-sans">
+                <div className="space-y-2">
+                  <span className="font-mono text-xs text-primary uppercase font-bold">Hook</span>
+                  <p className="text-base font-semibold text-slate-200">{editableHook || post.hook}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <span className="font-mono text-xs text-primary uppercase font-bold">Caption & Description</span>
+                  <div className="space-y-3 text-sm leading-relaxed text-slate-200 whitespace-pre-line bg-white/5 p-5 rounded-2xl border border-white/10 font-sans">
                     {editableCaption || post.caption}
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <span className="label-mono block text-muted-foreground">Hashtags</span>
-                  <div className="flex flex-wrap gap-1.5">
+                <div className="space-y-2">
+                  <span className="font-mono text-xs text-primary uppercase font-bold">Hashtags</span>
+                  <div className="flex flex-wrap gap-2">
                     {post.hashtags.map((tag) => (
                       <span
                         key={tag}
-                        className="rounded-md bg-secondary/70 px-2 py-1 font-mono text-xs text-primary ring-1 ring-border/50"
+                        className="rounded-lg bg-white/5 border border-white/10 px-3 py-1 font-mono text-xs text-primary"
                       >
                         {tag}
                       </span>
@@ -356,8 +431,8 @@ export function PostModal({
                 </div>
 
                 {post.sourceUrl && (
-                  <div className="space-y-1">
-                    <span className="label-mono block text-muted-foreground">Source Reference</span>
+                  <div className="space-y-1 pt-2 border-t border-white/10">
+                    <span className="font-mono text-xs text-slate-400">Grounding Source</span>
                     <a
                       href={post.sourceUrl}
                       target="_blank"
@@ -375,33 +450,36 @@ export function PostModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="border-t border-border/60 bg-background/80 px-5 py-3 sm:px-6 flex items-center justify-between">
+        <div className="border-t border-white/10 bg-black/60 px-6 py-4 flex items-center justify-between">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onRegenerate(post.id)}
             disabled={editing}
-            className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            className="h-9 gap-1.5 text-xs text-slate-400 hover:text-white rounded-xl"
           >
             <RefreshCw className="size-3.5" /> Regenerate Post
           </Button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <Button
               variant="outline"
               size="sm"
               onClick={handleCopy}
-              className="h-8 gap-1.5 text-xs"
+              className="h-9 gap-1.5 text-xs rounded-xl border-white/15 bg-white/5 text-white hover:bg-white/10"
             >
               {copied ? <Check className="size-3.5 text-emerald-400" /> : <Copy className="size-3.5" />}
               {copied ? "Copied!" : "Copy Post Text"}
             </Button>
             <Button
               size="sm"
-              onClick={() => onOpenChange(false)}
-              className="h-8 px-4 text-xs font-semibold bg-primary text-primary-foreground"
+              onClick={() => {
+                toast.success("Post updated successfully!");
+                onOpenChange(false);
+              }}
+              className="h-9 px-5 text-xs font-bold bg-primary text-black rounded-xl hover:bg-primary-hover shadow-ember"
             >
-              Done
+              Save & Close
             </Button>
           </div>
         </div>

@@ -75,6 +75,18 @@ CREATE TABLE IF NOT EXISTS image_assets (
 
 CREATE INDEX IF NOT EXISTS idx_image_assets_session ON image_assets(session_id, post_number);
 CREATE INDEX IF NOT EXISTS idx_image_assets_user ON image_assets(user_id);
+
+CREATE TABLE IF NOT EXISTS user_preferences (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    brand_name TEXT DEFAULT '',
+    brand_handle TEXT DEFAULT '@aiflick',
+    target_audience TEXT DEFAULT '',
+    tone_of_voice TEXT DEFAULT 'punchy, authoritative, high-conversion',
+    custom_rules TEXT DEFAULT '',
+    show_watermark BOOLEAN DEFAULT TRUE,
+    preferred_model_tier TEXT DEFAULT 'free',
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
 """
 
 
@@ -534,3 +546,67 @@ def list_image_assets_for_session_from_db(session_id: str) -> List[Dict[str, Any
             }
             for r in rows
         ]
+
+
+def get_user_preferences(user_id: int) -> Dict[str, Any]:
+    with _conn() as conn:
+        row = conn.execute(
+            """
+            SELECT brand_name, brand_handle, target_audience, tone_of_voice,
+                   custom_rules, show_watermark, preferred_model_tier
+            FROM user_preferences
+            WHERE user_id = %s
+            """,
+            (user_id,),
+        ).fetchone()
+        if not row:
+            return {
+                "brand_name": "",
+                "brand_handle": "@aiflick",
+                "target_audience": "",
+                "tone_of_voice": "punchy, authoritative, high-conversion",
+                "custom_rules": "",
+                "show_watermark": True,
+                "preferred_model_tier": "free",
+            }
+        return {
+            "brand_name": row[0] or "",
+            "brand_handle": row[1] or "@aiflick",
+            "target_audience": row[2] or "",
+            "tone_of_voice": row[3] or "punchy, authoritative, high-conversion",
+            "custom_rules": row[4] or "",
+            "show_watermark": bool(row[5]),
+            "preferred_model_tier": row[6] or "free",
+        }
+
+
+def save_user_preferences(user_id: int, prefs: Dict[str, Any]) -> Dict[str, Any]:
+    with _conn() as conn:
+        conn.execute(
+            """
+            INSERT INTO user_preferences (
+                user_id, brand_name, brand_handle, target_audience,
+                tone_of_voice, custom_rules, show_watermark, preferred_model_tier, updated_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, now())
+            ON CONFLICT (user_id) DO UPDATE SET
+                brand_name = EXCLUDED.brand_name,
+                brand_handle = EXCLUDED.brand_handle,
+                target_audience = EXCLUDED.target_audience,
+                tone_of_voice = EXCLUDED.tone_of_voice,
+                custom_rules = EXCLUDED.custom_rules,
+                show_watermark = EXCLUDED.show_watermark,
+                preferred_model_tier = EXCLUDED.preferred_model_tier,
+                updated_at = now()
+            """,
+            (
+                user_id,
+                prefs.get("brand_name", ""),
+                prefs.get("brand_handle", "@aiflick"),
+                prefs.get("target_audience", ""),
+                prefs.get("tone_of_voice", "punchy, authoritative, high-conversion"),
+                prefs.get("custom_rules", ""),
+                prefs.get("show_watermark", True),
+                prefs.get("preferred_model_tier", "free"),
+            ),
+        )
+        return get_user_preferences(user_id)

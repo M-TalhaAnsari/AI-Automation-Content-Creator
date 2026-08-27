@@ -10,12 +10,13 @@ from api.web.dependencies.rate_limit_deps import limiter, rate_limit_exceeded_ha
 from api.web.routes.auth_routes import router as auth_router
 from api.web.routes.chat_routes import router as chat_router
 from api.web.routes.session_routes import router as session_router
+from api.web.routes.preferences_routes import router as preferences_router
 from api.web.image_routes import router as image_router
 
 logger = logging.getLogger("trendforge.web.app")
 
 app = FastAPI(
-    title="TrendForge Social Content & Visual Studio API",
+    title="AIFlick Social Content & Visual Studio API",
     description="Production-grade API for generating viral social posts and high-converting graphics",
     version="2.0.0",
 )
@@ -61,4 +62,6 @@ def health():
 app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(session_router)
+app.include_router(preferences_router)
 app.include_router(image_router)
+

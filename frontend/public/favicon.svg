@@ -1,0 +1,22 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="aiflick-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F97316" />
+      <stop offset="50%" stop-color="#FB923C" />
+      <stop offset="100%" stop-color="#38BDF8" />
+    </linearGradient>
+    <linearGradient id="aiflick-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#38BDF8" stop-opacity="0.8"/>
+    </linearGradient>
+  </defs>
+  <!-- Background tile -->
+  <rect width="64" height="64" rx="16" fill="#0A0D14"/>
+  <rect width="62" height="62" x="1" y="1" rx="15" stroke="url(#aiflick-glow)" stroke-width="1.5" stroke-opacity="0.4"/>
+  
+  <!-- AIFlick Modern Geometric Prism Glyph -->
+  <path d="M32 12 L49 46 L15 46 Z" fill="url(#aiflick-grad)" />
+  <path d="M32 21 L43 43 L21 43 Z" fill="#0A0D14"/>
+  <circle cx="32" cy="34" r="3.5" fill="#38BDF8"/>
+  <path d="M32 26 L33.5 32 L39.5 33.5 L33.5 35 L32 41 L30.5 35 L24.5 33.5 L30.5 32 Z" fill="#FFFFFF"/>
+</svg>

@@ -109,7 +109,25 @@ class ContentGenerator:
         if result is not None:
             add_log(state, f"[Generator] Raw payload validated successfully via {engine_used}.")
             add_tokens(state, "content_generation", result.tokens_used)
-            validated = result.content.get("posts", [])
+            raw_posts = result.content.get("posts", [])
+            # Strip any accidental markdown headers or bold stars from card text
+            import re
+            def _clean_text(val):
+                if not val:
+                    return ""
+                s = re.sub(r"^#+\s*", "", str(val))
+                s = re.sub(r"\*\*(.*?)\*\*", r"\1", s)
+                return s.strip()
+
+            for p in raw_posts:
+                if isinstance(p, dict):
+                    if "title" in p:
+                        p["title"] = _clean_text(p["title"])
+                    if "hook" in p:
+                        p["hook"] = _clean_text(p["hook"])
+                    if "summary" in p and isinstance(p["summary"], list):
+                        p["summary"] = [_clean_text(item) for item in p["summary"]]
+                    validated.append(p)
 
         if not validated:
             add_log(state, "[ContentGenerator] System Warning: Engine output empty or failed validation — applying safe string builder.")

@@ -12,6 +12,7 @@ export type GeneratedPost = {
   platform: string;
   title: string;
   hook: string;
+  summary?: string[];
   caption: string;
   hashtags: string[];
   sourceUrl: string;
@@ -21,6 +22,7 @@ export type GeneratedPost = {
   isGeneratingImage?: boolean;
   imageError?: string;
   edits?: PostEdit[];
+  latencyMs?: number;
 };
 
 export type ChatMessage = {
@@ -162,6 +164,16 @@ export function deriveSourceLabel(url: string, sourceHint?: string): string {
   }
 }
 
+export function cleanHumanCopy(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/^#+\s+/gm, "")          // strip markdown headings #, ##, ###
+    .replace(/\*\*(.*?)\*\*/g, "$1")  // strip markdown bold stars
+    .replace(/__(.*?)__/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")      // strip code backticks
+    .trim();
+}
+
 export function rawPostToGeneratedPost(
   raw: Record<string, any>,
   fallbackPlatform = "instagram",
@@ -171,13 +183,34 @@ export function rawPostToGeneratedPost(
   const sourceLabel = deriveSourceLabel(url, raw._source || raw.source);
   const postNum = raw.number ?? index;
 
+  // Clean title & hook from any AI markdown headers (# Title)
+  const rawTitle = raw.title || raw.name || `Post ${index}`;
+  const cleanTitle = cleanHumanCopy(String(rawTitle));
+
+  const rawHook = raw.hook || (Array.isArray(raw.summary) ? raw.summary[0] : raw.summary) || "";
+  const cleanHook = cleanHumanCopy(String(rawHook));
+
+  let summaryArray: string[] | undefined;
+  if (Array.isArray(raw.summary)) {
+    summaryArray = raw.summary.map((s: any) => cleanHumanCopy(String(s))).filter(Boolean);
+  } else if (typeof raw.summary === "string" && raw.summary.trim()) {
+    summaryArray = raw.summary
+      .split("\n")
+      .map((s: string) => cleanHumanCopy(s))
+      .filter(Boolean);
+  }
+
+  const rawCaption = raw.caption || (Array.isArray(raw.summary) ? raw.summary.join("\n\n") : raw.summary) || "";
+  const cleanCaption = cleanHumanCopy(String(rawCaption));
+
   return {
     id: raw.id || `post-${postNum}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     number: postNum,
     platform: raw.platform || (fallbackPlatform !== "auto" ? fallbackPlatform : "instagram"),
-    title: raw.title || raw.name || `Post ${index}`,
-    hook: raw.hook || (Array.isArray(raw.summary) ? raw.summary[0] : raw.summary) || "",
-    caption: raw.caption || (Array.isArray(raw.summary) ? raw.summary.join("\n\n") : raw.summary) || "",
+    title: cleanTitle,
+    hook: cleanHook,
+    summary: summaryArray,
+    caption: cleanCaption,
     hashtags: Array.isArray(raw.hashtags) ? raw.hashtags : [],
     sourceUrl: url,
     sourceLabel,

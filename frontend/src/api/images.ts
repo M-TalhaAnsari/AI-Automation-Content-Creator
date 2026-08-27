@@ -21,14 +21,24 @@ const BASE_URL = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").repla
  * Appends a cache-busting timestamp to prevent stale cached images from showing
  * when a post's background is regenerated.
  */
-export function getImageUrl(assetId: string, cacheBust = false): string {
-  if (!assetId) return "";
-  // If it is already an absolute URL or data URI, return as-is
-  if (assetId.startsWith("http://") || assetId.startsWith("https://") || assetId.startsWith("data:")) {
-    return assetId;
+export function getImageUrl(assetIdOrUrl: string, cacheBust = false): string {
+  if (!assetIdOrUrl) return "";
+  let url = assetIdOrUrl;
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:") || url.startsWith("blob:")) {
+    // Already an absolute URL
+  } else if (url.startsWith("/images/")) {
+    url = `${BASE_URL}${url}`;
+  } else if (url.startsWith("/")) {
+    url = `${BASE_URL}${url}`;
+  } else {
+    url = `${BASE_URL}/images/${url}`;
   }
-  const base = `${BASE_URL}/images/${assetId}`;
-  return cacheBust ? `${base}?t=${Date.now()}` : base;
+
+  if (cacheBust) {
+    const sep = url.includes("?") ? "&" : "?";
+    return `${url}${sep}_t=${Date.now()}`;
+  }
+  return url;
 }
 
 /**

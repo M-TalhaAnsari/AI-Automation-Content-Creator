@@ -2,10 +2,11 @@ import { apiFetch, ApiError } from "./client";
 import { pollJobStatus, type PollJobOptions } from "./jobs";
 import type { ChatRequest, ChatResponse } from "./types";
 
-export async function sendChat(request: ChatRequest): Promise<ChatResponse> {
+export async function sendChat(request: ChatRequest, signal?: AbortSignal): Promise<ChatResponse> {
   return apiFetch<ChatResponse>("/chat", {
     method: "POST",
     body: JSON.stringify(request),
+    signal,
   });
 }
 
@@ -18,9 +19,10 @@ export interface SendChatResult {
 
 export async function sendChatAndWait(
   request: ChatRequest,
-  options: PollJobOptions = {}
+  options: PollJobOptions = {},
+  signal?: AbortSignal
 ): Promise<SendChatResult> {
-  const chatResponse = await sendChat(request);
+  const chatResponse = await sendChat(request, signal);
 
   if (chatResponse.status === "done") {
     return {
