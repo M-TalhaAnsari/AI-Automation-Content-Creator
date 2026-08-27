@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
@@ -187,6 +187,36 @@ function Workspace() {
 
   const activeTitle =
     sessions.find((s) => s.id === activeSessionId)?.title ?? "New chat";
+
+  const allCurrentPosts = useMemo(() => {
+    const list: GeneratedPost[] = [];
+    for (const msg of messages) {
+      if (msg.posts && msg.posts.length > 0) {
+        list.push(...msg.posts);
+      }
+    }
+    return list;
+  }, [messages]);
+
+  const currentPostIndex = activePost
+    ? allCurrentPosts.findIndex((p) => p.id === activePost.post.id)
+    : -1;
+  const hasPreviousPost = currentPostIndex > 0;
+  const hasNextPost = currentPostIndex !== -1 && currentPostIndex < allCurrentPosts.length - 1;
+
+  function handlePreviousPost() {
+    if (hasPreviousPost) {
+      const prev = allCurrentPosts[currentPostIndex - 1];
+      setActivePost({ post: prev, index: currentPostIndex });
+    }
+  }
+
+  function handleNextPost() {
+    if (hasNextPost) {
+      const next = allCurrentPosts[currentPostIndex + 1];
+      setActivePost({ post: next, index: currentPostIndex + 2 });
+    }
+  }
 
   function handleViewPost(post: GeneratedPost, index: number) {
     setActivePost({ post, index });
@@ -529,7 +559,13 @@ function Workspace() {
       }
 
       if (generatedPosts.length > 0) {
-        const lastAssistantIndex = chatMessages.findLastIndex((m) => m.role === "assistant");
+        let lastAssistantIndex = -1;
+        for (let i = chatMessages.length - 1; i >= 0; i--) {
+          if (chatMessages[i]?.role === "assistant") {
+            lastAssistantIndex = i;
+            break;
+          }
+        }
         if (lastAssistantIndex !== -1) {
           chatMessages[lastAssistantIndex].posts = generatedPosts;
         } else if (sessionView.last_output) {
@@ -537,6 +573,13 @@ function Workspace() {
             id: `msg-${Date.now()}`,
             role: "assistant",
             content: sessionView.last_output,
+            posts: generatedPosts,
+          });
+        } else {
+          chatMessages.push({
+            id: `msg-${Date.now()}`,
+            role: "assistant",
+            content: "Here are your generated posts:",
             posts: generatedPosts,
           });
         }
@@ -801,6 +844,11 @@ function Workspace() {
             else void postId;
           }}
           editing={editingPost}
+          hasPrevious={hasPreviousPost}
+          hasNext={hasNextPost}
+          onPrevious={handlePreviousPost}
+          onNext={handleNextPost}
+          totalPosts={allCurrentPosts.length}
         />
       </div>
       )}

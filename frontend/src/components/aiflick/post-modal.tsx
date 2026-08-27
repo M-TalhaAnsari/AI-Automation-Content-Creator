@@ -12,6 +12,8 @@ import {
   Plus,
   Trash2,
   Save,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,6 +50,11 @@ type Props = {
   onRegenerate: (postId: string) => void;
   onGenerateImage?: (postId: string, customPrompt?: string) => void;
   editing: boolean;
+  hasPrevious?: boolean;
+  hasNext?: boolean;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  totalPosts?: number;
 };
 
 export function PostModal({
@@ -60,6 +67,11 @@ export function PostModal({
   onRegenerate,
   onGenerateImage,
   editing,
+  hasPrevious = false,
+  hasNext = false,
+  onPrevious,
+  onNext,
+  totalPosts,
 }: Props) {
   const [instruction, setInstruction] = useState("");
   const [visualPrompt, setVisualPrompt] = useState("");
@@ -185,6 +197,35 @@ export function PostModal({
                 <Check className="size-3" /> Live Real-Time Sync
               </span>
             </div>
+
+            {/* Post Carousel Stepper / Navigation */}
+            {totalPosts && totalPosts > 1 && (
+              <div className="flex items-center gap-1 rounded-2xl bg-white/5 p-1 border border-white/10">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onPrevious}
+                  disabled={!hasPrevious}
+                  className="h-7 px-2.5 text-xs text-slate-300 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none rounded-xl"
+                  title="Previous Post"
+                >
+                  <ChevronLeft className="size-3.5 mr-1" /> Prev
+                </Button>
+                <span className="font-mono text-[11px] font-bold text-slate-400 px-2">
+                  {index} / {totalPosts}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onNext}
+                  disabled={!hasNext}
+                  className="h-7 px-2.5 text-xs text-slate-300 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none rounded-xl"
+                  title="Next Post"
+                >
+                  Next <ChevronRight className="size-3.5 ml-1" />
+                </Button>
+              </div>
+            )}
 
             {/* View Mode Switcher */}
             <div className="flex items-center gap-1 rounded-2xl bg-white/5 p-1 border border-white/10">
