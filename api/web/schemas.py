@@ -40,15 +40,15 @@ class SessionView(BaseModel):
     last_topic: Optional[str] = None
     last_platform: Optional[str] = None
     last_content_intent: Optional[str] = None
-    last_generated_posts: List[Dict[str, Any]] = Field(default_factory=list)
+    last_generated_posts: List[Any] = Field(default_factory=list)
     last_output: Optional[str] = None
-    active_constraints: List[Dict[str, Any]] = Field(default_factory=list)
-    leftover_fetch_pool: List[Dict[str, Any]] = Field(default_factory=list)
-    message_history: List[Dict[str, Any]] = Field(default_factory=list)
-    rolling_summary: str = ""
-    gate_tokens_used: int = 0
-    post_history: List[List[Dict[str, Any]]] = Field(default_factory=list)
-    pending_confirmation: Optional[Dict[str, Any]] = None
+    active_constraints: List[Any] = Field(default_factory=list)
+    leftover_fetch_pool: List[Any] = Field(default_factory=list)
+    message_history: List[Any] = Field(default_factory=list)
+    rolling_summary: Optional[str] = ""
+    gate_tokens_used: Optional[int] = 0
+    post_history: List[Any] = Field(default_factory=list)
+    pending_confirmation: Optional[Any] = None
     last_timings: Optional[Dict[str, Any]] = None
 
 

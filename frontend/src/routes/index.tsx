@@ -17,6 +17,8 @@ import {
   type ChatMessage,
   type GeneratedPost,
   type Session,
+  DEMO_MESSAGES,
+  DEMO_SESSIONS,
   formatTimeAgo,
   normalizeHistoryEntry,
   rawPostToGeneratedPost,
@@ -136,12 +138,12 @@ function Workspace() {
     checkAuth();
   }, []);
 
-  // Fetch Session History when Authenticated
+  // Fetch Session History when Authenticated, or show demo sessions if guest
   useEffect(() => {
     if (authenticated) {
       refreshSessions();
     } else {
-      setSessions([]);
+      setSessions(DEMO_SESSIONS);
     }
   }, [authenticated]);
 
@@ -520,24 +522,47 @@ function Workspace() {
     setError("");
     setActiveSessionId(id);
     setLastSnapshot(null);
+
+    // If it's a demo session, immediately load demo messages without network failure
+    if (id === "s1" || id === "s2" || id === "s3" || id === "s4" || id.startsWith("demo-")) {
+      setMessages(DEMO_MESSAGES);
+      return;
+    }
+
     try {
       const sessionView = await getSession(id);
+      if (!sessionView) {
+        setMessages([]);
+        return;
+      }
+
       if (sessionView.last_platform) {
         setPlatform(sessionView.last_platform);
       }
 
-      if (sessionView.active_constraints) {
+      if (sessionView.active_constraints && Array.isArray(sessionView.active_constraints)) {
         const formattedConstraints = sessionView.active_constraints
           .map((c) =>
-            typeof c === "string" ? c : c.value || `${c.type || ""}: ${c.value || ""}`
+            typeof c === "string" ? c : c?.value || `${c?.type || ""}: ${c?.value || ""}`
           )
           .filter(Boolean);
         setConstraints(formattedConstraints);
       }
 
-      const generatedPosts = (sessionView.last_generated_posts || []).map((p, idx) =>
-        rawPostToGeneratedPost(p, sessionView.last_platform || "instagram", idx + 1)
-      );
+      const generatedPosts: GeneratedPost[] = [];
+      if (Array.isArray(sessionView.last_generated_posts)) {
+        sessionView.last_generated_posts.forEach((p, idx) => {
+          if (p && typeof p === "object") {
+            try {
+              generatedPosts.push(
+                rawPostToGeneratedPost(p, sessionView.last_platform || "instagram", idx + 1)
+              );
+            } catch {
+              // Ignore corrupted post
+            }
+          }
+        });
+      }
 
       if (generatedPosts.length > 0) {
         const sourcesUsed = new Set<string>();
@@ -550,11 +575,15 @@ function Workspace() {
       }
 
       const chatMessages: ChatMessage[] = [];
-      const history = sessionView.message_history || [];
+      const history = Array.isArray(sessionView.message_history) ? sessionView.message_history : [];
       for (const entry of history) {
-        const normalized = normalizeHistoryEntry(entry);
-        if (normalized) {
-          chatMessages.push(normalized);
+        try {
+          const normalized = normalizeHistoryEntry(entry);
+          if (normalized) {
+            chatMessages.push(normalized);
+          }
+        } catch {
+          // Ignore invalid entry
         }
       }
 
@@ -587,6 +616,7 @@ function Workspace() {
 
       setMessages(chatMessages);
     } catch (err: any) {
+      toast.error(err?.detail || err?.message || "Failed to load chat history");
       setError(err?.detail || err?.message || "Failed to load session history");
     }
   }

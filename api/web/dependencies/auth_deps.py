@@ -1,4 +1,4 @@
-﻿"""api/web/dependencies/auth_deps.py -- FastAPI authentication dependencies."""
+"""api/web/dependencies/auth_deps.py -- FastAPI authentication dependencies."""
 import os
 import secrets
 from typing import Optional, Dict
@@ -29,13 +29,18 @@ async def verify_identity(
     x_anon_id: Optional[str] = Header(None, alias="X-Anon-Id"),
 ) -> str:
     """Accepts either a logged-in user (Bearer JWT) or an anonymous guest (X-Anon-Id)."""
-    if authorization:
-        return await verify_jwt(authorization=authorization)
+    if authorization and authorization.startswith("Bearer "):
+        try:
+            return await verify_jwt(authorization=authorization)
+        except HTTPException:
+            if not x_anon_id:
+                raise
 
-    if not x_anon_id:
-        raise HTTPException(status_code=401, detail=GENERIC_TOKEN_ERROR)
+    if x_anon_id:
+        from api.web import anon_trial
+        if anon_trial.is_over_limit(x_anon_id):
+            raise HTTPException(status_code=403, detail="signup_required")
+        return f"anon:{x_anon_id}"
 
-    from api.web import anon_trial
-    if anon_trial.is_over_limit(x_anon_id):
-        raise HTTPException(status_code=403, detail="signup_required")
-    return f"anon:{x_anon_id}"
+    # Transient fallback ID if headers were omitted
+    return f"anon:{secrets.token_hex(8)}"

@@ -3,6 +3,7 @@ import { type ReactNode } from "react";
 // Minimal markdown: **bold**, *italic*, `code`, and paragraph/list breaks.
 // Deliberately small — the assistant replies use only these.
 function renderInline(text: string, keyPrefix: string): ReactNode[] {
+  if (typeof text !== "string") return [String(text ?? "")];
   const nodes: ReactNode[] = [];
   const pattern = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g;
   let last = 0;
@@ -42,7 +43,8 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
 }
 
 export function Markdown({ content }: { content: string }) {
-  const blocks = content.split(/\n{2,}/);
+  const safeContent = typeof content === "string" ? content : (content ? String(content) : "");
+  const blocks = safeContent.split(/\n{2,}/);
 
   return (
     <div className="space-y-3">
