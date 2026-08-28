@@ -3,7 +3,6 @@ import { motion } from "motion/react";
 import {
   Check,
   Copy,
-  Eye,
   Image as ImageIcon,
   Loader2,
   Pencil,
@@ -17,7 +16,6 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PlatformBadge } from "./platform-badge";
 import { getImageUrl } from "@/api";
@@ -26,12 +24,12 @@ import type { GeneratedPost } from "./data";
 type Props = {
   post: GeneratedPost;
   index: number;
-  regenerating?: boolean;
+  regenerating?: boolean | undefined;
   onView: () => void;
   onEdit: () => void;
-  onUpdatePost?: (updated: GeneratedPost) => void;
+  onUpdatePost?: ((updated: GeneratedPost) => void) | undefined;
   onRegenerate: () => void;
-  onGenerateImage?: () => void;
+  onGenerateImage?: (() => void) | undefined;
 };
 
 export function PostCard({
@@ -94,7 +92,7 @@ export function PostCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28, delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
-      className="group relative overflow-hidden rounded-3xl border border-white/10 bg-[#0E131F]/90 p-5 shadow-2xl backdrop-blur-xl transition-all hover:border-primary/40 flex flex-col justify-between"
+      className="group relative overflow-hidden rounded-3xl border border-white/10 bg-[#0D1B3E]/90 p-5 shadow-2xl backdrop-blur-xl transition-all hover:border-primary/40 flex flex-col justify-between"
     >
       <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/50 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
 
@@ -151,6 +149,7 @@ export function PostCard({
                   if (e.key === "Enter") handleSaveInline();
                   if (e.key === "Escape") handleCancelInline();
                 }}
+                autoFocus
                 className="h-9 text-xs font-bold bg-black/40 text-white rounded-lg border-white/15"
                 placeholder="Slide headline"
               />
@@ -178,16 +177,19 @@ export function PostCard({
             </div>
           </div>
         ) : (
+          /* ─── VIEW MODE: clicking text does NOT trigger edit ─────────────
+             Edit is only via the ✏ button in the footer. Hover shows
+             the pencil icon as a visual hint. onView opens the Studio modal. */
           <div
-            onClick={() => setIsInlineEditing(true)}
-            className="mt-3.5 block w-full text-left cursor-pointer group/text rounded-xl p-1 -m-1 transition-colors hover:bg-white/[0.03]"
-            title="Click to edit text directly"
+            className="mt-3.5 block w-full text-left rounded-xl p-1 -m-1 group/text"
+            title="Click ✏ below to edit, or open in Visual Studio"
           >
             <div className="flex items-start justify-between gap-1">
-              <h3 className="text-[15px] font-bold leading-snug text-white transition-colors group-hover/text:text-primary">
+              <h3 className="text-[15px] font-bold leading-snug text-white transition-colors">
                 {post.title}
               </h3>
-              <Edit2 className="size-3 text-slate-500 opacity-0 group-hover/text:opacity-100 transition-opacity shrink-0 mt-1" />
+              {/* Subtle hint icon — click below pencil button to edit */}
+              <Edit2 className="size-3 text-slate-600 opacity-0 group-hover/text:opacity-60 transition-opacity shrink-0 mt-1" />
             </div>
             <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-300">
               {post.hook}
@@ -232,6 +234,7 @@ export function PostCard({
         <div className="flex items-center gap-0.5">
           <Tooltip>
             <TooltipTrigger asChild>
+              {/* ✏ ONLY click that activates inline editing */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -242,7 +245,7 @@ export function PostCard({
                 <Pencil className="size-3.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top">Quick Edit</TooltipContent>
+            <TooltipContent side="top">Quick Edit title & hook</TooltipContent>
           </Tooltip>
 
           <Tooltip>

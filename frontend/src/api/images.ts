@@ -14,7 +14,7 @@ import type {
   VisualProfileCreateRequest,
 } from "./types";
 
-const BASE_URL = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+const BASE_URL = ((import.meta.env["VITE_API_URL"] as string) || "http://127.0.0.1:8000").replace(/\/+$/, "");
 
 /**
  * Return direct URL to stream raw PNG/JPEG bytes from backend asset storage.

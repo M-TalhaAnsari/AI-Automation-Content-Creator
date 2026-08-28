@@ -142,10 +142,27 @@ export const PRESET_THEMES: PostTheme[] = [
     badgeBg: "rgba(37, 99, 235, 0.1)",
     badgeTextColor: "#2563EB",
   },
+  {
+    id: "deep_navy",
+    name: "Deep Navy",
+    description: "Rich midnight navy with indigo and violet accents",
+    bgGradient: ["#070B1A", "#0B0F24"],
+    containerBg: "rgba(13, 27, 62, 0.88)",
+    containerBorder: "rgba(99, 102, 241, 0.3)",
+    titleColor: "#FFFFFF",
+    hookColor: "#818CF8",
+    bulletColor: "#E0E7FF",
+    bulletNumBg: "#4F46E5",
+    bulletNumColor: "#FFFFFF",
+    accentColor: "#6366F1",
+    badgeBg: "rgba(99, 102, 241, 0.2)",
+    badgeTextColor: "#818CF8",
+  },
 ];
 
 /**
  * Compute auto-scaled typography dimensions so title & bullets always fit.
+ * Handles up to 7 bullet points with dynamic font and spacing scaling.
  */
 export function computeAutoLayout(
   canvasWidth: number,
@@ -155,14 +172,19 @@ export function computeAutoLayout(
 ) {
   // Padding & margins
   const horizontalMargin = Math.round(canvasWidth * 0.08);
-  const topMargin = Math.round(canvasHeight * 0.08);
+  const topMargin = Math.round(canvasHeight * 0.06);
   const containerWidth = canvasWidth - horizontalMargin * 2;
-  const containerHeight = Math.round(canvasHeight * 0.84);
 
-  // Auto-scale title font size
+  // Container height: shrinks slightly when many bullets to avoid overflow
+  const containerHeightRatio = bulletCount >= 6 ? 0.88 : 0.84;
+  const containerHeight = Math.round(canvasHeight * containerHeightRatio);
+
+  // Auto-scale title font size based on text length
   const titleLen = titleText.length;
   let titleFontSize = 46;
-  if (titleLen > 60) {
+  if (titleLen > 80) {
+    titleFontSize = 28;
+  } else if (titleLen > 60) {
     titleFontSize = 32;
   } else if (titleLen > 40) {
     titleFontSize = 36;
@@ -170,10 +192,17 @@ export function computeAutoLayout(
     titleFontSize = 40;
   }
 
-  // Auto-scale bullet points font size
+  // Auto-scale bullet font size and spacing based on count (handles up to 7)
   let bulletFontSize = 26;
   let bulletSpacing = 28;
-  if (bulletCount >= 5) {
+
+  if (bulletCount >= 7) {
+    bulletFontSize = 18;
+    bulletSpacing = 14;
+  } else if (bulletCount === 6) {
+    bulletFontSize = 20;
+    bulletSpacing = 16;
+  } else if (bulletCount === 5) {
     bulletFontSize = 22;
     bulletSpacing = 20;
   } else if (bulletCount === 4) {

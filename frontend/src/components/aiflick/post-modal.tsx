@@ -185,7 +185,7 @@ export function PostModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex h-[96vh] flex-col gap-0 overflow-hidden rounded-3xl border-white/15 bg-[#0D111A]/95 p-0 shadow-2xl backdrop-blur-2xl sm:max-w-6xl text-foreground"
+        className="flex h-[96vh] flex-col gap-0 overflow-hidden rounded-3xl border-white/15 bg-[#0B1535]/95 p-0 shadow-2xl backdrop-blur-2xl sm:max-w-6xl text-foreground"
       >
         {/* Modal Header */}
         <DialogHeader className="space-y-2 border-b border-white/10 px-6 pt-4 pb-3 text-left">
@@ -284,7 +284,7 @@ export function PostModal({
                     platform={post.platform}
                     authorHandle="@aiflick"
                     onRegenerateBg={() => submitVisualGeneration()}
-                    isGeneratingBg={post.isGeneratingImage}
+                    isGeneratingBg={Boolean(post.isGeneratingImage)}
                     onTitleChange={(v) => handleTitleChange(v)}
                     onHookChange={(v) => handleHookChange(v)}
                     onSummaryChange={(bullets) => {

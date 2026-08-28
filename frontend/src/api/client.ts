@@ -1,6 +1,6 @@
 import type { ApiErrorDetail } from "./types";
 
-const BASE_URL = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000").replace(/\/+$/, "");
+const BASE_URL = ((import.meta.env["VITE_API_URL"] as string) || "http://127.0.0.1:8000").replace(/\/+$/, "");
 
 const TOKEN_KEY = "trendforge_jwt_token";
 const ANON_ID_KEY = "trendforge_anon_id";
@@ -52,8 +52,9 @@ export function getAnonId(): string {
   return anonId;
 }
 
-export interface FetchOptions extends RequestInit {
-  timeoutMs?: number;
+export interface FetchOptions extends Omit<RequestInit, "signal"> {
+  timeoutMs?: number | undefined;
+  signal?: AbortSignal | null | undefined;
 }
 
 export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {

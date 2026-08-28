@@ -26,17 +26,17 @@ type Props = {
   activeSessionId: string | null;
   isGuest: boolean;
   guestMessagesLeft: number;
-  userEmail?: string | null;
-  userName?: string | null;
-  userTier?: string | null;
-  collapsible?: boolean;
+  userEmail?: string | null | undefined;
+  userName?: string | null | undefined;
+  userTier?: string | null | undefined;
+  collapsible?: boolean | undefined;
   onSelectSession: (id: string) => void;
   onNewChat: () => void;
   onDeleteSession: (id: string) => void;
   onSignIn: () => void;
   onLogout: () => void;
   onCollapse: () => void;
-  onOpenSettings?: () => void;
+  onOpenSettings?: (() => void) | undefined;
 };
 
 export function AppSidebar({

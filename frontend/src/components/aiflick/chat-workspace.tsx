@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowUp,
@@ -8,7 +8,10 @@ import {
   Sparkles,
   Square,
   Undo2,
+  Download,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -16,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Markdown } from "./markdown";
 import { PostCard, PostCardSkeleton } from "./post-card";
 import { SUGGESTED_PROMPTS, type ChatMessage, type GeneratedPost } from "./data";
+import { downloadAllPosts } from "./post-downloader";
 
 type Props = {
   messages: ChatMessage[];
@@ -104,6 +108,7 @@ export function ChatWorkspace({
                   message={message}
                   onViewPost={onViewPost}
                   onEditPost={onEditPost}
+                  onUpdatePost={onUpdatePost}
                   onRegeneratePost={onRegeneratePost}
                   onGenerateImage={onGenerateImage}
                   onBatchGenerateImages={onBatchGenerateImages}
@@ -259,10 +264,10 @@ type RowProps = {
   message: ChatMessage;
   onViewPost: (post: GeneratedPost, index: number) => void;
   onEditPost: (post: GeneratedPost, index: number) => void;
-  onUpdatePost?: (updatedPost: GeneratedPost) => void;
+  onUpdatePost?: ((updatedPost: GeneratedPost) => void) | undefined;
   onRegeneratePost: (post: GeneratedPost, index: number) => void;
-  onGenerateImage?: (post: GeneratedPost, index: number) => void;
-  onBatchGenerateImages?: (posts: GeneratedPost[]) => void;
+  onGenerateImage?: ((post: GeneratedPost, index: number) => void) | undefined;
+  onBatchGenerateImages?: ((posts: GeneratedPost[]) => void) | undefined;
   regeneratingPostId: string | null;
 };
 
@@ -293,6 +298,29 @@ function MessageRow({
 
   const hasPosts = message.posts && message.posts.length > 0;
   const anyPostMissingImage = hasPosts && message.posts?.some((p) => !p.imageUrl && !p.imageAssetId);
+  const [downloadingAll, setDownloadingAll] = useState(false);
+
+  async function handleDownloadAll() {
+    if (!message.posts?.length || downloadingAll) return;
+    setDownloadingAll(true);
+    toast.info(`Preparing ${message.posts.length} post graphics for download...`);
+    try {
+      const result = await downloadAllPosts(message.posts, {
+        onProgress: (done, total) => {
+          toast.info(`Downloaded ${done}/${total} posts...`);
+        },
+      });
+      if (result.success > 0) {
+        toast.success(`Successfully downloaded ${result.success} posts!`);
+      } else {
+        toast.error("Could not download posts.");
+      }
+    } catch {
+      toast.error("Failed to download posts.");
+    } finally {
+      setDownloadingAll(false);
+    }
+  }
 
   return (
     <motion.div
@@ -311,12 +339,28 @@ function MessageRow({
         {hasPosts && (
           <div className="mt-5 space-y-3.5">
             {/* Batch Action Bar */}
-            {onBatchGenerateImages && (
-              <div className="flex items-center justify-between gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2.5 backdrop-blur-md">
-                <span className="text-xs text-slate-400 font-mono">
-                  ✨ {message.posts?.length} platform-ready posts generated
-                </span>
-                {anyPostMissingImage && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2.5 backdrop-blur-md">
+              <span className="text-xs text-slate-400 font-mono">
+                ✨ {message.posts?.length} platform-ready posts generated
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleDownloadAll}
+                  disabled={downloadingAll}
+                  className="h-8 gap-1.5 rounded-xl px-3 text-xs font-semibold text-slate-300 hover:bg-white/10 hover:text-white"
+                  title="Download all generated post graphics at once"
+                >
+                  {downloadingAll ? (
+                    <Loader2 className="size-3.5 animate-spin text-primary" />
+                  ) : (
+                    <Download className="size-3.5 text-primary" />
+                  )}
+                  {downloadingAll ? "Downloading All..." : "Download All (PNG)"}
+                </Button>
+
+                {onBatchGenerateImages && anyPostMissingImage && (
                   <Button
                     size="sm"
                     variant="ghost"
@@ -328,7 +372,7 @@ function MessageRow({
                   </Button>
                 )}
               </div>
-            )}
+            </div>
 
             <div className="grid gap-3.5 grid-cols-2">
               {message.posts!.map((post, i) => (

@@ -8,28 +8,28 @@ export type PostEdit = {
 
 export type GeneratedPost = {
   id: string;
-  number?: number;
+  number?: number | undefined;
   platform: string;
   title: string;
   hook: string;
-  summary?: string[];
+  summary?: string[] | undefined;
   caption: string;
   hashtags: string[];
   sourceUrl: string;
   sourceLabel: string;
-  imageUrl?: string;
-  imageAssetId?: string;
-  isGeneratingImage?: boolean;
-  imageError?: string;
-  edits?: PostEdit[];
-  latencyMs?: number;
+  imageUrl?: string | undefined;
+  imageAssetId?: string | undefined;
+  isGeneratingImage?: boolean | undefined;
+  imageError?: string | undefined;
+  edits?: PostEdit[] | undefined;
+  latencyMs?: number | undefined;
 };
 
 export type ChatMessage = {
   id: string;
   role: Role;
   content: string;
-  posts?: GeneratedPost[];
+  posts?: GeneratedPost[] | undefined;
 };
 
 export type Session = {
@@ -175,7 +175,7 @@ export function cleanHumanCopy(text: string): string {
 }
 
 export function rawPostToGeneratedPost(
-  raw: Record<string, any>,
+  raw: any,
   fallbackPlatform = "instagram",
   index = 1
 ): GeneratedPost {
@@ -243,7 +243,7 @@ export function formatTimeAgo(isoDateString?: string | null): string {
 }
 
 export function normalizeHistoryEntry(
-  entry: Record<string, any>,
+  entry: any,
   posts?: GeneratedPost[]
 ): ChatMessage | null {
   if (!entry || typeof entry !== "object") return null;

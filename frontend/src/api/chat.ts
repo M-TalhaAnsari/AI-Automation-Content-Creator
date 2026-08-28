@@ -14,7 +14,7 @@ export interface SendChatResult {
   action: string;
   reply: string;
   session_id: string;
-  tokens_used?: number | null;
+  tokens_used?: number | null | undefined;
 }
 
 export async function sendChatAndWait(

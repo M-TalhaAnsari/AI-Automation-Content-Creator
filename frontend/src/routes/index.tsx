@@ -207,15 +207,15 @@ function Workspace() {
   const hasNextPost = currentPostIndex !== -1 && currentPostIndex < allCurrentPosts.length - 1;
 
   function handlePreviousPost() {
-    if (hasPreviousPost) {
-      const prev = allCurrentPosts[currentPostIndex - 1];
+    if (hasPreviousPost && allCurrentPosts[currentPostIndex - 1]) {
+      const prev = allCurrentPosts[currentPostIndex - 1]!;
       setActivePost({ post: prev, index: currentPostIndex });
     }
   }
 
   function handleNextPost() {
-    if (hasNextPost) {
-      const next = allCurrentPosts[currentPostIndex + 1];
+    if (hasNextPost && allCurrentPosts[currentPostIndex + 1]) {
+      const next = allCurrentPosts[currentPostIndex + 1]!;
       setActivePost({ post: next, index: currentPostIndex + 2 });
     }
   }
@@ -595,8 +595,8 @@ function Workspace() {
             break;
           }
         }
-        if (lastAssistantIndex !== -1) {
-          chatMessages[lastAssistantIndex].posts = generatedPosts;
+        if (lastAssistantIndex !== -1 && chatMessages[lastAssistantIndex]) {
+          chatMessages[lastAssistantIndex]!.posts = generatedPosts;
         } else if (sessionView.last_output) {
           chatMessages.push({
             id: `msg-${Date.now()}`,

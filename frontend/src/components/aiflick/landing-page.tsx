@@ -97,7 +97,7 @@ export function LandingPage({ onGetStarted, onOpenSignIn }: Props) {
   ];
 
   return (
-    <div className="relative min-h-screen bg-[#07080B] text-foreground font-sans selection:bg-primary/30 selection:text-white overflow-x-hidden">
+    <div className="relative min-h-screen bg-[#070B1A] text-foreground font-sans selection:bg-primary/30 selection:text-white overflow-x-hidden">
       {/* ── 1. Fluid Iridescent Ambient Background Glow (Inspired by Reference Image) ── */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden z-0">
         <div

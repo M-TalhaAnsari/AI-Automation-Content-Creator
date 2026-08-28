@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import {
   Brain,
@@ -265,19 +265,15 @@ export function SettingsModal({
                   </Button>
                 </div>
 
-                {/* 2. Creator Pro */}
+                {/* 2. Creator Pro — Coming Soon */}
                 <div
-                  className={`relative flex flex-col justify-between rounded-2xl border p-5 transition-all ${
-                    activeTierId === "creator"
-                      ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-panel"
-                      : "border-border/70 bg-card/60 hover:border-border-strong"
-                  }`}
+                  className="relative flex flex-col justify-between rounded-2xl border border-border/70 bg-card/60 p-5 transition-all opacity-90"
                 >
-                  {activeTierId === "creator" && (
-                    <span className="absolute -top-2.5 right-4 rounded-full bg-primary px-2 py-0.5 font-mono text-[10px] font-bold text-primary-foreground">
-                      Active Plan
-                    </span>
-                  )}
+                  {/* Coming Soon ribbon */}
+                  <span className="absolute -top-2.5 right-4 rounded-full bg-amber-500 px-2.5 py-0.5 font-mono text-[10px] font-bold text-black shadow-sm flex items-center gap-1">
+                    🚧 Coming Soon
+                  </span>
+
                   <div>
                     <div className="flex items-center gap-2">
                       <Zap className="size-4 text-primary" />
@@ -313,28 +309,22 @@ export function SettingsModal({
 
                   <Button
                     size="sm"
-                    variant={activeTierId === "creator" ? "secondary" : "default"}
-                    disabled={activeTierId === "creator" || upgradingTierId === "creator"}
-                    onClick={() => handleSwitchTier("creator")}
-                    className="mt-5 w-full rounded-xl bg-primary text-primary-foreground hover:bg-primary-hover"
+                    disabled
+                    className="mt-5 w-full rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 cursor-not-allowed font-bold"
                   >
-                    {activeTierId === "creator" ? "Currently Active" : "Switch to Creator Pro"}
+                    🚧 Coming Soon
                   </Button>
                 </div>
 
-                {/* 3. Agency Studio */}
+                {/* 3. Agency Studio — Coming Soon */}
                 <div
-                  className={`relative flex flex-col justify-between rounded-2xl border p-5 transition-all ${
-                    activeTierId === "agency"
-                      ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-panel"
-                      : "border-border/70 bg-card/60 hover:border-border-strong"
-                  }`}
+                  className="relative flex flex-col justify-between rounded-2xl border border-border/70 bg-card/60 p-5 transition-all opacity-90"
                 >
-                  {activeTierId === "agency" && (
-                    <span className="absolute -top-2.5 right-4 rounded-full bg-primary px-2 py-0.5 font-mono text-[10px] font-bold text-primary-foreground">
-                      Active Plan
-                    </span>
-                  )}
+                  {/* Coming Soon ribbon */}
+                  <span className="absolute -top-2.5 right-4 rounded-full bg-amber-500 px-2.5 py-0.5 font-mono text-[10px] font-bold text-black shadow-sm flex items-center gap-1">
+                    🚧 Coming Soon
+                  </span>
+
                   <div>
                     <div className="flex items-center gap-2">
                       <Crown className="size-4 text-amber-400" />
@@ -370,12 +360,10 @@ export function SettingsModal({
 
                   <Button
                     size="sm"
-                    variant={activeTierId === "agency" ? "secondary" : "default"}
-                    disabled={activeTierId === "agency" || upgradingTierId === "agency"}
-                    onClick={() => handleSwitchTier("agency")}
-                    className="mt-5 w-full rounded-xl bg-amber-500 text-black hover:bg-amber-400 font-bold"
+                    disabled
+                    className="mt-5 w-full rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 cursor-not-allowed font-bold"
                   >
-                    {activeTierId === "agency" ? "Currently Active" : "Switch to Agency Studio"}
+                    🚧 Coming Soon
                   </Button>
                 </div>
               </div>
