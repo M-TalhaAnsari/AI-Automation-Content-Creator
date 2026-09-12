@@ -10,6 +10,8 @@ import {
   Undo2,
   Download,
   Loader2,
+  Image as ImageIcon,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,6 +22,8 @@ import { Markdown } from "./markdown";
 import { PostCard, PostCardSkeleton } from "./post-card";
 import { SUGGESTED_PROMPTS, type ChatMessage, type GeneratedPost } from "./data";
 import { downloadAllPosts } from "./post-downloader";
+import { uploadUserAsset } from "@/api/images";
+import type { InjectedAssetSpec, AssetTargetScope } from "@/api/types";
 
 type Props = {
   messages: ChatMessage[];
@@ -42,6 +46,8 @@ type Props = {
   onBatchGenerateImages?: (posts: GeneratedPost[]) => void;
   regeneratingPostId: string | null;
   pipelineStatus?: { step: string; message: string } | null;
+  injectedAsset?: InjectedAssetSpec | null | undefined;
+  onInjectedAssetChange?: ((asset: InjectedAssetSpec | null) => void) | undefined;
 };
 
 export function ChatWorkspace({
@@ -65,11 +71,39 @@ export function ChatWorkspace({
   onBatchGenerateImages,
   regeneratingPostId,
   pipelineStatus,
+  injectedAsset,
+  onInjectedAssetChange,
 }: Props) {
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingAsset, setUploadingAsset] = useState(false);
   const isEmpty = messages.length === 0;
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAsset(true);
+    try {
+      const asset = await uploadUserAsset(file, "avatar");
+      onInjectedAssetChange?.({
+        id: asset.id,
+        name: asset.filename,
+        url: asset.url,
+        role: "avatar",
+        targetScope: "all",
+        cropShape: "circle",
+      });
+      toast.success(`Attached "${asset.filename}" to post studio`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to upload image asset";
+      toast.error(msg);
+    } finally {
+      setUploadingAsset(false);
+      if (e.target) e.target.value = "";
+    }
+  }
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -109,6 +143,7 @@ export function ChatWorkspace({
                 <MessageRow
                   key={message.id}
                   message={message}
+                  injectedAsset={injectedAsset}
                   onViewPost={onViewPost}
                   onEditPost={onEditPost}
                   onUpdatePost={onUpdatePost}
@@ -159,6 +194,39 @@ export function ChatWorkspace({
           </AnimatePresence>
 
           <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-2.5 shadow-2xl backdrop-blur-xl transition-all focus-within:border-primary/60 focus-within:bg-white/[0.06]">
+            {/* Asset attachment chip — shown when an asset is attached */}
+            {injectedAsset && (
+              <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/30">
+                <ImageIcon className="size-3.5 shrink-0 text-primary" />
+                <span className="min-w-0 flex-1 truncate text-[11px] font-mono text-primary font-bold">
+                  {injectedAsset.name ?? "Attached image"} · {injectedAsset.role.replace("_", " ")}
+                </span>
+                {/* Scope quick-switch */}
+                <select
+                  value={injectedAsset.targetScope}
+                  onChange={(e) =>
+                    onInjectedAssetChange?.({
+                      ...injectedAsset,
+                      targetScope: e.target.value as AssetTargetScope,
+                    })
+                  }
+                  className="h-6 rounded-lg border border-white/20 bg-black/60 px-1.5 text-[10px] font-mono text-slate-300 focus:outline-none focus:ring-1 focus:ring-primary/60"
+                >
+                  <option value="all">All Posts</option>
+                  <option value="first_only">Post 1 Only</option>
+                  <option value="last_only">Last Post Only</option>
+                  <option value="none">None (Off)</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => onInjectedAssetChange?.(null)}
+                  className="ml-1 rounded-md p-0.5 text-slate-400 hover:text-white transition-colors"
+                  aria-label="Remove attached image"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+            )}
             <Textarea
               ref={inputRef}
               value={input}
@@ -186,6 +254,22 @@ export function ChatWorkspace({
                     Undo last
                   </Button>
                 )}
+                {/* Attach graphic button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={uploadingAsset}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-7 gap-1.5 px-2.5 text-xs text-slate-400 hover:text-primary"
+                  title="Attach a graphic or photo to inject into your posts"
+                >
+                  {uploadingAsset ? (
+                    <Loader2 className="size-3.5 animate-spin text-primary" />
+                  ) : (
+                    <ImageIcon className="size-3.5" />
+                  )}
+                  {uploadingAsset ? "Uploading…" : "Attach Graphic"}
+                </Button>
                 <span className="hidden items-center gap-1 font-mono text-[10px] text-slate-500 sm:flex">
                   <CornerDownLeft className="size-3" />
                   to send · shift + enter for newline
@@ -217,6 +301,14 @@ export function ChatWorkspace({
               </div>
             </div>
           </div>
+          {/* Hidden file picker */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+            className="sr-only"
+            onChange={handleFileUpload}
+          />
         </div>
       </div>
     </div>
@@ -266,6 +358,7 @@ function EmptyState({ onSuggestion }: { onSuggestion: (prompt: string) => void }
 
 type RowProps = {
   message: ChatMessage;
+  injectedAsset?: InjectedAssetSpec | null | undefined;
   onViewPost: (post: GeneratedPost, index: number) => void;
   onEditPost: (post: GeneratedPost, index: number) => void;
   onUpdatePost?: ((updatedPost: GeneratedPost) => void) | undefined;
@@ -277,6 +370,7 @@ type RowProps = {
 
 function MessageRow({
   message,
+  injectedAsset,
   onViewPost,
   onEditPost,
   onUpdatePost,
@@ -301,6 +395,7 @@ function MessageRow({
   }
 
   const hasPosts = message.posts && message.posts.length > 0;
+  const totalPosts = message.posts?.length ?? 0;
   const anyPostMissingImage = hasPosts && message.posts?.some((p) => !p.imageUrl && !p.imageAssetId);
   const [downloadingAll, setDownloadingAll] = useState(false);
 
@@ -310,6 +405,7 @@ function MessageRow({
     toast.info(`Preparing ${message.posts.length} post graphics for download...`);
     try {
       const result = await downloadAllPosts(message.posts, {
+        injectedAsset: injectedAsset ?? undefined,
         onProgress: (done, total) => {
           toast.info(`Downloaded ${done}/${total} posts...`);
         },
@@ -346,6 +442,9 @@ function MessageRow({
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2.5 backdrop-blur-md">
               <span className="text-xs text-slate-400 font-mono">
                 ✨ {message.posts?.length} platform-ready posts generated
+                {injectedAsset && injectedAsset.targetScope !== "none" && (
+                  <span className="ml-2 text-primary">· with {injectedAsset.role.replace("_", " ")} injected</span>
+                )}
               </span>
               <div className="flex items-center gap-2">
                 <Button
@@ -384,6 +483,8 @@ function MessageRow({
                   key={post.id}
                   post={post}
                   index={i + 1}
+                  totalPosts={totalPosts}
+                  injectedAsset={injectedAsset}
                   regenerating={regeneratingPostId === post.id}
                   onView={() => onViewPost(post, i + 1)}
                   onEdit={() => onEditPost(post, i + 1)}

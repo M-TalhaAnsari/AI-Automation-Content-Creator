@@ -160,15 +160,38 @@ export const PRESET_THEMES: PostTheme[] = [
   },
 ];
 
+import type { InjectedAssetSpec } from "@/api/types";
+
+/**
+ * Determines whether a specific asset should be injected into a post based on its targetScope.
+ */
+export function shouldInjectAssetForPost(
+  asset?: InjectedAssetSpec | null,
+  currentPostNumber: number = 1,
+  totalPosts: number = 5
+): boolean {
+  if (!asset || !asset.url) return false;
+  if (asset.targetScope === "none") return false;
+  if (asset.targetScope === "all") return true;
+  if (asset.targetScope === "first_only") return currentPostNumber === 1;
+  if (asset.targetScope === "last_only") return currentPostNumber === totalPosts;
+  if (asset.targetScope === "custom") {
+    return Boolean(asset.targetPostNumbers?.includes(currentPostNumber));
+  }
+  return false;
+}
+
 /**
  * Compute auto-scaled typography dimensions so title & bullets always fit.
  * Handles up to 7 bullet points with dynamic font and spacing scaling.
+ * When hasHeroInset is true, scales typography down so text and graphics never collide.
  */
 export function computeAutoLayout(
   canvasWidth: number,
   canvasHeight: number,
   titleText: string,
-  bulletCount: number
+  bulletCount: number,
+  hasHeroInset: boolean = false
 ) {
   // Padding & margins
   const horizontalMargin = Math.round(canvasWidth * 0.08);
@@ -179,38 +202,38 @@ export function computeAutoLayout(
   const containerHeightRatio = bulletCount >= 6 ? 0.88 : 0.84;
   const containerHeight = Math.round(canvasHeight * containerHeightRatio);
 
-  // Auto-scale title font size based on text length
+  // Auto-scale title font size based on text length and inset presence
   const titleLen = titleText.length;
-  let titleFontSize = 46;
+  let titleFontSize = hasHeroInset ? 36 : 46;
   if (titleLen > 80) {
-    titleFontSize = 28;
+    titleFontSize = hasHeroInset ? 24 : 28;
   } else if (titleLen > 60) {
-    titleFontSize = 32;
+    titleFontSize = hasHeroInset ? 28 : 32;
   } else if (titleLen > 40) {
-    titleFontSize = 36;
+    titleFontSize = hasHeroInset ? 32 : 36;
   } else if (titleLen > 25) {
-    titleFontSize = 40;
+    titleFontSize = hasHeroInset ? 34 : 40;
   }
 
   // Auto-scale bullet font size and spacing based on count (handles up to 7)
-  let bulletFontSize = 26;
-  let bulletSpacing = 28;
+  let bulletFontSize = hasHeroInset ? 20 : 26;
+  let bulletSpacing = hasHeroInset ? 18 : 28;
 
   if (bulletCount >= 7) {
-    bulletFontSize = 18;
-    bulletSpacing = 14;
+    bulletFontSize = hasHeroInset ? 15 : 18;
+    bulletSpacing = hasHeroInset ? 10 : 14;
   } else if (bulletCount === 6) {
-    bulletFontSize = 20;
-    bulletSpacing = 16;
+    bulletFontSize = hasHeroInset ? 16 : 20;
+    bulletSpacing = hasHeroInset ? 12 : 16;
   } else if (bulletCount === 5) {
-    bulletFontSize = 22;
-    bulletSpacing = 20;
+    bulletFontSize = hasHeroInset ? 18 : 22;
+    bulletSpacing = hasHeroInset ? 14 : 20;
   } else if (bulletCount === 4) {
-    bulletFontSize = 24;
-    bulletSpacing = 24;
+    bulletFontSize = hasHeroInset ? 19 : 24;
+    bulletSpacing = hasHeroInset ? 16 : 24;
   } else if (bulletCount <= 2) {
-    bulletFontSize = 30;
-    bulletSpacing = 36;
+    bulletFontSize = hasHeroInset ? 22 : 30;
+    bulletSpacing = hasHeroInset ? 22 : 36;
   }
 
   return {

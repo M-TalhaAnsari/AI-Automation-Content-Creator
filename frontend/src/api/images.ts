@@ -12,6 +12,9 @@ import type {
   ImageAssetMeta,
   VisualProfileResponse,
   VisualProfileCreateRequest,
+  UserUploadedAsset,
+  AssetRole,
+  AssetTargetScope,
 } from "./types";
 
 const BASE_URL = ((import.meta.env["VITE_API_URL"] as string) || "http://127.0.0.1:8000").replace(/\/+$/, "");
@@ -131,3 +134,42 @@ export async function pollImageJob(
 
   throw new ApiError(408, "Image generation timed out waiting for worker", "image_job_timeout");
 }
+
+/**
+ * Upload a custom branded image asset (avatar, logo, product screenshot, sticker).
+ */
+export async function uploadUserAsset(
+  file: File,
+  role: AssetRole = "avatar",
+  defaultScope: AssetTargetScope = "all"
+): Promise<UserUploadedAsset> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("asset_role", role);
+  formData.append("default_scope", defaultScope);
+
+  return apiFetch<UserUploadedAsset>("/images/upload-asset", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+/**
+ * List all branded assets uploaded by current user.
+ */
+export async function getUserAssets(): Promise<UserUploadedAsset[]> {
+  const res = await apiFetch<{ assets: UserUploadedAsset[] }>("/images/user-assets", {
+    method: "GET",
+  });
+  return res.assets || [];
+}
+
+/**
+ * Delete an uploaded branded asset.
+ */
+export async function deleteUserAsset(assetId: string): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>(`/images/user-assets/${assetId}`, {
+    method: "DELETE",
+  });
+}
+

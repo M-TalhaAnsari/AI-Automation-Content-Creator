@@ -20,10 +20,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { PlatformBadge } from "./platform-badge";
 import { getImageUrl } from "@/api";
 import type { GeneratedPost } from "./data";
+import type { InjectedAssetSpec } from "@/api/types";
+import { shouldInjectAssetForPost } from "./canvas-templates";
 
 type Props = {
   post: GeneratedPost;
   index: number;
+  totalPosts?: number | undefined;
+  injectedAsset?: InjectedAssetSpec | null | undefined;
   regenerating?: boolean | undefined;
   onView: () => void;
   onEdit: () => void;
@@ -35,6 +39,8 @@ type Props = {
 export function PostCard({
   post,
   index,
+  totalPosts,
+  injectedAsset,
   regenerating,
   onView,
   onEdit,
@@ -102,11 +108,18 @@ export function PostCard({
             <PlatformBadge platform={post.platform} />
             <span className="font-mono text-xs text-primary font-bold">Post {index}</span>
           </div>
-          {displayImgUrl && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-mono text-emerald-400">
-              <Sparkles className="size-2.5" /> Visual Ready
-            </span>
-          )}
+          <div className="flex items-center gap-1.5">
+            {shouldInjectAssetForPost(injectedAsset, index, totalPosts) && injectedAsset && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 border border-primary/30 px-2 py-0.5 text-[10px] font-mono text-primary font-bold capitalize">
+                <ImageIcon className="size-2.5" /> + {injectedAsset.role.replace("_", " ")}
+              </span>
+            )}
+            {displayImgUrl && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-mono text-emerald-400">
+                <Sparkles className="size-2.5" /> Visual Ready
+              </span>
+            )}
+          </div>
         </header>
 
         {/* Thumbnail / Generating Preview Area */}

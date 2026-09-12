@@ -31,6 +31,7 @@ import { PlatformBadge } from "./platform-badge";
 import { SocialPostCanvas } from "./social-post-canvas";
 import { getImageUrl } from "@/api";
 import type { GeneratedPost } from "./data";
+import type { InjectedAssetSpec } from "@/api/types";
 
 const QUICK_TEXT_PROMPTS = [
   "Convert caption to bullet points",
@@ -55,6 +56,8 @@ type Props = {
   onPrevious?: () => void;
   onNext?: () => void;
   totalPosts?: number;
+  injectedAsset?: InjectedAssetSpec | null | undefined;
+  onInjectedAssetChange?: ((asset: InjectedAssetSpec | null) => void) | undefined;
 };
 
 export function PostModal({
@@ -72,6 +75,8 @@ export function PostModal({
   onPrevious,
   onNext,
   totalPosts,
+  injectedAsset,
+  onInjectedAssetChange,
 }: Props) {
   const [instruction, setInstruction] = useState("");
   const [visualPrompt, setVisualPrompt] = useState("");
@@ -291,6 +296,10 @@ export function PostModal({
                       setEditableBullets(bullets);
                       updateField({ summary: bullets });
                     }}
+                    injectedAsset={injectedAsset}
+                    postNumber={index}
+                    totalPosts={totalPosts}
+                    onInjectedAssetChange={onInjectedAssetChange}
                   />
                 </div>
 

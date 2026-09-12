@@ -16,11 +16,14 @@ import {
   type PostTheme,
   computeAutoLayout,
   generatePresetBackgroundDataUrl,
+  shouldInjectAssetForPost,
 } from "./canvas-templates";
+import type { InjectedAssetSpec } from "@/api/types";
 
 export interface DownloadAllOptions {
   theme?: PostTheme | undefined;
   aspectRatioKey?: string | undefined;
+  injectedAsset?: InjectedAssetSpec | null | undefined;
   onProgress?: ((downloaded: number, total: number) => void) | undefined;
   delayBetweenMs?: number | undefined;
 }
@@ -31,7 +34,10 @@ export interface DownloadAllOptions {
 export async function renderPostToDataUrl(
   post: GeneratedPost,
   theme: PostTheme = PRESET_THEMES[0]!,
-  aspectRatioKey = "4:5"
+  aspectRatioKey = "4:5",
+  injectedAsset?: InjectedAssetSpec | null,
+  postIndex = 0,
+  totalPosts = 1
 ): Promise<string | null> {
   const dimensions = ASPECT_RATIOS[aspectRatioKey] ?? ASPECT_RATIOS["4:5"]!;
   const { width, height } = dimensions;
@@ -76,7 +82,9 @@ export async function renderPostToDataUrl(
       ];
     })();
 
-    const layout = computeAutoLayout(width, height, post.title || "", bulletPoints.length);
+    const shouldInject = shouldInjectAssetForPost(injectedAsset, postIndex + 1, totalPosts);
+    const hasHeroInset = Boolean(shouldInject && injectedAsset?.role === "hero_inset");
+    const layout = computeAutoLayout(width, height, post.title || "", bulletPoints.length, hasHeroInset);
 
     // Set background
     const bgSvgUrl = generatePresetBackgroundDataUrl(width, height, theme);
@@ -133,6 +141,31 @@ export async function renderPostToDataUrl(
       fontFamily: "Inter, sans-serif", fontWeight: "bold",
       fill: theme.badgeTextColor, selectable: false, evented: false,
     }));
+
+    // Logo injection if active
+    if (shouldInject && injectedAsset?.url && (injectedAsset.role === "logo" || injectedAsset.role === "custom_sticker")) {
+      await new Promise<void>((res) => {
+        fabric.Image.fromURL(injectedAsset.url, (img) => {
+          if (img && img.width && img.height) {
+            const maxH = 38;
+            const scale = maxH / img.height;
+            const logoW = img.width * scale;
+            img.set({
+              scaleX: scale,
+              scaleY: scale,
+              left: innerLeft + innerWidth - logoW,
+              top: layout.topMargin + 46,
+              opacity: injectedAsset.opacity ?? 0.95,
+              selectable: false,
+              evented: false,
+            });
+            fc!.add(img);
+          }
+          res();
+        }, { crossOrigin: "anonymous" });
+      });
+    }
+
     currentY += 56;
 
     // Title
@@ -168,6 +201,33 @@ export async function renderPostToDataUrl(
     }));
     currentY += 28;
 
+    // Hero Inset injection if active
+    if (shouldInject && injectedAsset?.url && injectedAsset.role === "hero_inset") {
+      await new Promise<void>((res) => {
+        fabric.Image.fromURL(injectedAsset.url, (img) => {
+          if (img && img.width && img.height) {
+            const maxW = innerWidth - 32;
+            const maxH = 220;
+            const scale = Math.min(maxW / img.width, maxH / img.height);
+            img.set({
+              scaleX: scale,
+              scaleY: scale,
+              originX: "center",
+              originY: "top",
+              left: innerLeft + innerWidth / 2,
+              top: currentY,
+              selectable: false,
+              evented: false,
+              shadow: new fabric.Shadow({ color: "rgba(0,0,0,0.55)", blur: 24, offsetX: 0, offsetY: 10 }),
+            });
+            fc!.add(img);
+          }
+          res();
+        }, { crossOrigin: "anonymous" });
+      });
+      currentY += 240;
+    }
+
     // Bullets
     bulletPoints.forEach((bulletText, idx) => {
       fc!.add(new fabric.Circle({
@@ -191,13 +251,57 @@ export async function renderPostToDataUrl(
       currentY += Math.max(bulletContent.height || 36, 36) + layout.bulletSpacing;
     });
 
-    // Watermark
+    // Watermark & Avatar
     const footerY = layout.topMargin + layout.containerHeight - 48;
-    fc.add(new fabric.Textbox(`✨ Created with AIFlick`, {
+    const footerTag = new fabric.Textbox(`✨ Created with AIFlick`, {
       fontSize: 14, fontFamily: "Inter, sans-serif", fontWeight: "500",
       fill: theme.badgeTextColor, left: innerLeft, top: footerY, width: innerWidth,
       selectable: false, evented: false,
-    }));
+    });
+    fc.add(footerTag);
+
+    if (shouldInject && injectedAsset?.url && injectedAsset.role === "avatar") {
+      await new Promise<void>((res) => {
+        fabric.Image.fromURL(injectedAsset.url, (img) => {
+          if (img && img.width && img.height) {
+            const avatarSize = 38;
+            const scale = avatarSize / Math.min(img.width, img.height);
+            const avatarLeft = innerLeft;
+            const avatarTop = footerY - 9;
+            img.set({
+              scaleX: scale,
+              scaleY: scale,
+              originX: "center",
+              originY: "center",
+              left: avatarLeft + avatarSize / 2,
+              top: avatarTop + avatarSize / 2,
+              clipPath: new fabric.Circle({
+                radius: (avatarSize / 2) / scale,
+                originX: "center",
+                originY: "center",
+              }),
+              selectable: false,
+              evented: false,
+            });
+            fc!.add(new fabric.Circle({
+              radius: avatarSize / 2 + 1.5,
+              originX: "center",
+              originY: "center",
+              left: avatarLeft + avatarSize / 2,
+              top: avatarTop + avatarSize / 2,
+              fill: "transparent",
+              stroke: injectedAsset.borderColor || theme.accentColor,
+              strokeWidth: injectedAsset.borderWidth || 2,
+              selectable: false,
+              evented: false,
+            }));
+            fc!.add(img);
+            footerTag.set({ left: avatarLeft + avatarSize + 12, top: avatarTop + 10 });
+          }
+          res();
+        }, { crossOrigin: "anonymous" });
+      });
+    }
 
     fc.renderAll();
 
@@ -218,7 +322,7 @@ export async function renderPostToDataUrl(
 }
 
 /**
- * Download all posts as individual PNG files with sequential naming.
+ * Download all posts as individual PNG files with sequential naming and selective asset injection.
  */
 export async function downloadAllPosts(
   posts: GeneratedPost[],
@@ -227,6 +331,7 @@ export async function downloadAllPosts(
   const {
     theme = PRESET_THEMES[0]!,
     aspectRatioKey = "4:5",
+    injectedAsset,
     onProgress,
     delayBetweenMs = 300,
   } = options;
@@ -242,7 +347,14 @@ export async function downloadAllPosts(
     if (!post) continue;
 
     try {
-      const dataUrl = await renderPostToDataUrl(post, theme, aspectRatioKey);
+      const dataUrl = await renderPostToDataUrl(
+        post,
+        theme,
+        aspectRatioKey,
+        injectedAsset,
+        i,
+        posts.length
+      );
 
       if (dataUrl) {
         const filename = `aiflick-post-${i + 1}-${post.platform || "post"}-${ratioSlug}.png`;

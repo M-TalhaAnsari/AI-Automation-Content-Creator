@@ -42,6 +42,7 @@ import {
   type MeResponse,
   type SseStatusPayload,
 } from "@/api";
+import type { InjectedAssetSpec } from "@/api/types";
 
 
 export const Route = createFileRoute("/")({
@@ -118,6 +119,7 @@ function Workspace() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [userTier, setUserTier] = useState<string>("free");
   const [pipelineStatus, setPipelineStatus] = useState<{ step: string; message: string } | null>(null);
+  const [activeInjectedAsset, setActiveInjectedAsset] = useState<InjectedAssetSpec | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Initialize Authentication State on Load
@@ -921,6 +923,8 @@ function Workspace() {
               onBatchGenerateImages={handleBatchGenerateImages}
               regeneratingPostId={regeneratingPostId}
               pipelineStatus={pipelineStatus}
+              injectedAsset={activeInjectedAsset}
+              onInjectedAssetChange={setActiveInjectedAsset}
             />
 
             <AnimatePresence initial={false}>
@@ -959,6 +963,8 @@ function Workspace() {
           onPrevious={handlePreviousPost}
           onNext={handleNextPost}
           totalPosts={allCurrentPosts.length}
+          injectedAsset={activeInjectedAsset}
+          onInjectedAssetChange={setActiveInjectedAsset}
         />
       </div>
       )}

@@ -152,6 +152,34 @@ export interface ApiErrorDetail {
   retry_after?: number | undefined;
 }
 
+export type AssetRole = "avatar" | "logo" | "hero_inset" | "custom_sticker";
+export type AssetTargetScope = "all" | "first_only" | "last_only" | "custom" | "none";
+export type AssetCropShape = "circle" | "rounded_rect" | "original";
+
+export interface InjectedAssetSpec {
+  id: string;
+  name: string;
+  url: string;
+  role: AssetRole;
+  targetScope: AssetTargetScope;
+  targetPostNumbers?: number[];
+  cropShape?: AssetCropShape;
+  opacity?: number;
+  borderWidth?: number;
+  borderColor?: string;
+}
+
+export interface UserUploadedAsset {
+  id: string;
+  filename: string;
+  mime_type: string;
+  file_size_bytes: number;
+  asset_role: AssetRole;
+  default_scope: AssetTargetScope;
+  url: string;
+  created_at: string;
+}
+
 // ── Image Subsystem API Contracts ──────────────────────────────────────────
 
 export interface ImageGenerateRequest {

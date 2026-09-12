@@ -113,3 +113,19 @@ class VisualProfileResponse(BaseModel):
     is_default: bool
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
+
+
+class UserAssetResponse(BaseModel):
+    id: str
+    filename: str
+    mime_type: str
+    file_size_bytes: int
+    asset_role: str = "avatar"
+    default_scope: str = "all"
+    url: str
+    created_at: str
+
+
+class UserAssetListResponse(BaseModel):
+    assets: List[UserAssetResponse]
+

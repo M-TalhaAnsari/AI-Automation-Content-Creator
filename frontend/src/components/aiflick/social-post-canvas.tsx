@@ -54,6 +54,9 @@ import {
   Circle,
   Minus,
   Type,
+  Image as ImageIcon,
+  Sliders,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getImageUrl } from "@/api";
@@ -63,7 +66,9 @@ import {
   type PostTheme,
   computeAutoLayout,
   generatePresetBackgroundDataUrl,
+  shouldInjectAssetForPost,
 } from "./canvas-templates";
+import type { InjectedAssetSpec, AssetRole, AssetTargetScope } from "@/api/types";
 
 export interface SocialPostCanvasProps {
   backgroundImageUrl?: string | null | undefined;
@@ -77,6 +82,10 @@ export interface SocialPostCanvasProps {
   onTitleChange?: ((newTitle: string) => void) | undefined;
   onHookChange?: ((newHook: string) => void) | undefined;
   onSummaryChange?: ((newSummary: string[]) => void) | undefined;
+  injectedAsset?: InjectedAssetSpec | null | undefined;
+  postNumber?: number | undefined;
+  totalPosts?: number | undefined;
+  onInjectedAssetChange?: ((asset: InjectedAssetSpec | null) => void) | undefined;
 }
 
 const ZOOM_LEVELS = [0.35, 0.5, 0.65, 0.75, 1.0, 1.25];
@@ -101,11 +110,23 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
   onTitleChange,
   onHookChange,
   onSummaryChange,
+  injectedAsset,
+  postNumber = 1,
+  totalPosts = 5,
+  onInjectedAssetChange,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const assetFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Injected asset state for live selective branding
+  const [activeAsset, setActiveAsset] = useState<InjectedAssetSpec | null>(injectedAsset || null);
+  useEffect(() => {
+    setActiveAsset(injectedAsset || null);
+  }, [injectedAsset]);
+  const [showAssetModal, setShowAssetModal] = useState(false);
 
   // ── Stable callback refs — updated every render so Fabric listeners
   //    always call the latest prop version without triggering re-renders ──
@@ -271,7 +292,9 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     canvas.clear();
     canvas.discardActiveObject();
 
-    const layout = computeAutoLayout(width, height, title || "", bulletPoints.length);
+    const shouldInject = shouldInjectAssetForPost(activeAsset, postNumber ?? 1, totalPosts ?? 5);
+    const hasHeroInset = Boolean(shouldInject && activeAsset?.role === "hero_inset");
+    const layout = computeAutoLayout(width, height, title || "", bulletPoints.length, hasHeroInset);
 
     const buildForegroundLayers = () => {
       // Guard: abort if canvas was replaced by a newer render
@@ -344,6 +367,33 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
         hoverCursor: "text",
       });
       canvas.add(badgeText);
+
+      // ── LOGO INJECTION: Symmetrical Top-Right Placement ──
+      if (shouldInject && activeAsset?.url && (activeAsset.role === "logo" || activeAsset.role === "custom_sticker")) {
+        fabric.Image.fromURL(
+          activeAsset.url,
+          (img) => {
+            if (renderGenerationRef.current !== thisGeneration) return;
+            if (!img || !img.width || !img.height) return;
+            const maxH = 38;
+            const scale = maxH / img.height;
+            const logoW = img.width * scale;
+            img.set({
+              scaleX: scale,
+              scaleY: scale,
+              left: innerLeft + innerWidth - logoW,
+              top: layout.topMargin + 46,
+              opacity: activeAsset.opacity ?? 0.95,
+              selectable: true,
+              hoverCursor: "move",
+            });
+            canvas.add(img);
+            canvas.requestRenderAll();
+          },
+          { crossOrigin: "anonymous" }
+        );
+      }
+
       currentY += 56;
 
       // ── TITLE: store ref, wire text:changed with stable ref callback ──
@@ -406,6 +456,40 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
       );
       canvas.add(divider);
       currentY += 28;
+
+      // ── HERO INSET INJECTION: Centered Graphic with Auto Text-Reflow ──
+      if (shouldInject && activeAsset?.url && activeAsset.role === "hero_inset") {
+        fabric.Image.fromURL(
+          activeAsset.url,
+          (img) => {
+            if (renderGenerationRef.current !== thisGeneration) return;
+            if (!img || !img.width || !img.height) return;
+            const maxW = innerWidth - 32;
+            const maxH = 220;
+            const scale = Math.min(maxW / img.width, maxH / img.height);
+            img.set({
+              scaleX: scale,
+              scaleY: scale,
+              originX: "center",
+              originY: "top",
+              left: innerLeft + innerWidth / 2,
+              top: currentY,
+              selectable: true,
+              hoverCursor: "move",
+              shadow: new fabric.Shadow({
+                color: "rgba(0,0,0,0.55)",
+                blur: 24,
+                offsetX: 0,
+                offsetY: 10,
+              }),
+            });
+            canvas.add(img);
+            canvas.requestRenderAll();
+          },
+          { crossOrigin: "anonymous" }
+        );
+        currentY += 240;
+      }
 
       // ── BULLETS: use real content, up to 7, fallback only when truly empty ──
       const itemsToRender =
@@ -487,6 +571,61 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
           }
         );
         canvas.add(footerTag);
+
+        // ── AVATAR INJECTION: Creator Profile Circle Badge alongside Author Handle ──
+        if (shouldInject && activeAsset?.url && activeAsset.role === "avatar") {
+          fabric.Image.fromURL(
+            activeAsset.url,
+            (img) => {
+              if (renderGenerationRef.current !== thisGeneration) return;
+              if (!img || !img.width || !img.height) return;
+              const avatarSize = 38;
+              const scale = avatarSize / Math.min(img.width, img.height);
+              const avatarLeft = innerLeft;
+              const avatarTop = footerY - 9;
+
+              img.set({
+                scaleX: scale,
+                scaleY: scale,
+                originX: "center",
+                originY: "center",
+                left: avatarLeft + avatarSize / 2,
+                top: avatarTop + avatarSize / 2,
+                clipPath: new fabric.Circle({
+                  radius: (avatarSize / 2) / scale,
+                  originX: "center",
+                  originY: "center",
+                }),
+                selectable: true,
+                hoverCursor: "move",
+              });
+
+              const borderRing = new fabric.Circle({
+                radius: avatarSize / 2 + 1.5,
+                originX: "center",
+                originY: "center",
+                left: avatarLeft + avatarSize / 2,
+                top: avatarTop + avatarSize / 2,
+                fill: "transparent",
+                stroke: activeAsset.borderColor || selectedTheme.accentColor,
+                strokeWidth: activeAsset.borderWidth || 2,
+                selectable: false,
+                evented: false,
+              });
+
+              canvas.add(borderRing);
+              canvas.add(img);
+
+              // Shift footer text to the right of the avatar
+              footerTag.set({
+                left: avatarLeft + avatarSize + 12,
+                top: avatarTop + 10,
+              });
+              canvas.requestRenderAll();
+            },
+            { crossOrigin: "anonymous" }
+          );
+        }
       }
 
       canvas.renderAll();
@@ -561,9 +700,40 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     title,
     hook,
     bulletPoints,
+    activeAsset,
+    postNumber,
+    totalPosts,
     saveStateToHistory,
     loadImageAsDataUrl,
   ]);
+
+  const handleAssetUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload a valid PNG, JPEG, SVG or WebP image");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        const newAsset: InjectedAssetSpec = {
+          id: `ast_${Date.now()}`,
+          name: file.name,
+          url: dataUrl,
+          role: activeAsset?.role || "avatar",
+          targetScope: activeAsset?.targetScope || "all",
+          cropShape: (activeAsset?.role || "avatar") === "avatar" ? "circle" : "original",
+          opacity: 1,
+        };
+        setActiveAsset(newAsset);
+        if (onInjectedAssetChange) onInjectedAssetChange(newAsset);
+        toast.success(`Asset "${file.name}" ready for post injection!`);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // ── Canvas initialization ──
   useEffect(() => {
@@ -1199,8 +1369,168 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
           >
             <Layers className="size-3" /> Preset
           </button>
+
+          {/* Branded Asset / Logo / Inset Controls */}
+          <button
+            type="button"
+            onClick={() => setShowAssetModal((v) => !v)}
+            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+              activeAsset
+                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                : "bg-secondary/60 text-muted-foreground hover:text-foreground border border-transparent"
+            }`}
+          >
+            <ImageIcon className="size-3 text-amber-400" />
+            {activeAsset ? (
+              <span className="flex items-center gap-1 font-semibold">
+                {activeAsset.role === "avatar" ? "👤 Avatar" : activeAsset.role === "logo" ? "🏷️ Logo" : "🖼️ Inset"}
+                <span className="text-[10px] opacity-75 font-mono">({activeAsset.targetScope})</span>
+              </span>
+            ) : (
+              "Insert Asset"
+            )}
+          </button>
         </div>
       </div>
+
+      {/* ── Branded Asset / Image Injection Drawer ── */}
+      {showAssetModal && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-border/80 bg-surface-raised/95 p-4 shadow-xl backdrop-blur-xl animate-in fade-in-50">
+          <div className="flex items-center justify-between border-b border-border/60 pb-2">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="size-4 text-primary" />
+              <span className="text-xs font-bold text-foreground">Post Graphic & Brand Asset Module</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAssetModal(false)}
+              className="rounded-lg p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            {/* 1. Upload or Change Image */}
+            <div className="flex flex-col gap-1.5">
+              <span className="font-semibold text-muted-foreground">1. Custom Image / Graphic</span>
+              <button
+                type="button"
+                onClick={() => assetFileInputRef.current?.click()}
+                className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-primary/50 bg-primary/5 px-3 py-3 text-primary font-medium hover:bg-primary/10 transition-colors"
+              >
+                <Upload className="size-3.5" />
+                {activeAsset ? "Replace Image File" : "Upload Picture (PNG/JPG)"}
+              </button>
+              <input
+                ref={assetFileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAssetUpload}
+              />
+              {activeAsset && (
+                <span className="text-[11px] text-muted-foreground truncate">
+                  Attached: {activeAsset.name}
+                </span>
+              )}
+            </div>
+
+            {/* 2. Semantic Role */}
+            <div className="flex flex-col gap-1.5">
+              <span className="font-semibold text-muted-foreground">2. Graphic Role & Styling</span>
+              <div className="grid grid-cols-2 gap-1.5">
+                {(
+                  [
+                    { id: "avatar", label: "👤 Avatar Ring" },
+                    { id: "logo", label: "🏷️ Top Logo" },
+                    { id: "hero_inset", label: "🖼️ Inset Card" },
+                    { id: "custom_sticker", label: "✨ Sticker" },
+                  ] as const
+                ).map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => {
+                      if (!activeAsset) return;
+                      const updated: InjectedAssetSpec = {
+                        ...activeAsset,
+                        role: r.id as AssetRole,
+                        cropShape: r.id === "avatar" ? "circle" : "original",
+                      };
+                      setActiveAsset(updated);
+                      if (onInjectedAssetChange) onInjectedAssetChange(updated);
+                    }}
+                    className={`rounded-lg px-2 py-1.5 text-[11px] font-medium transition-all ${
+                      activeAsset?.role === r.id
+                        ? "bg-primary text-primary-foreground font-semibold shadow-sm"
+                        : "bg-secondary/60 text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 3. Selective Targeting */}
+            <div className="flex flex-col gap-1.5">
+              <span className="font-semibold text-muted-foreground">3. Selective Post Placement</span>
+              <div className="grid grid-cols-2 gap-1.5">
+                {(
+                  [
+                    { id: "all", label: "All Posts (5/5)" },
+                    { id: "first_only", label: "Post 1 (Cover)" },
+                    { id: "last_only", label: "Final Post" },
+                    { id: "none", label: "None (Hide)" },
+                  ] as const
+                ).map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => {
+                      if (!activeAsset) return;
+                      const updated: InjectedAssetSpec = {
+                        ...activeAsset,
+                        targetScope: s.id as AssetTargetScope,
+                      };
+                      setActiveAsset(updated);
+                      if (onInjectedAssetChange) onInjectedAssetChange(updated);
+                    }}
+                    className={`rounded-lg px-2 py-1.5 text-[11px] font-medium transition-all ${
+                      activeAsset?.targetScope === s.id
+                        ? "bg-primary text-primary-foreground font-semibold shadow-sm"
+                        : "bg-secondary/60 text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {activeAsset && (
+            <div className="flex items-center justify-between border-t border-border/60 pt-2">
+              <span className="text-[11px] text-muted-foreground">
+                Status: Rendered on {shouldInjectAssetForPost(activeAsset, postNumber ?? 1, totalPosts ?? 5) ? `Post #${postNumber} (Active)` : `Other posts only (${activeAsset.targetScope})`}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveAsset(null);
+                  if (onInjectedAssetChange) onInjectedAssetChange(null);
+                  setShowAssetModal(false);
+                  toast.info("Branded asset removed from canvas");
+                }}
+                className="flex items-center gap-1 text-[11px] text-rose-400 hover:text-rose-300"
+              >
+                <Trash2 className="size-3" /> Remove Asset
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {bgSource === "solid" && (
         <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-surface-raised/50 px-3 py-1.5 text-xs">

@@ -8,12 +8,13 @@ import logging
 import uuid
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile, status
 from fastapi.responses import Response as RawBinaryResponse
 from rq import Queue
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
 
+from api.web import db
 from api.web.auth import verify_identity, verify_jwt
 from api.web.image_deps import (
     IMAGE_QUEUE_NAME,
@@ -36,6 +37,8 @@ from api.web.image_schemas import (
     ImageGenerateRequest,
     ImageJobResponse,
     ImageJobStatusResponse,
+    UserAssetResponse,
+    UserAssetListResponse,
     VisualProfileCreateRequest,
     VisualProfileResponse,
 )
@@ -198,6 +201,120 @@ async def upload_reference_image(
     }
 
 
+@router.post("/upload-asset", response_model=UserAssetResponse, status_code=status.HTTP_201_CREATED)
+async def upload_user_asset(
+    file: UploadFile = File(...),
+    asset_role: str = Form("avatar"),
+    default_scope: str = Form("all"),
+    client_name: str = Depends(verify_identity),
+    service: ImageService = Depends(get_image_service),
+):
+    """
+    Upload a custom branded image asset (creator avatar, brand logo, product screenshot, sticker).
+    Returns metadata and URL for selective post injection.
+    """
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="File size exceeds maximum allowed limit of 10MB",
+        )
+
+    # Determine extension and validate MIME
+    ext = file.filename.split(".")[-1].lower() if file.filename and "." in file.filename else "png"
+    if ext not in ("png", "jpg", "jpeg", "webp", "svg"):
+        ext = "png"
+
+    allowed_mimes = ("image/png", "image/jpeg", "image/webp", "image/svg+xml")
+    content_type = file.content_type or f"image/{ext}"
+    if content_type not in allowed_mimes and not any(ext in m for m in allowed_mimes):
+        content_type = f"image/{ext}"
+
+    # Validate asset_role
+    valid_roles = ("avatar", "logo", "hero_inset", "custom_sticker")
+    normalized_role = asset_role if asset_role in valid_roles else "avatar"
+
+    # Validate default_scope
+    valid_scopes = ("all", "first_only", "last_only", "custom", "none")
+    normalized_scope = default_scope if default_scope in valid_scopes else "all"
+
+    user_id = extract_user_id(client_name)
+    asset_id = f"ast_{uuid.uuid4().hex[:12]}"
+    key = service.storage.build_key(user_id=user_id, asset_id=asset_id, extension=ext)
+    service.storage.save(key, content, content_type=content_type)
+
+    record = db.create_user_uploaded_asset(
+        asset_id=asset_id,
+        user_id=user_id,
+        filename=file.filename or f"asset.{ext}",
+        mime_type=content_type,
+        file_size_bytes=len(content),
+        asset_role=normalized_role,
+        default_scope=normalized_scope,
+        storage_key=key,
+    )
+
+    logger.info("Uploaded user asset %s (%s, %d bytes) for user %s", asset_id, normalized_role, len(content), user_id)
+    return UserAssetResponse(
+        id=record["id"],
+        filename=record["filename"],
+        mime_type=record["mime_type"],
+        file_size_bytes=record["file_size_bytes"],
+        asset_role=record["asset_role"],
+        default_scope=record["default_scope"],
+        url=f"/images/{asset_id}",
+        created_at=record["created_at"],
+    )
+
+
+@router.get("/user-assets", response_model=UserAssetListResponse)
+def list_user_assets(
+    client_name: str = Depends(verify_identity),
+):
+    """List all custom image assets uploaded by the current user."""
+    user_id = extract_user_id(client_name)
+    if user_id <= 0:
+        return UserAssetListResponse(assets=[])
+
+    records = db.list_user_uploaded_assets(user_id)
+    return UserAssetListResponse(
+        assets=[
+            UserAssetResponse(
+                id=r["id"],
+                filename=r["filename"],
+                mime_type=r["mime_type"],
+                file_size_bytes=r["file_size_bytes"],
+                asset_role=r["asset_role"],
+                default_scope=r["default_scope"],
+                url=f"/images/{r['id']}",
+                created_at=r["created_at"],
+            )
+            for r in records
+        ]
+    )
+
+
+@router.delete("/user-assets/{asset_id}")
+def delete_user_asset(
+    asset_id: str,
+    client_name: str = Depends(verify_identity),
+    service: ImageService = Depends(get_image_service),
+):
+    """Delete an uploaded image asset and free its storage."""
+    user_id = extract_user_id(client_name)
+    record = db.get_user_uploaded_asset(asset_id)
+    if not record or record.get("user_id") != user_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found or access denied")
+
+    try:
+        service.storage.delete(record["storage_key"])
+    except Exception as e:
+        logger.warning("Could not delete file from storage for asset %s: %s", asset_id, e)
+
+    db.delete_user_uploaded_asset(asset_id, user_id)
+    return {"ok": True, "deleted_id": asset_id}
+
+
 @router.get("/{asset_id}")
 def serve_image_asset(
     asset_id: str,
@@ -206,8 +323,17 @@ def serve_image_asset(
 ):
     """
     Serve raw image bytes securely with correct content-type and cache headers.
+    Supports both generated AI assets and user-uploaded branded assets.
     """
     result = service.get_asset_bytes(asset_id)
+    if not result:
+        # Check user_uploaded_assets table
+        record = db.get_user_uploaded_asset(asset_id)
+        if record and record.get("storage_key"):
+            data = service.storage.get(record["storage_key"])
+            if data:
+                result = (data, record.get("mime_type", "image/png"))
+
     if not result:
         raise to_http_exception(ImageNotFoundError(asset_id))
 

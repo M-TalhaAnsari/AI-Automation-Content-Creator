@@ -129,6 +129,19 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     preferred_model_tier TEXT DEFAULT 'free',
     updated_at TIMESTAMPTZ DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS user_uploaded_assets (
+    id VARCHAR(64) PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    filename TEXT NOT NULL,
+    mime_type VARCHAR(64) NOT NULL,
+    file_size_bytes INTEGER NOT NULL,
+    asset_role VARCHAR(32) NOT NULL DEFAULT 'avatar',
+    default_scope VARCHAR(32) NOT NULL DEFAULT 'all',
+    storage_key TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_user_assets_user_id ON user_uploaded_assets(user_id);
 """
 
 # ---------------------------------------------------------------------------
@@ -148,6 +161,18 @@ _MIGRATIONS = [
     "ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;",
     # Ensure google_id uniqueness (partial index to allow multiple NULLs)
     "CREATE UNIQUE INDEX IF NOT EXISTS users_google_id_unique ON users(google_id) WHERE google_id IS NOT NULL;",
+    """CREATE TABLE IF NOT EXISTS user_uploaded_assets (
+        id VARCHAR(64) PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        filename TEXT NOT NULL,
+        mime_type VARCHAR(64) NOT NULL,
+        file_size_bytes INTEGER NOT NULL,
+        asset_role VARCHAR(32) NOT NULL DEFAULT 'avatar',
+        default_scope VARCHAR(32) NOT NULL DEFAULT 'all',
+        storage_key TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT now()
+    );""",
+    "CREATE INDEX IF NOT EXISTS idx_user_assets_user_id ON user_uploaded_assets(user_id);",
 ]
 
 
@@ -848,4 +873,89 @@ def save_user_preferences(user_id: int, prefs: Dict[str, Any]) -> Dict[str, Any]
             ),
         )
         return get_user_preferences(user_id)
+
+
+# ---------------------------------------------------------------------------
+# User Uploaded Assets CRUD
+# ---------------------------------------------------------------------------
+
+def create_user_uploaded_asset(
+    asset_id: str,
+    user_id: int,
+    filename: str,
+    mime_type: str,
+    file_size_bytes: int,
+    asset_role: str = "avatar",
+    default_scope: str = "all",
+    storage_key: str = "",
+) -> Dict[str, Any]:
+    with _conn() as conn:
+        conn.execute(
+            """
+            INSERT INTO user_uploaded_assets
+                (id, user_id, filename, mime_type, file_size_bytes, asset_role, default_scope, storage_key, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, now())
+            """,
+            (asset_id, user_id, filename, mime_type, file_size_bytes, asset_role, default_scope, storage_key),
+        )
+    return get_user_uploaded_asset(asset_id) or {}
+
+
+def get_user_uploaded_asset(asset_id: str) -> Optional[Dict[str, Any]]:
+    with _conn() as conn:
+        row = conn.execute(
+            """
+            SELECT id, user_id, filename, mime_type, file_size_bytes, asset_role, default_scope, storage_key, created_at
+            FROM user_uploaded_assets WHERE id = %s
+            """,
+            (asset_id,),
+        ).fetchone()
+        if not row:
+            return None
+        return {
+            "id": row[0],
+            "user_id": row[1],
+            "filename": row[2],
+            "mime_type": row[3],
+            "file_size_bytes": row[4],
+            "asset_role": row[5],
+            "default_scope": row[6],
+            "storage_key": row[7],
+            "created_at": row[8].isoformat() if hasattr(row[8], "isoformat") else str(row[8]),
+        }
+
+
+def list_user_uploaded_assets(user_id: int) -> List[Dict[str, Any]]:
+    with _conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, user_id, filename, mime_type, file_size_bytes, asset_role, default_scope, storage_key, created_at
+            FROM user_uploaded_assets WHERE user_id = %s
+            ORDER BY created_at DESC
+            """,
+            (user_id,),
+        ).fetchall()
+        return [
+            {
+                "id": r[0],
+                "user_id": r[1],
+                "filename": r[2],
+                "mime_type": r[3],
+                "file_size_bytes": r[4],
+                "asset_role": r[5],
+                "default_scope": r[6],
+                "storage_key": r[7],
+                "created_at": r[8].isoformat() if hasattr(r[8], "isoformat") else str(r[8]),
+            }
+            for r in rows
+        ]
+
+
+def delete_user_uploaded_asset(asset_id: str, user_id: int) -> bool:
+    with _conn() as conn:
+        res = conn.execute(
+            "DELETE FROM user_uploaded_assets WHERE id = %s AND user_id = %s",
+            (asset_id, user_id),
+        )
+        return res.rowcount > 0
 
