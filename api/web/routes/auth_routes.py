@@ -34,6 +34,7 @@ from api.web.services.google_oauth_service import (
     FRONTEND_URL,
 )
 from api.web.services.tier_service import list_available_plans, get_tier_config
+from api.web.errors.exceptions import TierFeatureComingSoon
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -285,9 +286,16 @@ def get_plans():
 
 @router.post("/upgrade")
 def upgrade_tier(body: UpgradeRequest, client_name: str = Depends(verify_jwt)):
-    """Switch or upgrade user tier."""
+    """Switch or upgrade user tier. Restricts paid tiers to 'coming soon' in Phase 2."""
     user_id = get_current_user_id(client_name)
     config = get_tier_config(body.tier)
+
+    if config.is_coming_soon or config.id != "free":
+        raise TierFeatureComingSoon(
+            message=f"{config.name} (${int(config.price_monthly_usd)}/mo) is coming soon in Phase 2! Free Explorer is active for all accounts.",
+            feature=config.id,
+        )
+
     db.update_user_tier(user_id, config.id)
     return {"ok": True, "tier": config.id, "plan_name": config.name}
 

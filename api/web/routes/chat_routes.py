@@ -12,6 +12,7 @@ from rq.job import Job
 from rq.exceptions import NoSuchJobError
 from memory.redis_session_store import REDIS_URL
 from api.web.dependencies.auth_deps import verify_identity
+from api.web.dependencies.tier_deps import enforce_post_quota
 from api.web.dependencies.session_deps import resolve_session_id
 from api.web.dependencies.rate_limit_deps import limiter
 from api.web.schemas import ChatRequest, ChatResponse, JobStatusResponse, SseTicketResponse
@@ -50,12 +51,13 @@ def get_sse_ticket(
 
 
 @router.post("", response_model=ChatResponse)
-@limiter.limit("10/minute")
+@limiter.limit("20/minute")
 def send_chat(
     body: ChatRequest,
     request: Request,
     response: Response,
     client_name: str = Depends(verify_identity),
+    _quota: None = Depends(enforce_post_quota),
 ):
     session_id = resolve_session_id(request, response, body.session_id)
     stream_key = body.stream_key or session_id

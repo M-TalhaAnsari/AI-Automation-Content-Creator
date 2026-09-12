@@ -1,4 +1,4 @@
-﻿/**
+/**
  * frontend/src/api/preferences.ts -- User Memory, Brand Preferences & Model Tiers API Client
  */
 import { apiFetch } from "./client";
@@ -27,6 +27,7 @@ export interface PlanInfo {
   watermark: boolean;
   custom_branding: boolean;
   priority: boolean;
+  coming_soon?: boolean;
 }
 
 export async function getPreferences(): Promise<UserPreferences> {

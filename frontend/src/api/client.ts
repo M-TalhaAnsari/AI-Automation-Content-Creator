@@ -167,7 +167,13 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
 
       try {
         const errorData: ApiErrorDetail = await response.json();
-        if (typeof errorData.detail === "string") {
+        if (errorData.error === "quota_exceeded") {
+          code = "quota_exceeded";
+          detail = errorData.message || "Daily generation quota reached. Limit resets at midnight UTC.";
+        } else if (errorData.error === "feature_coming_soon") {
+          code = "feature_coming_soon";
+          detail = errorData.message || "This feature is coming soon in Phase 2.";
+        } else if (typeof errorData.detail === "string") {
           detail = errorData.detail;
           if (detail === "signup_required") {
             code = "signup_required";
@@ -186,9 +192,11 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
         clearToken();
       } else if (response.status === 403 && detail === "signup_required") {
         code = "signup_required";
-      } else if (response.status === 429) {
+      } else if (response.status === 429 && code !== "quota_exceeded") {
         code = "rate_limited";
         if (!retryAfterSeconds) retryAfterSeconds = 10;
+      } else if (response.status === 503) {
+        code = "feature_coming_soon";
       }
 
       throw new ApiError(

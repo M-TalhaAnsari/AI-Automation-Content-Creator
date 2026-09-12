@@ -129,9 +129,26 @@ export interface JobStatusResponse {
   detail?: string | null | undefined;
 }
 
+export interface QuotaErrorPayload {
+  error: "quota_exceeded" | string;
+  message: string;
+  resource?: string | undefined;
+  used?: number | undefined;
+  limit?: number | undefined;
+  tier?: string | undefined;
+  resets_at?: string | undefined;
+}
+
 export interface ApiErrorDetail {
   detail?: string | Array<{ loc: string[]; msg: string; type: string }> | undefined;
   message?: string | undefined;
+  error?: string | undefined;
+  code?: string | undefined;
+  resource?: string | undefined;
+  used?: number | undefined;
+  limit?: number | undefined;
+  tier?: string | undefined;
+  resets_at?: string | undefined;
   retry_after?: number | undefined;
 }
 

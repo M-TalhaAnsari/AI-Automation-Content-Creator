@@ -64,6 +64,15 @@ def run_slow_action(
 
         raw_posts = conversation.get("last_generated_posts", [])
 
+        # Record daily post usage in PostgreSQL for authenticated accounts
+        if client_name.startswith("user:") and raw_posts:
+            try:
+                user_id = int(client_name.split(":", 1)[1])
+                from api.web.services.usage_service import record_post_generation
+                record_post_generation(user_id, count=len(raw_posts))
+            except Exception as usage_err:
+                logger.warning("Failed recording daily post usage: %s", usage_err)
+
         # Step 3: Publish done event with full payload
         publish_sse_event(
             effective_stream_key,

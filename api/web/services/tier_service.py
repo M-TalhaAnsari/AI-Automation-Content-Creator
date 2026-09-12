@@ -1,4 +1,4 @@
-﻿"""
+"""
 api/web/services/tier_service.py -- Tier management, model quotas, and monetization rules.
 """
 from typing import Dict, Any, Optional
@@ -19,6 +19,7 @@ class TierConfig:
     watermark_enabled: bool
     custom_branding: bool
     priority_queue: bool
+    is_coming_soon: bool = False
 
 
 TIER_PLANS: Dict[str, TierConfig] = {
@@ -36,6 +37,7 @@ TIER_PLANS: Dict[str, TierConfig] = {
         watermark_enabled=True,
         custom_branding=False,
         priority_queue=False,
+        is_coming_soon=False,
     ),
     "creator": TierConfig(
         id="creator",
@@ -51,6 +53,7 @@ TIER_PLANS: Dict[str, TierConfig] = {
         watermark_enabled=False,
         custom_branding=True,
         priority_queue=True,
+        is_coming_soon=True,
     ),
     "agency": TierConfig(
         id="agency",
@@ -66,6 +69,7 @@ TIER_PLANS: Dict[str, TierConfig] = {
         watermark_enabled=False,
         custom_branding=True,
         priority_queue=True,
+        is_coming_soon=True,
     ),
 }
 
@@ -91,6 +95,7 @@ def list_available_plans() -> list[Dict[str, Any]]:
             "watermark": plan.watermark_enabled,
             "custom_branding": plan.custom_branding,
             "priority": plan.priority_queue,
+            "coming_soon": plan.is_coming_soon,
         }
         for plan in TIER_PLANS.values()
     ]

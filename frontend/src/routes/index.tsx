@@ -541,6 +541,12 @@ function Workspace() {
         setShowAuthScreen(true);
         // Remove optimistic user bubble
         setMessages((prev) => prev.slice(0, -1));
+      } else if (err?.code === "quota_exceeded") {
+        setError(err?.detail || err?.message || "Daily post quota reached (15/day). Resets at midnight UTC.");
+        toast.error(err?.detail || "Daily post quota reached! Resets at midnight UTC.");
+        setMessages((prev) => prev.slice(0, -1));
+      } else if (err?.code === "feature_coming_soon") {
+        toast.info(err?.detail || "This feature is coming soon in Phase 2!");
       } else if (err?.status === 429) {
         setError(`Rate limited — please try again in ${err.retryAfterSeconds || 10}s`);
         setRetryCountdown(err.retryAfterSeconds || 10);
