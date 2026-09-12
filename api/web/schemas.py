@@ -15,6 +15,7 @@ class ChatRequest(BaseModel):
     platform: Optional[str] = None
     posts: int = 5
     verbose: bool = False
+    stream_key: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
@@ -23,8 +24,10 @@ class ChatResponse(BaseModel):
     action: str
     reply: Optional[str] = None
     job_id: Optional[str] = None
+    stream_key: Optional[str] = None
     tokens_used: Optional[int] = None
     timings: Optional[TimingMeta] = None
+
 
 
 class JobStatusResponse(BaseModel):
@@ -63,8 +66,12 @@ class LoginRequest(BaseModel):
     password: str
 
 
-class TokenResponse(BaseModel):
-    token: str
+class GoogleVerifyRequest(BaseModel):
+    credential: str
+
+
+class GoogleUrlResponse(BaseModel):
+    url: str
 
 
 class MeResponse(BaseModel):
@@ -72,6 +79,29 @@ class MeResponse(BaseModel):
     name: Optional[str] = ""
     email: str
     tier: Optional[str] = "free"
+    avatar_url: Optional[str] = None
+    provider: Optional[str] = "email"
+    is_email_verified: Optional[bool] = False
+
+
+class TokenResponse(BaseModel):
+    token: str
+    access_token: Optional[str] = None
+    token_type: Optional[str] = "bearer"
+    expires_in: Optional[int] = 900
+    user: Optional[MeResponse] = None
+
+
+class TokenPairResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int = 900
+    user: MeResponse
+
+
+class SseTicketResponse(BaseModel):
+    ticket: str
+    expires_in: int = 60
 
 
 class SessionListItem(BaseModel):
@@ -79,3 +109,4 @@ class SessionListItem(BaseModel):
     title: Optional[str] = None
     created_at: str
     last_active_at: str
+

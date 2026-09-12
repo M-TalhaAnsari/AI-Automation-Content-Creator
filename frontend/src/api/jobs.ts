@@ -8,10 +8,10 @@ export async function getJobStatus(jobId: string): Promise<JobStatusResponse> {
 }
 
 export interface PollJobOptions {
-  onProgress?: (status: string, attempt: number) => void;
-  intervalMs?: number;
-  maxAttempts?: number;
-  signal?: AbortSignal;
+  onProgress?: ((status: string, attempt: number) => void) | undefined;
+  intervalMs?: number | undefined;
+  maxAttempts?: number | undefined;
+  signal?: AbortSignal | undefined;
 }
 
 export async function pollJobStatus(jobId: string, options: PollJobOptions = {}): Promise<JobStatusResponse> {

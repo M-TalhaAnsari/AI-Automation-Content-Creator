@@ -41,6 +41,7 @@ type Props = {
   onGenerateImage?: (post: GeneratedPost, index: number) => void;
   onBatchGenerateImages?: (posts: GeneratedPost[]) => void;
   regeneratingPostId: string | null;
+  pipelineStatus?: { step: string; message: string } | null;
 };
 
 export function ChatWorkspace({
@@ -63,7 +64,9 @@ export function ChatWorkspace({
   onGenerateImage,
   onBatchGenerateImages,
   regeneratingPostId,
+  pipelineStatus,
 }: Props) {
+
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const isEmpty = messages.length === 0;
@@ -115,8 +118,9 @@ export function ChatWorkspace({
                   regeneratingPostId={regeneratingPostId}
                 />
               ))}
-              {sending && <ThinkingRow />}
+              {sending && <ThinkingRow pipelineStatus={pipelineStatus} />}
             </div>
+
           )}
           <div ref={bottomRef} />
         </div>
@@ -396,16 +400,29 @@ function MessageRow({
   );
 }
 
-function ThinkingRow() {
+function ThinkingRow({
+  pipelineStatus,
+}: {
+  pipelineStatus?: { step: string; message: string } | null | undefined;
+}) {
+  const step = pipelineStatus?.step || "researching";
+  const message = pipelineStatus?.message || "Fetching live signals and composing posts…";
+
   return (
     <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-3.5">
       <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-primary to-amber-400 shadow-ember ring-1 ring-primary/40 animate-pulse">
         <span className="text-[11px] font-black text-black">△</span>
       </div>
-      <div className="min-w-0 space-y-2.5 pt-1">
-        <p className="text-sm text-primary font-mono font-medium">
-          <span className="animate-pulse">Fetching live signals and composing posts…</span>
-        </p>
+      <div className="min-w-0 space-y-3 pt-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wider text-primary">
+            <span className="size-1.5 rounded-full bg-primary animate-ping" />
+            {step}
+          </span>
+          <p className="text-sm font-medium text-white/90">
+            {message}
+          </p>
+        </div>
         <div className="space-y-1.5">
           {["w-4/5", "w-3/5", "w-2/3"].map((w) => (
             <div
@@ -423,3 +440,4 @@ function ThinkingRow() {
     </div>
   );
 }
+

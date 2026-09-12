@@ -1,27 +1,41 @@
 """api/web/dependencies/auth_deps.py -- FastAPI authentication dependencies."""
 import os
 import secrets
-from typing import Optional, Dict
-import jwt
-from fastapi import Header, HTTPException
+from typing import Optional
+from fastapi import Header, HTTPException, status
 from dotenv import load_dotenv
+
+from api.web.services.auth_service import verify_access_token
 
 load_dotenv()
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "trendforge_default_secret_key_change_in_prod")
-JWT_ALGORITHM = "HS256"
 GENERIC_TOKEN_ERROR = "Invalid or missing token"
 
 
 async def verify_jwt(authorization: Optional[str] = Header(None)) -> str:
-    if not JWT_SECRET or not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail=GENERIC_TOKEN_ERROR)
-    token = authorization[len("Bearer "):]
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-    except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail=GENERIC_TOKEN_ERROR)
+    """Verifies Bearer JWT, checking expiration and Redis revocation blocklist."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=GENERIC_TOKEN_ERROR,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    token = authorization[len("Bearer "):].strip()
+    payload = verify_access_token(token)
     return payload["sub"]
+
+
+def get_current_user_id(client_name: str) -> int:
+    """Extracts integer user ID from client_name formatted 'user:{id}'."""
+    if not client_name.startswith("user:"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User identity required for this operation",
+        )
+    try:
+        return int(client_name.split(":", 1)[1])
+    except (ValueError, IndexError):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Malformed user identity")
 
 
 async def verify_identity(
@@ -42,5 +56,6 @@ async def verify_identity(
             raise HTTPException(status_code=403, detail="signup_required")
         return f"anon:{x_anon_id}"
 
-    # Transient fallback ID if headers were omitted
+    # Fallback temporary guest ID
     return f"anon:{secrets.token_hex(8)}"
+

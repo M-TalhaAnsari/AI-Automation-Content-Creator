@@ -15,6 +15,23 @@ export interface LoginRequest {
 
 export interface TokenResponse {
   token: string;
+  access_token?: string | undefined;
+  token_type?: string | undefined;
+  expires_in?: number | undefined;
+  user?: MeResponse | undefined;
+}
+
+export interface GoogleVerifyRequest {
+  credential: string;
+}
+
+export interface GoogleUrlResponse {
+  url: string;
+}
+
+export interface SseTicketResponse {
+  ticket: string;
+  expires_in: number;
 }
 
 export interface MeResponse {
@@ -22,7 +39,11 @@ export interface MeResponse {
   name?: string | undefined;
   email: string;
   tier?: string | undefined;
+  avatar_url?: string | null | undefined;
+  provider?: string | undefined;
+  is_email_verified?: boolean | undefined;
 }
+
 
 export interface SessionListItem {
   session_id: string;
@@ -69,6 +90,7 @@ export interface ChatRequest {
   platform?: string | null | undefined;
   posts?: number | undefined;
   verbose?: boolean | undefined;
+  stream_key?: string | null | undefined;
 }
 
 export interface ChatResponse {
@@ -77,8 +99,28 @@ export interface ChatResponse {
   action: string;
   reply?: string | null | undefined;
   job_id?: string | null | undefined;
+  stream_key?: string | null | undefined;
   tokens_used?: number | null | undefined;
 }
+
+export interface SseStatusPayload {
+  step: "queued" | "understanding" | "researching" | "generating" | string;
+  message: string;
+}
+
+export interface SseDonePayload {
+  action: string;
+  reply?: string | null | undefined;
+  topic?: string | null | undefined;
+  platform?: string | null | undefined;
+  posts?: RawPost[] | undefined;
+  tokens_used?: number | undefined;
+}
+
+export interface SseErrorPayload {
+  detail: string;
+}
+
 
 export interface JobStatusResponse {
   status: "done" | "processing" | "error" | string;

@@ -1,9 +1,13 @@
-import type { ApiErrorDetail } from "./types";
+import type { ApiErrorDetail, TokenResponse } from "./types";
 
-const BASE_URL = ((import.meta.env["VITE_API_URL"] as string) || "http://127.0.0.1:8000").replace(/\/+$/, "");
+export const BASE_URL = ((import.meta.env["VITE_API_URL"] as string) || "http://127.0.0.1:8000").replace(/\/+$/, "");
 
 const TOKEN_KEY = "trendforge_jwt_token";
 const ANON_ID_KEY = "trendforge_anon_id";
+
+// In-memory token storage (XSS protection)
+let _memoryToken: string | null = null;
+let _refreshPromise: Promise<string | null> | null = null;
 
 export class ApiError extends Error {
   status: number;
@@ -22,18 +26,29 @@ export class ApiError extends Error {
 }
 
 export function getToken(): string | null {
+  if (_memoryToken) return _memoryToken;
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
+  // Fallback to sessionStorage
+  const token = sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY);
+  if (token) {
+    _memoryToken = token;
+  }
+  return _memoryToken;
 }
 
 export function setToken(token: string): void {
+  _memoryToken = token;
   if (typeof window !== "undefined") {
-    localStorage.setItem(TOKEN_KEY, token);
+    sessionStorage.setItem(TOKEN_KEY, token);
+    // Remove from localStorage if lingering from older builds
+    localStorage.removeItem(TOKEN_KEY);
   }
 }
 
 export function clearToken(): void {
+  _memoryToken = null;
   if (typeof window !== "undefined") {
+    sessionStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(TOKEN_KEY);
   }
 }
@@ -46,7 +61,10 @@ export function getAnonId(): string {
   if (typeof window === "undefined") return "guest-default-id";
   let anonId = localStorage.getItem(ANON_ID_KEY);
   if (!anonId) {
-    anonId = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `anon-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    anonId =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `anon-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     localStorage.setItem(ANON_ID_KEY, anonId);
   }
   return anonId;
@@ -55,6 +73,39 @@ export function getAnonId(): string {
 export interface FetchOptions extends Omit<RequestInit, "signal"> {
   timeoutMs?: number | undefined;
   signal?: AbortSignal | null | undefined;
+  _isRetry?: boolean | undefined;
+}
+
+async function trySilentRefresh(): Promise<string | null> {
+  if (_refreshPromise) return _refreshPromise;
+
+  _refreshPromise = (async () => {
+    try {
+      const resp = await fetch(`${BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      if (!resp.ok) {
+        clearToken();
+        return null;
+      }
+      const data: TokenResponse = await resp.json();
+      const nextToken = data.access_token || data.token;
+      if (nextToken) {
+        setToken(nextToken);
+        return nextToken;
+      }
+      return null;
+    } catch {
+      clearToken();
+      return null;
+    } finally {
+      _refreshPromise = null;
+    }
+  })();
+
+  return _refreshPromise;
 }
 
 export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
@@ -81,10 +132,28 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
     const response = await fetch(url, {
       ...options,
       headers,
+      credentials: "include", // Enables HttpOnly refresh token cookie transport
       signal: options.signal || controller.signal,
     });
 
     clearTimeout(timeoutId);
+
+    // Silent Refresh Retry on 401 Unauthorized
+    const isAuthEndpoint =
+      endpoint.includes("/auth/login") ||
+      endpoint.includes("/auth/signup") ||
+      endpoint.includes("/auth/refresh") ||
+      endpoint.includes("/auth/logout");
+
+    if (response.status === 401 && !options._isRetry && !isAuthEndpoint) {
+      const newToken = await trySilentRefresh();
+      if (newToken) {
+        return apiFetch<T>(endpoint, {
+          ...options,
+          _isRetry: true,
+        });
+      }
+    }
 
     if (!response.ok) {
       let detail = "";
@@ -114,9 +183,7 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
 
       if (response.status === 401) {
         code = "unauthorized";
-        if (token) {
-          clearToken();
-        }
+        clearToken();
       } else if (response.status === 403 && detail === "signup_required") {
         code = "signup_required";
       } else if (response.status === 429) {
@@ -159,3 +226,4 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
     );
   }
 }
+

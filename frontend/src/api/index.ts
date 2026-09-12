@@ -4,5 +4,7 @@ export * from "./auth";
 export * from "./sessions";
 export * from "./jobs";
 export * from "./chat";
+export * from "./sse";
 export * from "./images";
 export * from "./preferences";
+

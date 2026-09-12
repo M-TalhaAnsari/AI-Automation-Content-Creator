@@ -30,13 +30,19 @@ import {
   isLoggedIn,
   listSessions,
   logout,
+  sendChatStream,
   sendChatAndWait,
+  setToken,
+  startAutoTokenRefresh,
+  stopAutoTokenRefresh,
   generateImage,
   generateBatchImages,
   pollImageJob,
   getImageUrl,
   type MeResponse,
+  type SseStatusPayload,
 } from "@/api";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -111,11 +117,46 @@ function Workspace() {
   const [showLanding, setShowLanding] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [userTier, setUserTier] = useState<string>("free");
+  const [pipelineStatus, setPipelineStatus] = useState<{ step: string; message: string } | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Initialize Authentication State on Load
   useEffect(() => {
     async function checkAuth() {
+      // Handle Google OAuth redirect callback (?google_auth=success&token=...)
+      const urlParams = new URLSearchParams(window.location.search);
+      const googleAuthStatus = urlParams.get("google_auth");
+      const googleToken = urlParams.get("token");
+      const googleAuthError = urlParams.get("google_auth_error");
+
+      if (googleAuthError) {
+        // Clean URL
+        window.history.replaceState({}, "", window.location.pathname);
+        setAuthChecking(false);
+        setAuthenticated(false);
+        toast.error(`Google sign-in failed: ${googleAuthError.replace(/_/g, " ")}`);
+        return;
+      }
+
+      if (googleAuthStatus === "success" && googleToken) {
+        // Clean URL immediately so token never lingers in browser history
+        window.history.replaceState({}, "", window.location.pathname);
+        setToken(googleToken);
+        startAutoTokenRefresh();
+        try {
+          const me = await getMe();
+          setUser(me);
+          setAuthenticated(true);
+          if (me.tier) setUserTier(me.tier);
+          toast.success("Signed in with Google!");
+        } catch {
+          // Token may be invalid – fall through to normal flow
+        } finally {
+          setAuthChecking(false);
+        }
+        return;
+      }
+
       if (!isLoggedIn()) {
         setAuthenticated(false);
         setUser(null);
@@ -127,8 +168,9 @@ function Workspace() {
         setUser(me);
         setAuthenticated(true);
         if (me.tier) setUserTier(me.tier);
+        startAutoTokenRefresh();
       } catch {
-        logout();
+        await logout();
         setAuthenticated(false);
         setUser(null);
       } finally {
@@ -136,6 +178,10 @@ function Workspace() {
       }
     }
     checkAuth();
+
+    return () => {
+      stopAutoTokenRefresh();
+    };
   }, []);
 
   // Fetch Session History when Authenticated, or show demo sessions if guest
@@ -406,14 +452,18 @@ function Workspace() {
     abortControllerRef.current = controller;
 
     try {
-      const chatResult = await sendChatAndWait(
+      const chatResult = await sendChatStream(
         {
           message: value,
           session_id: activeSessionId,
           platform: platform !== "auto" ? platform : undefined,
           posts: postCount,
         },
-        {},
+        {
+          onStatus: (status) => {
+            setPipelineStatus(status);
+          },
+        },
         controller.signal
       );
 
@@ -437,12 +487,17 @@ function Workspace() {
           setPlatform(sessionView.last_platform);
         }
 
-        if (
+        const rawPosts =
           POST_PRODUCING_ACTIONS.has(chatResult.action) &&
           sessionView.last_generated_posts &&
           sessionView.last_generated_posts.length > 0
-        ) {
-          postsForMessage = sessionView.last_generated_posts.map((p, idx) =>
+            ? sessionView.last_generated_posts
+            : chatResult.posts && chatResult.posts.length > 0
+            ? chatResult.posts
+            : null;
+
+        if (rawPosts && rawPosts.length > 0) {
+          postsForMessage = rawPosts.map((p, idx) =>
             rawPostToGeneratedPost(p, sessionView.last_platform || platform, idx + 1)
           );
 
@@ -456,7 +511,12 @@ function Workspace() {
           }
         }
       } catch {
-        // Non-fatal — reply text will still render
+        // Non-fatal fallback — if getSession fails, try using chatResult.posts if present
+        if (chatResult.posts && chatResult.posts.length > 0) {
+          postsForMessage = chatResult.posts.map((p, idx) =>
+            rawPostToGeneratedPost(p, platform, idx + 1)
+          );
+        }
       }
 
       setMessages((prev) => [
@@ -494,6 +554,7 @@ function Workspace() {
     } finally {
       abortControllerRef.current = null;
       setSending(false);
+      setPipelineStatus(null);
     }
   }
 
@@ -502,6 +563,7 @@ function Workspace() {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
+    setPipelineStatus(null);
     setSending(false);
     toast("Generation stopped by user");
   }
@@ -657,8 +719,13 @@ function Workspace() {
     toast("Chat cleared");
   }
 
-  function handleLogout() {
-    logout();
+  async function handleLogout() {
+    stopAutoTokenRefresh();
+    try {
+      await logout();
+    } catch {
+      // Ignore network errors during logout
+    }
     setAuthenticated(false);
     setUser(null);
     setSessions([]);
@@ -670,7 +737,13 @@ function Workspace() {
     setAuthenticated(true);
     setShowAuthScreen(false);
     setAuthForced(false);
-    getMe().then((me) => setUser(me)).catch(() => {});
+    startAutoTokenRefresh();
+    getMe()
+      .then((me) => {
+        setUser(me);
+        if (me.tier) setUserTier(me.tier);
+      })
+      .catch(() => {});
     refreshSessions();
     toast("Signed in successfully");
   }
@@ -841,6 +914,7 @@ function Workspace() {
               onGenerateImage={(post, index) => handleGenerateImage(post, undefined, index)}
               onBatchGenerateImages={handleBatchGenerateImages}
               regeneratingPostId={regeneratingPostId}
+              pipelineStatus={pipelineStatus}
             />
 
             <AnimatePresence initial={false}>
