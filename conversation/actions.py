@@ -21,10 +21,11 @@ USER INSTRUCTION: "{instruction}"
 POSTS TO EDIT (JSON array, {len(targeted)} post(s)):
 {posts_json}
 
-Apply the instruction to every post above. Keep the exact same JSON field
-structure for each post (number, title, hook, summary, link, caption,
-hashtags) — only change what the instruction actually asks for. Keep each
-post's original "number" value unchanged. Do not add or remove posts.
+Apply the instruction to every post above:
+- If the user asks for more text, more bullets, deeper explanation, or richer summary: expand the "title", "hook", "summary" (provide up to 4-7 detailed, actionable points), or "caption" accordingly.
+- If the user asks for centering or layout adjustments: adapt the phrasing so it works cleanly and symmetrically.
+- Keep the exact same JSON field structure for each post (number, title, hook, summary, link, caption, hashtags).
+- Keep each post's original "number" value unchanged. Do not add or remove posts.
 Return ONLY this JSON object, nothing else:
 {{"posts": [<same {len(targeted)} posts, edited, same field structure>]}}"""
 

@@ -252,6 +252,29 @@ def process_turn(conversation: dict, user_message: str) -> dict:
 
     pending = conversation.get("pending_confirmation")
 
+    # Fast deterministic resolution for pending confirmations (avoids LLM loop on "OK", "YES", etc.)
+    if pending:
+        clean_msg = user_message.strip().lower()
+        AFFIRMATIVE_PATTERN = re.compile(
+            r"^(yes|y|ok|okay|yeah|yep|sure|proceed|confirm|go ahead|do it|apply|change it|update it|replace it|do that)\b",
+            re.IGNORECASE,
+        )
+        NEGATIVE_PATTERN = re.compile(r"^(no|nope|cancel|stop|nevermind|abort|don't|dont)\b", re.IGNORECASE)
+
+        if AFFIRMATIVE_PATTERN.search(clean_msg):
+            conversation.pop("pending_confirmation", None)
+            return {
+                "action": pending["action"],
+                "args": pending["args"],
+                "tokens_used": 0,
+                "error": None,
+            }
+        elif NEGATIVE_PATTERN.search(clean_msg):
+            conversation.pop("pending_confirmation", None)
+            cancellation = "Understood — I've kept your existing posts as they are."
+            conversation.setdefault("message_history", []).append({"role": "assistant", "content": cancellation})
+            return {"action": "clarify", "args": {"clarify_question": cancellation}, "tokens_used": 0, "error": None}
+
     try:
         from groq import Groq
         client = Groq(api_key=CONFIG.models.groq_api_key)

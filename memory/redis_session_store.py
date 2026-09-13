@@ -120,6 +120,47 @@ def delete_conversation(session_id: str, client_name: str) -> bool:
         return False
 
 
+def claim_guest_conversation(guest_session_id: str, target_client_name: str) -> bool:
+    """Find any conversation stored with guest_session_id under an IP/guest key,
+    and copy/persist it under target_client_name (e.g. 'user:4').
+    Also ensures the session is inserted into Postgres chat_sessions.
+    """
+    try:
+        keys = _client.keys(f"{KEY_PREFIX}*:{guest_session_id}")
+    except redis_exceptions.RedisError as e:
+        logger.warning("Redis keys search failed for guest session %s: %s", guest_session_id, e)
+        keys = []
+
+    target_key = _key(guest_session_id, target_client_name)
+    conversation = None
+
+    for k in keys:
+        if k != target_key:
+            try:
+                raw = _client.get(k)
+                if raw:
+                    conversation = json.loads(raw)
+                    break
+            except Exception:
+                continue
+
+    if not conversation:
+        return False
+
+    # Save under target authenticated client name (persists to Redis & Postgres)
+    save_conversation(guest_session_id, target_client_name, conversation)
+
+    try:
+        from api.web.db import upsert_chat_session, parse_user_id
+        user_id = parse_user_id(target_client_name)
+        title = conversation.get("last_topic") or "Imported session"
+        upsert_chat_session(user_id, guest_session_id, title)
+    except Exception as e:
+        logger.info("Could not upsert chat session in Postgres for %s: %s", guest_session_id, e)
+
+    return True
+
+
 def ping() -> bool:
     try:
         return bool(_client.ping())

@@ -108,12 +108,11 @@ Create {post_count} distinct, platform-ready {platform_name} post cards or carou
     CONTENT INTENT:
     {guidance.intent_instruction}
 
-    **CRITICAL VIRAL CREATOR RULES (STRICT QUALITY GATES):**
-    1. **MINIMAL ON-SCREEN TEXT (Visual Post Card):**
-       On Instagram / social media, visual cards MUST NEVER have walls of text.
-       - "title": Clean, high-impact headline (max 8-10 words).
-       - "hook": Subtitle / curiosity hook (max 12 words).
-       - "summary": 3 ultra-short, punchy bullet points (max 8-10 words each) designed to fit inside a visual graphic without clutter.
+    1. **HIGH-IMPACT ON-SCREEN TEXT (Visual Post Card):**
+       - "title": Clean, bold, high-impact headline that immediately captures attention.
+       - "hook": Subtitle / curiosity hook that provides immediate context.
+       - "summary": 3 to 5 substantial, actionable, high-signal bullet points (each 10-25 words with concrete takeaways, steps, or insights). If the user requested more detailed text or comprehensive points, provide full, rich substance — the card dynamically scales typography to fit up to 7 bullet points effortlessly.
+       - If the user requested center alignment, middle placement, or specific structure, craft the copy so it reads with balanced symmetry.
     2. **RICH & ENGAGING CAPTION / DESCRIPTION:**
        All the deep, valuable, step-by-step information belongs in the "caption" (description).
        - **Zero ALL-CAPS Words:** DO NOT write capitalized screaming labels like "PROJECT OVERVIEW:", "TECH STACK:", "WHAT HAPPENED:", "KEY INSIGHT:". Write naturally capitalized, human creator copy (e.g. "Here is how it works:", "The tech behind it:", "Why this matters today:").

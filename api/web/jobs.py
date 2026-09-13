@@ -63,6 +63,9 @@ def run_slow_action(
         save_conversation(session_id, client_name, conversation)
 
         raw_posts = conversation.get("last_generated_posts", [])
+        posts_to_emit = conversation.pop("last_turn_posts", None)
+        if posts_to_emit is None:
+            posts_to_emit = raw_posts
 
         # Record daily post usage in PostgreSQL for authenticated accounts
         if client_name.startswith("user:") and raw_posts:
@@ -82,7 +85,7 @@ def run_slow_action(
                 "reply": reply,
                 "topic": conversation.get("last_topic"),
                 "platform": conversation.get("last_platform"),
-                "posts": raw_posts,
+                "posts": posts_to_emit,
             },
         )
 

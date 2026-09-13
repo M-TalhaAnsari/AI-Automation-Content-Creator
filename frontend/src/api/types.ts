@@ -163,6 +163,7 @@ export interface InjectedAssetSpec {
   role: AssetRole;
   targetScope: AssetTargetScope;
   targetPostNumbers?: number[];
+  customPostNumbers?: number[]; // used when targetScope === "custom"
   cropShape?: AssetCropShape;
   opacity?: number;
   borderWidth?: number;

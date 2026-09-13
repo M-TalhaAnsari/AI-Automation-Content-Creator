@@ -137,6 +137,16 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
   useEffect(() => { onHookChangeRef.current = onHookChange; }, [onHookChange]);
   useEffect(() => { onSummaryChangeRef.current = onSummaryChange; }, [onSummaryChange]);
 
+  // ── Stable content refs — keep latest values of title/hook/bulletPoints
+  //    accessible inside renderCanvasComposition without adding them to its
+  //    dependency array. Changes to these values are handled by lightweight
+  //    in-place patch effects below, NOT by a full canvas rebuild. ──
+  const titleRef = useRef(title);
+  const hookRef = useRef(hook);
+  const bulletPointsRef = useRef<string[]>([]);
+  useEffect(() => { titleRef.current = title; }, [title]);
+  useEffect(() => { hookRef.current = hook; }, [hook]);
+
   // Refs to named canvas text objects — updated in-place to avoid full rebuilds
   const titleObjRef = useRef<fabric.Textbox | null>(null);
   const hookObjRef = useRef<fabric.Textbox | null>(null);
@@ -195,6 +205,8 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     }
     return [];
   }, [summary]);
+  // Keep bulletPointsRef in sync with the memoized value
+  useEffect(() => { bulletPointsRef.current = bulletPoints; }, [bulletPoints]);
 
   const currentDimensions = ASPECT_RATIOS[aspectRatioKey] ?? ASPECT_RATIOS["4:5"]!;
 
@@ -294,7 +306,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
 
     const shouldInject = shouldInjectAssetForPost(activeAsset, postNumber ?? 1, totalPosts ?? 5);
     const hasHeroInset = Boolean(shouldInject && activeAsset?.role === "hero_inset");
-    const layout = computeAutoLayout(width, height, title || "", bulletPoints.length, hasHeroInset);
+    const layout = computeAutoLayout(width, height, titleRef.current || "", bulletPointsRef.current.length, hasHeroInset);
 
     const buildForegroundLayers = () => {
       // Guard: abort if canvas was replaced by a newer render
@@ -397,7 +409,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
       currentY += 56;
 
       // ── TITLE: store ref, wire text:changed with stable ref callback ──
-      const cleanCanvasTitle = (title || "").replace(/^#+\s*/gm, "").replace(/\*\*(.*?)\*\*/g, "$1");
+      const cleanCanvasTitle = (titleRef.current || "").replace(/^#+\s*/gm, "").replace(/\*\*(.*?)\*\*/g, "$1");
       const titleFab = new fabric.Textbox(cleanCanvasTitle, {
         left: innerLeft,
         top: currentY,
@@ -407,6 +419,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
         fontFamily: "Inter, -apple-system, sans-serif",
         fill: selectedTheme.titleColor,
         lineHeight: 1.25,
+        textAlign: "center",
         editable: true,
         selectable: true,
         hoverCursor: "text",
@@ -419,8 +432,8 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
       currentY += (titleFab.height || 60) + 16;
 
       // ── HOOK: store ref, wire text:changed with stable ref callback ──
-      if (hook) {
-        const cleanHook = (hook || "").replace(/^#+\s*/gm, "").replace(/\*\*(.*?)\*\*/g, "$1");
+      if (hookRef.current) {
+        const cleanHook = (hookRef.current || "").replace(/^#+\s*/gm, "").replace(/\*\*(.*?)\*\*/g, "$1");
         const hookFab = new fabric.Textbox(`⚡ ${cleanHook}`, {
           left: innerLeft,
           top: currentY,
@@ -430,6 +443,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
           fontFamily: "Inter, -apple-system, sans-serif",
           fill: selectedTheme.hookColor,
           lineHeight: 1.35,
+          textAlign: "center",
           editable: true,
           selectable: true,
           hoverCursor: "text",
@@ -493,8 +507,8 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
 
       // ── BULLETS: use real content, up to 7, fallback only when truly empty ──
       const itemsToRender =
-        bulletPoints.length > 0
-          ? bulletPoints.slice(0, 7)
+        bulletPointsRef.current.length > 0
+          ? bulletPointsRef.current.slice(0, 7)
           : [
               "1. Core Implementation & Architecture",
               "2. Key Workflow Decisions",
@@ -697,9 +711,8 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     customBgDataUrl,
     backgroundImageUrl,
     selectedTheme,
-    title,
-    hook,
-    bulletPoints,
+    // title, hook, bulletPoints intentionally OMITTED — accessed via refs.
+    // Their changes are handled by lightweight in-place patch effects below.
     activeAsset,
     postNumber,
     totalPosts,
@@ -767,7 +780,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
       setSelectedFontSize(null);
     });
 
-    // ── Smart single-click editing: if object already selected, enter edit ──
+    // ── Instant single-click text editing with immediate focus ──
     fc.on("mouse:down", (opt) => {
       if (isSpaceDownRef.current) {
         isPanningRef.current = true;
@@ -782,16 +795,17 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
         target &&
         target instanceof fabric.Textbox &&
         (target as any).editable &&
-        fc.getActiveObject() === target &&
         !(target as any).isEditing
       ) {
-        // Already selected — enter text editing on single click
         setTimeout(() => {
-          if (!isPanningRef.current) {
+          if (!isPanningRef.current && fc.getActiveObject() === target) {
             target.enterEditing();
+            if ((target as any).hiddenTextarea) {
+              (target as any).hiddenTextarea.focus();
+            }
             fc.renderAll();
           }
-        }, 150);
+        }, 50);
       }
     });
 
@@ -815,12 +829,15 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
       }
     });
 
-    // Double-click still works for text that isn't selected yet
+    // Double-click always selects all text for fast total replacement
     fc.on("mouse:dblclick", (opt) => {
       const target = opt.target;
       if (target && target instanceof fabric.Textbox && (target as any).editable) {
         target.enterEditing();
         target.selectAll();
+        if ((target as any).hiddenTextarea) {
+          (target as any).hiddenTextarea.focus();
+        }
         fc.renderAll();
       }
     });
@@ -876,12 +893,40 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
         return;
       }
 
+      // If active object is a Textbox and not yet editing, handle keyboard typing/backspace
+      if (active && active instanceof fabric.Textbox && active.editable && !isEditingText) {
+        if (e.key === "Backspace" || e.key === "Delete") {
+          e.preventDefault();
+          active.enterEditing();
+          if (active.hiddenTextarea) {
+            active.hiddenTextarea.focus();
+          }
+          const cur = active.text || "";
+          if (cur.length > 0) {
+            active.set("text", cur.slice(0, -1));
+            fc.renderAll();
+            active.fire("changed");
+          }
+          return;
+        }
+
+        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          active.enterEditing();
+          if (active.hiddenTextarea) {
+            active.hiddenTextarea.focus();
+          }
+          return;
+        }
+      }
+
+      // Delete/Backspace only deletes non-textbox objects (shapes, images)
       if ((e.key === "Delete" || e.key === "Backspace") && !isEditingText) {
         const activeObjs = fc.getActiveObjects();
-        if (activeObjs.length > 0) {
+        const nonTextObjs = activeObjs.filter((obj) => !(obj instanceof fabric.Textbox));
+        if (nonTextObjs.length > 0) {
           e.preventDefault();
           fc.discardActiveObject();
-          activeObjs.forEach((obj) => fc.remove(obj));
+          nonTextObjs.forEach((obj) => fc.remove(obj));
           fc.renderAll();
           setHasSelection(false);
           saveStateToHistory();
@@ -1103,11 +1148,16 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     const obj = canvas.getActiveObject() as any;
-    if (!obj || obj.fontSize === undefined) return;
-    obj.set("textAlign", align);
+    if (obj && obj.fontSize !== undefined) {
+      obj.set("textAlign", align);
+    } else {
+      const allText = canvas.getObjects().filter((o) => o instanceof fabric.Textbox);
+      allText.forEach((t) => (t as fabric.Textbox).set("textAlign", align));
+    }
     setSelectedAlign(align);
     canvas.renderAll();
     saveStateToHistory();
+    toast.success(`Text alignment: ${align}`);
   };
 
   const handleFontFamily = (family: string) => {
@@ -1478,13 +1528,12 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
             {/* 3. Selective Targeting */}
             <div className="flex flex-col gap-1.5">
               <span className="font-semibold text-muted-foreground">3. Selective Post Placement</span>
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="grid grid-cols-3 gap-1.5">
                 {(
                   [
-                    { id: "all", label: "All Posts (5/5)" },
-                    { id: "first_only", label: "Post 1 (Cover)" },
-                    { id: "last_only", label: "Final Post" },
-                    { id: "none", label: "None (Hide)" },
+                    { id: "all", label: "✅ All Posts" },
+                    { id: "custom", label: "🎯 Custom" },
+                    { id: "none", label: "🚫 None" },
                   ] as const
                 ).map((s) => (
                   <button
@@ -1509,6 +1558,27 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
                   </button>
                 ))}
               </div>
+              {activeAsset?.targetScope === "custom" && (
+                <div className="flex flex-col gap-1 pt-1">
+                  <span className="text-[10px] text-muted-foreground">Post numbers (comma-separated, e.g. 1,3,5):</span>
+                  <input
+                    type="text"
+                    placeholder="e.g. 1,3,5"
+                    defaultValue={activeAsset?.customPostNumbers?.join(",") || ""}
+                    onBlur={(e) => {
+                      if (!activeAsset) return;
+                      const nums = e.target.value
+                        .split(",")
+                        .map((n) => parseInt(n.trim(), 10))
+                        .filter((n) => !isNaN(n) && n > 0);
+                      const updated: InjectedAssetSpec = { ...activeAsset, customPostNumbers: nums };
+                      setActiveAsset(updated);
+                      if (onInjectedAssetChange) onInjectedAssetChange(updated);
+                    }}
+                    className="rounded-lg border border-border/60 bg-secondary/40 px-2 py-1 text-[11px] text-foreground placeholder:text-muted-foreground/50"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -1690,11 +1760,10 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
               key={align}
               type="button"
               onClick={() => handleTextAlign(align)}
-              disabled={!hasSelection || selectedFontSize === null}
               title={`Align ${align}`}
-              className={`flex size-7 items-center justify-center rounded text-xs transition-all disabled:opacity-30 ${
+              className={`flex size-7 items-center justify-center rounded text-xs transition-all ${
                 selectedAlign === align
-                  ? "bg-primary/20 text-primary"
+                  ? "bg-primary/20 text-primary ring-1 ring-primary/40"
                   : "text-muted-foreground hover:bg-secondary hover:text-foreground"
               }`}
             >

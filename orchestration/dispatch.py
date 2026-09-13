@@ -199,6 +199,14 @@ def _handle_edit_existing(args, conversation, verbose):
     _snapshot_posts(conversation)
     conversation["last_generated_posts"] = result["edited_posts"]
 
+    if target_posts != "all" and isinstance(target_posts, list):
+        targeted_indices = [i - 1 for i in target_posts if isinstance(i, int) and 0 <= i - 1 < len(result["edited_posts"])]
+        conversation["last_turn_posts"] = [result["edited_posts"][i] for i in targeted_indices]
+        target_label = f"Post {target_posts[0]}" if len(target_posts) == 1 else f"Posts {', '.join(map(str, target_posts))}"
+    else:
+        conversation["last_turn_posts"] = result["edited_posts"]
+        target_label = "your posts"
+
     state = create_initial_state(raw_prompt=instruction, session_id=str(uuid.uuid4())[:8])
     state["core_topic"] = conversation.get("last_topic") or ""
     state["platform"] = conversation.get("last_platform") or "instagram"
@@ -211,7 +219,7 @@ def _handle_edit_existing(args, conversation, verbose):
     if saved_path:
         print(f"  \U0001f4be Saved to: {saved_path}")
     conversation["last_output"] = (
-        f'Updated the post(s) — {instruction}' if instruction else "Updated the requested post(s)."
+        f"Updated {target_label} based on: \"{instruction}\"" if instruction else f"Updated {target_label}."
     )
 
 

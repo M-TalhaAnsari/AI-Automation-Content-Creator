@@ -14,8 +14,8 @@ from llm.errors import LLMCallFailed, LLMSchemaViolation
 
 logger = logging.getLogger("trendforge.llm")
 
-_MAX_RETRIES = 2
-_BACKOFF_BASE_SECONDS = 1.5
+_MAX_RETRIES = 1
+_BACKOFF_BASE_SECONDS = 1.0
 
 _groq_client: Groq | None = None
 _genai_client: "genai.Client | None" = None
@@ -43,7 +43,10 @@ def _lazy_genai_client() -> "genai.Client":
         from Config.config import CONFIG
 
         api_key = getattr(CONFIG.models, "gemini_api_key", None)
-        _genai_client = genai.Client(api_key=api_key)
+        _genai_client = genai.Client(
+            api_key=api_key,
+            http_options=genai_types.HttpOptions(timeout=12000),
+        )
     return _genai_client
 
 

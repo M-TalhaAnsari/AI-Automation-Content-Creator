@@ -29,6 +29,7 @@ import {
   getSession,
   isLoggedIn,
   listSessions,
+  claimGuestSession,
   logout,
   sendChatStream,
   sendChatAndWait,
@@ -150,6 +151,10 @@ function Workspace() {
           setUser(me);
           setAuthenticated(true);
           if (me.tier) setUserTier(me.tier);
+          setShowLanding(false);
+          if (activeSessionId) {
+            claimGuestSession(activeSessionId).catch(() => {});
+          }
           toast.success("Signed in with Google!");
         } catch {
           // Token may be invalid – fall through to normal flow
@@ -170,6 +175,7 @@ function Workspace() {
         setUser(me);
         setAuthenticated(true);
         if (me.tier) setUserTier(me.tier);
+        setShowLanding(false);
         startAutoTokenRefresh();
       } catch {
         await logout();
@@ -744,6 +750,7 @@ function Workspace() {
   function handleAuthenticated() {
     setAuthenticated(true);
     setShowAuthScreen(false);
+    setShowLanding(false);
     setAuthForced(false);
     startAutoTokenRefresh();
     getMe()
@@ -752,7 +759,13 @@ function Workspace() {
         if (me.tier) setUserTier(me.tier);
       })
       .catch(() => {});
-    refreshSessions();
+    if (activeSessionId) {
+      claimGuestSession(activeSessionId)
+        .then(() => refreshSessions())
+        .catch(() => refreshSessions());
+    } else {
+      refreshSessions();
+    }
     toast("Signed in successfully");
   }
 

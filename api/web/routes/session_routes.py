@@ -1,4 +1,4 @@
-﻿"""api/web/routes/session_routes.py -- Session management API endpoints."""
+"""api/web/routes/session_routes.py -- Session management API endpoints."""
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from api.web.dependencies.auth_deps import verify_identity, verify_jwt
@@ -34,3 +34,16 @@ def delete_chat_session(
 ):
     delete_session(session_id, client_name)
     return {"status": "deleted", "session_id": session_id}
+
+
+@router.post("/session/claim-guest")
+def claim_guest_session_endpoint(
+    body: dict,
+    client_name: str = Depends(verify_jwt),
+):
+    guest_session_id = body.get("guest_session_id")
+    if not guest_session_id:
+        return {"status": "skipped", "reason": "no_guest_session_id"}
+    from memory.redis_session_store import claim_guest_conversation
+    ok = claim_guest_conversation(guest_session_id, client_name)
+    return {"status": "claimed" if ok else "not_found", "session_id": guest_session_id}

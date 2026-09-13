@@ -190,7 +190,7 @@ export function PostModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex h-[96vh] flex-col gap-0 overflow-hidden rounded-3xl border-white/15 bg-[#0B1535]/95 p-0 shadow-2xl backdrop-blur-2xl sm:max-w-6xl text-foreground"
+        className="flex h-[98vh] flex-col gap-0 overflow-hidden rounded-3xl border-white/15 bg-[#0B1535]/95 p-0 shadow-2xl backdrop-blur-2xl sm:max-w-7xl xl:max-w-[95vw] text-foreground"
       >
         {/* Modal Header */}
         <DialogHeader className="space-y-2 border-b border-white/10 px-6 pt-4 pb-3 text-left">
@@ -279,8 +279,8 @@ export function PostModal({
                 transition={{ duration: 0.15 }}
                 className="grid grid-cols-1 lg:grid-cols-12 gap-6"
               >
-                {/* Left 7 Columns: Fabric Canvas Studio */}
-                <div className="lg:col-span-7 space-y-4">
+                {/* Left 8 Columns: Fabric Canvas Studio */}
+                <div className="lg:col-span-8 space-y-4">
                   <SocialPostCanvas
                     backgroundImageUrl={displayImgUrl}
                     title={editableTitle}
@@ -303,8 +303,8 @@ export function PostModal({
                   />
                 </div>
 
-                {/* Right 5 Columns: Large Editable Fields & AI Assistant */}
-                <div className="lg:col-span-5 flex flex-col gap-5 border-t lg:border-t-0 lg:border-l border-white/10 pt-4 lg:pt-0 lg:pl-6">
+                {/* Right 4 Columns: Large Editable Fields & AI Assistant */}
+                <div className="lg:col-span-4 flex flex-col gap-5 border-t lg:border-t-0 lg:border-l border-white/10 pt-4 lg:pt-0 lg:pl-6">
                   {/* Quick AI Content Assistant */}
                   <div className="rounded-2xl border border-primary/40 bg-primary/5 p-4 space-y-3 shadow-sm">
                     <div className="flex items-center justify-between">

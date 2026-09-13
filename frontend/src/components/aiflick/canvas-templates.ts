@@ -176,7 +176,8 @@ export function shouldInjectAssetForPost(
   if (asset.targetScope === "first_only") return currentPostNumber === 1;
   if (asset.targetScope === "last_only") return currentPostNumber === totalPosts;
   if (asset.targetScope === "custom") {
-    return Boolean(asset.targetPostNumbers?.includes(currentPostNumber));
+    const numbers = asset.customPostNumbers ?? asset.targetPostNumbers ?? [];
+    return numbers.includes(currentPostNumber);
   }
   return false;
 }

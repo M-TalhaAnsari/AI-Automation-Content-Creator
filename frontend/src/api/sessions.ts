@@ -18,3 +18,10 @@ export async function deleteSession(sessionId: string): Promise<{ status: string
     method: "DELETE",
   });
 }
+
+export async function claimGuestSession(guestSessionId: string): Promise<{ status: string; session_id: string }> {
+  return apiFetch<{ status: string; session_id: string }>("/session/claim-guest", {
+    method: "POST",
+    body: JSON.stringify({ guest_session_id: guestSessionId }),
+  });
+}
