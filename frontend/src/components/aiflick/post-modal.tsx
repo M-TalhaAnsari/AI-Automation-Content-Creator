@@ -273,9 +273,9 @@ export function PostModal({
             {activeTab === "studio" ? (
               <motion.div
                 key="tab-studio"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
                 className="grid grid-cols-1 lg:grid-cols-12 gap-6"
               >

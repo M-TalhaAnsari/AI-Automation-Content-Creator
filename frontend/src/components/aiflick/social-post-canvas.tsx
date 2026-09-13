@@ -1245,9 +1245,11 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* ── Toolbar Row 1: Ratio + Themes + Glass Card + Background ── */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-surface-raised/70 p-2.5 backdrop-blur-md">
-        <div className="flex items-center gap-1">
+      {/* ── Sticky Top Editing Controls Dock: Pinned statically so user never has to scroll up ── */}
+      <div className="sticky -top-5 z-20 flex flex-col gap-2 rounded-2xl border border-white/15 bg-[#0B1535]/95 p-2 shadow-2xl backdrop-blur-2xl">
+        {/* ── Toolbar Row 1: Ratio + Themes + Glass Card + Background ── */}
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-surface-raised/70 p-2.5 backdrop-blur-md">
+          <div className="flex items-center gap-1">
           <span className="text-[11px] font-semibold text-muted-foreground mr-1">Ratio:</span>
           {Object.entries(ASPECT_RATIOS).map(([key, dim]) => (
             <button
@@ -1871,6 +1873,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
             <ZoomIn className="size-3.5" />
           </button>
         </div>
+      </div>
       </div>
 
       {/* ── Canvas Area ── */}
