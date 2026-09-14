@@ -3,61 +3,19 @@
  *
  * Production-Grade Interactive Social Post Studio built with Fabric.js.
  *
- * Features & Fixes:
- *  1. Stable callback refs — onTitleChange/onHookChange/onSummaryChange stored in
- *     useRef so Fabric event listeners never capture stale closures, preventing
- *     re-mount/reload cycles when editing directly on canvas.
- *  2. Generation-token anti-overlap guard — renderGenerationRef cancels stale
- *     async background image resolutions.
- *  3. Full canvas object flush before clear to reset Fabric's object registry.
- *  4. Up to 7 bullet points supported with dynamic scaling.
- *  5. Single-click-again to enter text editing on already-selected text.
- *  6. Space + Drag canvas pan when zoomed in.
- *  7. Full creative toolbar: bold, italic, underline, alignment, duplicate (Ctrl+D),
- *     lock/unlock, vector shapes (rect, circle, line), opacity, font family, line height.
+ * Architecture & Features:
+ *  1. Vertical Left Toolbar Dock: Sleek, compact rail (~56px) on the left side of the canvas.
+ *  2. True Bidirectional Live Text Sync: Listens to Fabric's `text:changed` on the canvas so typing
+ *     directly on the canvas updates the right menu and parent post state on every keystroke.
+ *  3. In-Place Non-Destructive Style Updates: Toggling watermark, card opacity, solid color,
+ *     or preset themes updates existing Fabric objects in-place with ZERO canvas destruction or edit resets.
+ *  4. Instant Text Editing & Deletion Protection: Clicking any textbox enters edit mode immediately.
+ *     Backspace/Delete inside textboxes edits characters instead of deleting the object.
+ *  5. Modular Components: CanvasLeftToolbar, CanvasAssetDrawer, CanvasBottomBar.
  */
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { fabric } from "fabric";
-import {
-  Download,
-  Copy,
-  RotateCcw,
-  Sparkles,
-  Upload,
-  Palette,
-  Layers,
-  Check,
-  Smartphone,
-  Square,
-  MonitorPlay,
-  Flame,
-  Trash2,
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
-  ALargeSmall,
-  Undo2,
-  Redo2,
-  Paintbrush,
-  MoveUp,
-  MoveDown,
-  Bold,
-  Italic,
-  Underline,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  Copy as CopyIcon,
-  Lock,
-  Unlock,
-  Circle,
-  Minus,
-  Type,
-  Image as ImageIcon,
-  Sliders,
-  X,
-} from "lucide-react";
 import { toast } from "sonner";
 import { getImageUrl } from "@/api";
 import {
@@ -68,7 +26,10 @@ import {
   generatePresetBackgroundDataUrl,
   shouldInjectAssetForPost,
 } from "./canvas-templates";
-import type { InjectedAssetSpec, AssetRole, AssetTargetScope } from "@/api/types";
+import type { InjectedAssetSpec } from "@/api/types";
+import { CanvasLeftToolbar } from "./canvas/canvas-left-toolbar";
+import { CanvasAssetDrawer } from "./canvas/canvas-asset-drawer";
+import { CanvasBottomBar } from "./canvas/canvas-bottom-bar";
 
 export interface SocialPostCanvasProps {
   backgroundImageUrl?: string | null | undefined;
@@ -96,7 +57,6 @@ const FONT_FAMILIES = [
   "Arial, sans-serif",
   "Trebuchet MS, sans-serif",
 ];
-const FONT_FAMILY_LABELS = ["Inter", "Georgia", "Courier", "Arial", "Trebuchet"];
 
 export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
   backgroundImageUrl,
@@ -119,7 +79,6 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const assetFileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Injected asset state for live selective branding
   const [activeAsset, setActiveAsset] = useState<InjectedAssetSpec | null>(injectedAsset || null);
@@ -128,8 +87,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
   }, [injectedAsset]);
   const [showAssetModal, setShowAssetModal] = useState(false);
 
-  // ── Stable callback refs — updated every render so Fabric listeners
-  //    always call the latest prop version without triggering re-renders ──
+  // ── Stable callback refs: Fabric listeners never capture stale closures ──
   const onTitleChangeRef = useRef(onTitleChange);
   const onHookChangeRef = useRef(onHookChange);
   const onSummaryChangeRef = useRef(onSummaryChange);
@@ -137,22 +95,21 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
   useEffect(() => { onHookChangeRef.current = onHookChange; }, [onHookChange]);
   useEffect(() => { onSummaryChangeRef.current = onSummaryChange; }, [onSummaryChange]);
 
-  // ── Stable content refs — keep latest values of title/hook/bulletPoints
-  //    accessible inside renderCanvasComposition without adding them to its
-  //    dependency array. Changes to these values are handled by lightweight
-  //    in-place patch effects below, NOT by a full canvas rebuild. ──
+  // ── Stable content refs: always hold the latest text values ──
   const titleRef = useRef(title);
   const hookRef = useRef(hook);
   const bulletPointsRef = useRef<string[]>([]);
   useEffect(() => { titleRef.current = title; }, [title]);
   useEffect(() => { hookRef.current = hook; }, [hook]);
 
-  // Refs to named canvas text objects — updated in-place to avoid full rebuilds
+  // Refs to named canvas objects for lightweight in-place updates
   const titleObjRef = useRef<fabric.Textbox | null>(null);
   const hookObjRef = useRef<fabric.Textbox | null>(null);
   const bulletObjRefs = useRef<fabric.Textbox[]>([]);
+  const containerObjRef = useRef<fabric.Rect | null>(null);
+  const watermarkObjRef = useRef<fabric.Textbox | null>(null);
 
-  // Generation token: prevents stale async image-load from building on new canvas
+  // Generation token: prevents stale async image loads
   const renderGenerationRef = useRef<number>(0);
 
   const historyStackRef = useRef<string[]>([]);
@@ -174,7 +131,6 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
   const [showWatermark, setShowWatermark] = useState<boolean>(true);
 
   const [copied, setCopied] = useState(false);
-  const [, setIsReady] = useState(false);
   const [zoom, setZoom] = useState(0.65);
   const [bgLoading, setBgLoading] = useState(false);
   const [hasSelection, setHasSelection] = useState(false);
@@ -182,12 +138,8 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
   const [selectedColor, setSelectedColor] = useState<string>("#FFFFFF");
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
-
-  // Enhanced toolbar state
-  const [selectedFontFamily, setSelectedFontFamily] = useState<string>(FONT_FAMILIES[0]!);
-  const [selectedOpacity, setSelectedOpacity] = useState<number>(1);
   const [isLocked, setIsLocked] = useState<boolean>(false);
-  const [selectedAlign, setSelectedAlign] = useState<string>("left");
+  const [selectedAlign, setSelectedAlign] = useState<string>("center");
 
   useEffect(() => {
     if (backgroundImageUrl) {
@@ -205,7 +157,6 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     }
     return [];
   }, [summary]);
-  // Keep bulletPointsRef in sync with the memoized value
   useEffect(() => { bulletPointsRef.current = bulletPoints; }, [bulletPoints]);
 
   const currentDimensions = ASPECT_RATIOS[aspectRatioKey] ?? ASPECT_RATIOS["4:5"]!;
@@ -228,10 +179,6 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     }
   }, []);
 
-  /**
-   * Fetch an image URL and convert it to a blob: URL so Fabric.js can load it
-   * without any CORS restrictions.
-   */
   const loadImageAsDataUrl = useCallback(async (url: string): Promise<string> => {
     if (!url) return "";
     if (url.startsWith("data:") || url.startsWith("blob:")) return url;
@@ -282,24 +229,41 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     });
   }, []);
 
+  // Compute container fill based on opacity and theme
+  const getContainerFill = useCallback((op: string, theme: PostTheme, bg: string) => {
+    if (bg === "ai" || bg === "custom") {
+      if (op === "subtle") return "rgba(10, 15, 30, 0.40)";
+      if (op === "medium") return "rgba(10, 15, 30, 0.70)";
+      if (op === "none") return "rgba(0, 0, 0, 0.05)";
+      return theme.containerBg;
+    }
+    if (op === "subtle") return "rgba(10, 15, 30, 0.45)";
+    if (op === "none") return "rgba(0, 0, 0, 0.05)";
+    if (op === "medium") return "rgba(10, 15, 30, 0.70)";
+    return theme.containerBg;
+  }, []);
+
+  /**
+   * Complete canvas composition builder.
+   * Called on initial mount and when layout dimensions (aspect ratio) change.
+   */
   const renderCanvasComposition = useCallback(async () => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
-    // ── Generation token: invalidate any in-flight async resolutions ──
     renderGenerationRef.current += 1;
     const thisGeneration = renderGenerationRef.current;
 
-    // Reset named object refs each time we do a full rebuild
     titleObjRef.current = null;
     hookObjRef.current = null;
     bulletObjRefs.current = [];
+    containerObjRef.current = null;
+    watermarkObjRef.current = null;
 
     const { width, height } = currentDimensions;
     canvas.setWidth(width);
     canvas.setHeight(height);
 
-    // Flush all objects from Fabric's registry before clear
     canvas.getObjects().forEach((obj) => canvas.remove(obj));
     canvas.clear();
     canvas.discardActiveObject();
@@ -309,22 +273,10 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     const layout = computeAutoLayout(width, height, titleRef.current || "", bulletPointsRef.current.length, hasHeroInset);
 
     const buildForegroundLayers = () => {
-      // Guard: abort if canvas was replaced by a newer render
       if (renderGenerationRef.current !== thisGeneration) return;
       if (!fabricCanvasRef.current) return;
 
-      let containerFill = selectedTheme.containerBg;
-      if (bgSource === "ai" || bgSource === "custom") {
-        if (cardOpacity === "subtle") containerFill = "rgba(10, 15, 30, 0.40)";
-        else if (cardOpacity === "medium") containerFill = "rgba(10, 15, 30, 0.70)";
-        else if (cardOpacity === "none") containerFill = "rgba(0, 0, 0, 0.05)";
-        else containerFill = selectedTheme.containerBg;
-      } else {
-        if (cardOpacity === "subtle") containerFill = "rgba(10, 15, 30, 0.45)";
-        else if (cardOpacity === "none") containerFill = "rgba(0, 0, 0, 0.05)";
-        else if (cardOpacity === "medium") containerFill = "rgba(10, 15, 30, 0.70)";
-        else containerFill = selectedTheme.containerBg;
-      }
+      const containerFill = getContainerFill(cardOpacity, selectedTheme, bgSource);
 
       const container = new fabric.Rect({
         left: layout.horizontalMargin,
@@ -345,12 +297,14 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
           offsetY: 16,
         }),
       });
+      containerObjRef.current = container;
       canvas.add(container);
 
       const innerLeft = layout.horizontalMargin + 48;
       const innerWidth = layout.containerWidth - 96;
       let currentY = layout.topMargin + 48;
 
+      // Platform badge
       const badgeBg = new fabric.Rect({
         left: innerLeft,
         top: currentY,
@@ -380,7 +334,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
       });
       canvas.add(badgeText);
 
-      // ── LOGO INJECTION: Symmetrical Top-Right Placement ──
+      // Logo injection (top right)
       if (shouldInject && activeAsset?.url && (activeAsset.role === "logo" || activeAsset.role === "custom_sticker")) {
         fabric.Image.fromURL(
           activeAsset.url,
@@ -408,7 +362,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
 
       currentY += 56;
 
-      // ── TITLE: store ref, wire text:changed with stable ref callback ──
+      // Title Textbox
       const cleanCanvasTitle = (titleRef.current || "").replace(/^#+\s*/gm, "").replace(/\*\*(.*?)\*\*/g, "$1");
       const titleFab = new fabric.Textbox(cleanCanvasTitle, {
         left: innerLeft,
@@ -419,19 +373,16 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
         fontFamily: "Inter, -apple-system, sans-serif",
         fill: selectedTheme.titleColor,
         lineHeight: 1.25,
-        textAlign: "center",
+        textAlign: selectedAlign,
         editable: true,
         selectable: true,
         hoverCursor: "text",
-      });
-      titleFab.on("changed", () => {
-        if (onTitleChangeRef.current) onTitleChangeRef.current((titleFab as any).text || "");
       });
       titleObjRef.current = titleFab;
       canvas.add(titleFab);
       currentY += (titleFab.height || 60) + 16;
 
-      // ── HOOK: store ref, wire text:changed with stable ref callback ──
+      // Hook Textbox
       if (hookRef.current) {
         const cleanHook = (hookRef.current || "").replace(/^#+\s*/gm, "").replace(/\*\*(.*?)\*\*/g, "$1");
         const hookFab = new fabric.Textbox(`⚡ ${cleanHook}`, {
@@ -443,16 +394,10 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
           fontFamily: "Inter, -apple-system, sans-serif",
           fill: selectedTheme.hookColor,
           lineHeight: 1.35,
-          textAlign: "center",
+          textAlign: selectedAlign,
           editable: true,
           selectable: true,
           hoverCursor: "text",
-        });
-        hookFab.on("changed", () => {
-          if (onHookChangeRef.current) {
-            const raw: string = (hookFab as any).text || "";
-            onHookChangeRef.current(raw.replace(/^⚡\s*/, ""));
-          }
         });
         hookObjRef.current = hookFab;
         canvas.add(hookFab);
@@ -471,7 +416,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
       canvas.add(divider);
       currentY += 28;
 
-      // ── HERO INSET INJECTION: Centered Graphic with Auto Text-Reflow ──
+      // Hero Inset injection
       if (shouldInject && activeAsset?.url && activeAsset.role === "hero_inset") {
         fabric.Image.fromURL(
           activeAsset.url,
@@ -505,7 +450,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
         currentY += 240;
       }
 
-      // ── BULLETS: use real content, up to 7, fallback only when truly empty ──
+      // Bullet points
       const itemsToRender =
         bulletPointsRef.current.length > 0
           ? bulletPointsRef.current.slice(0, 7)
@@ -555,95 +500,88 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
           selectable: true,
           hoverCursor: "text",
         });
-        bulletContent.on("changed", () => {
-          if (onSummaryChangeRef.current) {
-            const updatedBullets = bulletObjRefs.current.map((b) => (b as any).text || "");
-            onSummaryChangeRef.current(updatedBullets);
-          }
-        });
         bulletObjRefs.current.push(bulletContent);
         canvas.add(bulletContent);
 
         currentY += Math.max(bulletContent.height || 36, 36) + layout.bulletSpacing;
       });
 
-      if (showWatermark) {
-        const footerY = layout.topMargin + layout.containerHeight - 48;
-        const footerTag = new fabric.Textbox(
-          `✨ Created with AIFlick  •  ${authorHandle}`,
-          {
-            fontSize: 14,
-            fontFamily: "Inter, sans-serif",
-            fontWeight: "500",
-            fill: selectedTheme.badgeTextColor,
-            left: innerLeft,
-            top: footerY,
-            width: innerWidth,
-            editable: true,
-            selectable: true,
-            hoverCursor: "text",
-          }
-        );
-        canvas.add(footerTag);
-
-        // ── AVATAR INJECTION: Creator Profile Circle Badge alongside Author Handle ──
-        if (shouldInject && activeAsset?.url && activeAsset.role === "avatar") {
-          fabric.Image.fromURL(
-            activeAsset.url,
-            (img) => {
-              if (renderGenerationRef.current !== thisGeneration) return;
-              if (!img || !img.width || !img.height) return;
-              const avatarSize = 38;
-              const scale = avatarSize / Math.min(img.width, img.height);
-              const avatarLeft = innerLeft;
-              const avatarTop = footerY - 9;
-
-              img.set({
-                scaleX: scale,
-                scaleY: scale,
-                originX: "center",
-                originY: "center",
-                left: avatarLeft + avatarSize / 2,
-                top: avatarTop + avatarSize / 2,
-                clipPath: new fabric.Circle({
-                  radius: (avatarSize / 2) / scale,
-                  originX: "center",
-                  originY: "center",
-                }),
-                selectable: true,
-                hoverCursor: "move",
-              });
-
-              const borderRing = new fabric.Circle({
-                radius: avatarSize / 2 + 1.5,
-                originX: "center",
-                originY: "center",
-                left: avatarLeft + avatarSize / 2,
-                top: avatarTop + avatarSize / 2,
-                fill: "transparent",
-                stroke: activeAsset.borderColor || selectedTheme.accentColor,
-                strokeWidth: activeAsset.borderWidth || 2,
-                selectable: false,
-                evented: false,
-              });
-
-              canvas.add(borderRing);
-              canvas.add(img);
-
-              // Shift footer text to the right of the avatar
-              footerTag.set({
-                left: avatarLeft + avatarSize + 12,
-                top: avatarTop + 10,
-              });
-              canvas.requestRenderAll();
-            },
-            { crossOrigin: "anonymous" }
-          );
+      // Watermark footer
+      const footerY = layout.topMargin + layout.containerHeight - 48;
+      const footerTag = new fabric.Textbox(
+        `✨ Created with AIFlick  •  ${authorHandle}`,
+        {
+          fontSize: 14,
+          fontFamily: "Inter, sans-serif",
+          fontWeight: "500",
+          fill: selectedTheme.badgeTextColor,
+          left: innerLeft,
+          top: footerY,
+          width: innerWidth,
+          visible: showWatermark,
+          editable: true,
+          selectable: true,
+          hoverCursor: "text",
         }
+      );
+      watermarkObjRef.current = footerTag;
+      canvas.add(footerTag);
+
+      // Avatar injection
+      if (shouldInject && activeAsset?.url && activeAsset.role === "avatar") {
+        fabric.Image.fromURL(
+          activeAsset.url,
+          (img) => {
+            if (renderGenerationRef.current !== thisGeneration) return;
+            if (!img || !img.width || !img.height) return;
+            const avatarSize = 38;
+            const scale = avatarSize / Math.min(img.width, img.height);
+            const avatarLeft = innerLeft;
+            const avatarTop = footerY - 9;
+
+            img.set({
+              scaleX: scale,
+              scaleY: scale,
+              originX: "center",
+              originY: "center",
+              left: avatarLeft + avatarSize / 2,
+              top: avatarTop + avatarSize / 2,
+              clipPath: new fabric.Circle({
+                radius: (avatarSize / 2) / scale,
+                originX: "center",
+                originY: "center",
+              }),
+              selectable: true,
+              hoverCursor: "move",
+            });
+
+            const borderRing = new fabric.Circle({
+              radius: avatarSize / 2 + 1.5,
+              originX: "center",
+              originY: "center",
+              left: avatarLeft + avatarSize / 2,
+              top: avatarTop + avatarSize / 2,
+              fill: "transparent",
+              stroke: activeAsset.borderColor || selectedTheme.accentColor,
+              strokeWidth: activeAsset.borderWidth || 2,
+              selectable: false,
+              evented: false,
+            });
+
+            canvas.add(borderRing);
+            canvas.add(img);
+
+            footerTag.set({
+              left: avatarLeft + avatarSize + 12,
+              top: avatarTop + 10,
+            });
+            canvas.requestRenderAll();
+          },
+          { crossOrigin: "anonymous" }
+        );
       }
 
       canvas.renderAll();
-      setIsReady(true);
       saveStateToHistory();
     };
 
@@ -665,7 +603,6 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
 
       setBgLoading(true);
       loadImageAsDataUrl(activeBgUrl).then((resolvedUrl) => {
-        // ── Generation guard: abort if this render is stale ──
         if (renderGenerationRef.current !== thisGeneration) {
           setBgLoading(false);
           return;
@@ -711,46 +648,24 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     customBgDataUrl,
     backgroundImageUrl,
     selectedTheme,
-    // title, hook, bulletPoints intentionally OMITTED — accessed via refs.
-    // Their changes are handled by lightweight in-place patch effects below.
+    selectedAlign,
     activeAsset,
     postNumber,
     totalPosts,
     saveStateToHistory,
     loadImageAsDataUrl,
+    getContainerFill,
   ]);
 
-  const handleAssetUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please upload a valid PNG, JPEG, SVG or WebP image");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (dataUrl) {
-        const newAsset: InjectedAssetSpec = {
-          id: `ast_${Date.now()}`,
-          name: file.name,
-          url: dataUrl,
-          role: activeAsset?.role || "avatar",
-          targetScope: activeAsset?.targetScope || "all",
-          cropShape: (activeAsset?.role || "avatar") === "avatar" ? "circle" : "original",
-          opacity: 1,
-        };
-        setActiveAsset(newAsset);
-        if (onInjectedAssetChange) onInjectedAssetChange(newAsset);
-        toast.success(`Asset "${file.name}" ready for post injection!`);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // ── Canvas initialization ──
+  // ── MOUNT FABRIC CANVAS STRICTLY ONCE ──
   useEffect(() => {
     if (!canvasRef.current) return;
+
+    // Direct Fabric's hiddenTextarea to append inside containerRef (inside DialogContent)
+    if (containerRef.current) {
+      (fabric.IText.prototype as any).hiddenTextareaContainer = containerRef.current;
+      (fabric.Textbox.prototype as any).hiddenTextareaContainer = containerRef.current;
+    }
 
     const fc = new fabric.Canvas(canvasRef.current, {
       preserveObjectStacking: true,
@@ -763,9 +678,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
       setHasSelection(Boolean(obj));
       if (obj) {
         if (obj.fontSize !== undefined) setSelectedFontSize(obj.fontSize);
-        if (obj.fill) setSelectedColor(obj.fill as string || "#FFFFFF");
-        if (obj.fontFamily) setSelectedFontFamily(obj.fontFamily || FONT_FAMILIES[0]!);
-        if (obj.opacity !== undefined) setSelectedOpacity(obj.opacity ?? 1);
+        if (obj.fill) setSelectedColor((obj.fill as string) || "#FFFFFF");
         if (obj.textAlign) setSelectedAlign(obj.textAlign || "left");
         setIsLocked(!!obj.lockMovementX && !!obj.lockMovementY);
       } else {
@@ -780,7 +693,38 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
       setSelectedFontSize(null);
     });
 
-    // ── Instant single-click text editing with immediate focus ──
+    // ── LIVE BIDIRECTIONAL TEXT SYNC: Every keystroke on canvas updates right menu in real-time ──
+    const syncCanvasTextToParent = (target: any) => {
+      if (!target) return;
+
+      if (target === titleObjRef.current) {
+        const newTitle = (target as fabric.Textbox).text || "";
+        titleRef.current = newTitle;
+        if (onTitleChangeRef.current) {
+          onTitleChangeRef.current(newTitle);
+        }
+      } else if (target === hookObjRef.current) {
+        const raw = (target as fabric.Textbox).text || "";
+        const newHook = raw.replace(/^⚡\s*/, "");
+        hookRef.current = newHook;
+        if (onHookChangeRef.current) {
+          onHookChangeRef.current(newHook);
+        }
+      } else if (bulletObjRefs.current.includes(target as fabric.Textbox)) {
+        const updatedBullets = bulletObjRefs.current.map((b) => (b as any).text || "");
+        bulletPointsRef.current = updatedBullets;
+        if (onSummaryChangeRef.current) {
+          onSummaryChangeRef.current(updatedBullets);
+        }
+      }
+      saveStateToHistory();
+    };
+
+    fc.on("text:changed", (opt: any) => {
+      syncCanvasTextToParent(opt.target);
+    });
+
+    // ── Click to enter text editing immediately ──
     fc.on("mouse:down", (opt) => {
       if (isSpaceDownRef.current) {
         isPanningRef.current = true;
@@ -789,23 +733,6 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
         fc.hoverCursor = "grabbing";
         opt.e.preventDefault();
         return;
-      }
-      const target = opt.target;
-      if (
-        target &&
-        target instanceof fabric.Textbox &&
-        (target as any).editable &&
-        !(target as any).isEditing
-      ) {
-        setTimeout(() => {
-          if (!isPanningRef.current && fc.getActiveObject() === target) {
-            target.enterEditing();
-            if ((target as any).hiddenTextarea) {
-              (target as any).hiddenTextarea.focus();
-            }
-            fc.renderAll();
-          }
-        }, 50);
       }
     });
 
@@ -820,20 +747,34 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
       }
     });
 
-    fc.on("mouse:up", () => {
+    fc.on("mouse:up", (opt) => {
       if (isPanningRef.current) {
         isPanningRef.current = false;
         panStartRef.current = null;
         fc.defaultCursor = "default";
         fc.hoverCursor = "move";
+        return;
+      }
+      const target = opt.target;
+      if (
+        target &&
+        target instanceof fabric.Textbox &&
+        (target as any).editable
+      ) {
+        if (!(target as any).isEditing) {
+          target.enterEditing(opt.e);
+          if ((target as any).hiddenTextarea) {
+            (target as any).hiddenTextarea.focus();
+          }
+          fc.renderAll();
+        }
       }
     });
 
-    // Double-click always selects all text for fast total replacement
     fc.on("mouse:dblclick", (opt) => {
       const target = opt.target;
       if (target && target instanceof fabric.Textbox && (target as any).editable) {
-        target.enterEditing();
+        target.enterEditing(opt.e);
         target.selectAll();
         if ((target as any).hiddenTextarea) {
           (target as any).hiddenTextarea.focus();
@@ -848,7 +789,6 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
       const active = fc.getActiveObject() as any;
       const isEditingText = active && active.isEditing;
 
-      // Space key activates pan mode
       if (e.code === "Space" && !isEditingText) {
         isSpaceDownRef.current = true;
         fc.defaultCursor = "grab";
@@ -875,7 +815,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
         }
       }
 
-      // Ctrl+D to duplicate
+      // Duplicate
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d" && !isEditingText) {
         e.preventDefault();
         const activeObjs = fc.getActiveObjects();
@@ -893,33 +833,43 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
         return;
       }
 
-      // If active object is a Textbox and not yet editing, handle keyboard typing/backspace
+      // Keystroke in active textbox
       if (active && active instanceof fabric.Textbox && active.editable && !isEditingText) {
         if (e.key === "Backspace" || e.key === "Delete") {
           e.preventDefault();
           active.enterEditing();
-          if (active.hiddenTextarea) {
-            active.hiddenTextarea.focus();
-          }
           const cur = active.text || "";
           if (cur.length > 0) {
-            active.set("text", cur.slice(0, -1));
+            const nextText = cur.slice(0, -1);
+            active.set("text", nextText);
+            if (active.hiddenTextarea) {
+              active.hiddenTextarea.value = nextText;
+              active.hiddenTextarea.focus();
+            }
             fc.renderAll();
             active.fire("changed");
+            syncCanvasTextToParent(active);
           }
           return;
         }
 
         if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          e.preventDefault();
           active.enterEditing();
+          const nextText = (active.text || "") + e.key;
+          active.set("text", nextText);
           if (active.hiddenTextarea) {
+            active.hiddenTextarea.value = nextText;
             active.hiddenTextarea.focus();
           }
+          fc.renderAll();
+          active.fire("changed");
+          syncCanvasTextToParent(active);
           return;
         }
       }
 
-      // Delete/Backspace only deletes non-textbox objects (shapes, images)
+      // Only delete non-textbox objects (shapes, images)
       if ((e.key === "Delete" || e.key === "Backspace") && !isEditingText) {
         const activeObjs = fc.getActiveObjects();
         const nonTextObjs = activeObjs.filter((obj) => !(obj instanceof fabric.Textbox));
@@ -945,6 +895,8 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
+
+    // Initial render
     renderCanvasComposition();
 
     return () => {
@@ -953,9 +905,44 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
       fc.dispose();
       fabricCanvasRef.current = null;
     };
-  }, [renderCanvasComposition, redo, undo, saveStateToHistory]);
+  }, []); // Run ONCE on mount!
 
-  // ── Lightweight title updater: patch the title Fabric object in-place ──
+  // Re-render composition when aspect ratio or active injected asset changes
+  useEffect(() => {
+    if (fabricCanvasRef.current) {
+      renderCanvasComposition();
+    }
+  }, [aspectRatioKey, activeAsset]);
+
+  // ── IN-PLACE NON-DESTRUCTIVE STYLE UPDATES (Never destroys user edits!) ──
+
+  // 1. Watermark Toggle
+  useEffect(() => {
+    const wm = watermarkObjRef.current;
+    const canvas = fabricCanvasRef.current;
+    if (!wm || !canvas) return;
+    wm.set("visible", showWatermark);
+    canvas.renderAll();
+  }, [showWatermark]);
+
+  // 2. Card Opacity
+  useEffect(() => {
+    const container = containerObjRef.current;
+    const canvas = fabricCanvasRef.current;
+    if (!container || !canvas) return;
+    const fill = getContainerFill(cardOpacity, selectedTheme, bgSource);
+    container.set("fill", fill);
+    canvas.renderAll();
+  }, [cardOpacity, selectedTheme, bgSource, getContainerFill]);
+
+  // 3. Solid Background Color
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || bgSource !== "solid") return;
+    canvas.setBackgroundColor(solidColor, () => canvas.renderAll());
+  }, [solidColor, bgSource]);
+
+  // 4. In-Place Title update from side panel
   useEffect(() => {
     const obj = titleObjRef.current;
     const canvas = fabricCanvasRef.current;
@@ -967,7 +954,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     }
   }, [title]);
 
-  // ── Lightweight hook updater: patch the hook Fabric object in-place ──
+  // 5. In-Place Hook update from side panel
   useEffect(() => {
     const obj = hookObjRef.current;
     const canvas = fabricCanvasRef.current;
@@ -980,7 +967,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     }
   }, [hook]);
 
-  // ── Lightweight bullet updater: patch bullet Fabric objects in-place ──
+  // 6. In-Place Bullet points update from side panel
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas || bulletObjRefs.current.length === 0) return;
@@ -994,7 +981,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     canvas.renderAll();
   }, [bulletPoints]);
 
-  // ── Enhanced toolbar handlers ──
+  // ── Action Handlers ──
 
   const handleDeleteSelected = () => {
     const canvas = fabricCanvasRef.current;
@@ -1029,7 +1016,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     canvas.setActiveObject(newText);
     canvas.renderAll();
     saveStateToHistory();
-    toast.success("New text added — click to select, click again to edit");
+    toast.success("New text added");
   };
 
   const handleAddShape = (shape: "rect" | "circle" | "line") => {
@@ -1134,16 +1121,6 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     saveStateToHistory();
   };
 
-  const handleToggleUnderline = () => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    const obj = canvas.getActiveObject() as any;
-    if (!obj || obj.fontSize === undefined) return;
-    obj.set("underline", !obj.underline);
-    canvas.renderAll();
-    saveStateToHistory();
-  };
-
   const handleTextAlign = (align: string) => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
@@ -1158,39 +1135,6 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     canvas.renderAll();
     saveStateToHistory();
     toast.success(`Text alignment: ${align}`);
-  };
-
-  const handleFontFamily = (family: string) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    const obj = canvas.getActiveObject() as any;
-    if (!obj || obj.fontSize === undefined) return;
-    obj.set("fontFamily", family);
-    setSelectedFontFamily(family);
-    canvas.renderAll();
-    saveStateToHistory();
-  };
-
-  const handleOpacityChange = (val: number) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    const obj = canvas.getActiveObject() as any;
-    if (!obj) return;
-    obj.set("opacity", val);
-    setSelectedOpacity(val);
-    canvas.renderAll();
-    saveStateToHistory();
-  };
-
-  const handleLineHeightChange = (delta: number) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    const obj = canvas.getActiveObject() as any;
-    if (!obj || obj.lineHeight === undefined) return;
-    const newLH = Math.max(0.8, Math.min(3.0, (obj.lineHeight || 1.3) + delta));
-    obj.set("lineHeight", Math.round(newLH * 10) / 10);
-    canvas.renderAll();
-    saveStateToHistory();
   };
 
   const handleFontSizeChange = (delta: number) => {
@@ -1216,26 +1160,6 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
     saveStateToHistory();
   };
 
-  const handleBringForward = () => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    const obj = canvas.getActiveObject();
-    if (!obj) return;
-    canvas.bringForward(obj);
-    canvas.renderAll();
-    saveStateToHistory();
-  };
-
-  const handleSendBackward = () => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    const obj = canvas.getActiveObject();
-    if (!obj) return;
-    canvas.sendBackwards(obj);
-    canvas.renderAll();
-    saveStateToHistory();
-  };
-
   const handleCustomUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1249,7 +1173,7 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
       if (dataUrl) {
         setCustomBgDataUrl(dataUrl);
         setBgSource("custom");
-        toast.success("Custom background loaded into studio!");
+        toast.success("Custom background applied");
       }
     };
     reader.readAsDataURL(file);
@@ -1258,33 +1182,41 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
   const handleDownload = () => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
+
     try {
-      const dataUrl = canvas.toDataURL({ format: "png", multiplier: 1, quality: 1 });
-      const a = document.createElement("a");
-      a.href = dataUrl;
-      a.download = `aiflick-${platform || "post"}-${aspectRatioKey.replace(":", "-")}.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      toast.success("High-resolution graphic downloaded!");
+      const dataUrl = canvas.toDataURL({
+        format: "png",
+        quality: 1,
+        multiplier: 2,
+      });
+
+      const link = document.createElement("a");
+      const safeTitle = (titleRef.current || "post").slice(0, 30).replace(/[^a-zA-Z0-9_-]/g, "_");
+      link.download = `aiflick_${safeTitle}_${aspectRatioKey.replace(":", "-")}.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Post image downloaded!");
     } catch {
-      toast.error("Could not export image.");
+      toast.error("Failed to export image");
     }
   };
 
   const handleCopyToClipboard = async () => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
+
     try {
-      canvas.renderAll();
-      const canvasElem = canvas.getElement();
-      canvasElem.toBlob(async (blob) => {
-        if (!blob) throw new Error("Blob error");
-        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-        setCopied(true);
-        toast.success("Graphic copied to clipboard!");
-        setTimeout(() => setCopied(false), 2000);
-      });
+      const dataUrl = canvas.toDataURL({ format: "png", quality: 1, multiplier: 2 });
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": blob }),
+      ]);
+      setCopied(true);
+      toast.success("Graphic copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error("Clipboard copy not supported in this browser");
     }
@@ -1294,739 +1226,120 @@ export const SocialPostCanvas: React.FC<SocialPostCanvasProps> = ({
   const canvasDisplayHeight = currentDimensions.height * zoom;
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* ── Sticky Top Editing Controls Dock: Pinned statically so user never has to scroll up ── */}
-      <div className="sticky -top-5 z-20 flex flex-col gap-2 rounded-2xl border border-white/15 bg-[#0B1535]/95 p-2 shadow-2xl backdrop-blur-2xl">
-        {/* ── Toolbar Row 1: Ratio + Themes + Glass Card + Background ── */}
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 bg-surface-raised/70 p-2.5 backdrop-blur-md">
-          <div className="flex items-center gap-1">
-          <span className="text-[11px] font-semibold text-muted-foreground mr-1">Ratio:</span>
-          {Object.entries(ASPECT_RATIOS).map(([key, dim]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setAspectRatioKey(key)}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
-                aspectRatioKey === key
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-secondary/60 text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {key === "4:5" && <Smartphone className="size-3" />}
-              {key === "1:1" && <Square className="size-3" />}
-              {key === "16:9" && <MonitorPlay className="size-3" />}
-              {key === "9:16" && <Flame className="size-3" />}
-              {dim.badgeRatio}
-            </button>
-          ))}
-        </div>
+    <div className="flex flex-col gap-3 w-full">
+      {/* Hidden File Input for Custom Background */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleCustomUpload}
+      />
 
-        <div className="flex items-center gap-1.5">
-          <Palette className="size-3.5 text-muted-foreground" />
-          <div className="flex items-center gap-1">
-            {PRESET_THEMES.map((theme) => (
-              <button
-                key={theme.id}
-                type="button"
-                onClick={() => {
-                  setSelectedTheme(theme);
-                  setBgSource("preset");
-                }}
-                title={theme.name}
-                className={`relative size-5 rounded-full border transition-all ${
-                  selectedTheme.id === theme.id && bgSource === "preset"
-                    ? "ring-2 ring-primary ring-offset-1 ring-offset-background scale-110 border-white"
-                    : "border-border/60 opacity-80 hover:opacity-100"
-                }`}
+      {/* Branded Asset / Graphic Injection Drawer */}
+      <CanvasAssetDrawer
+        open={showAssetModal}
+        onClose={() => setShowAssetModal(false)}
+        activeAsset={activeAsset}
+        setActiveAsset={setActiveAsset}
+        onInjectedAssetChange={onInjectedAssetChange}
+        postNumber={postNumber}
+        totalPosts={totalPosts}
+      />
+
+      {/* Main Studio Area: Left Vertical Toolbar + Center Canvas Preview */}
+      <div className="flex flex-row gap-3 items-start w-full">
+        {/* ── Left-Side Vertical Editing Dock ── */}
+        <CanvasLeftToolbar
+          aspectRatioKey={aspectRatioKey}
+          setAspectRatioKey={setAspectRatioKey}
+          selectedTheme={selectedTheme}
+          setSelectedTheme={setSelectedTheme}
+          cardOpacity={cardOpacity}
+          setCardOpacity={setCardOpacity}
+          bgSource={bgSource}
+          setBgSource={setBgSource}
+          solidColor={solidColor}
+          setSolidColor={setSolidColor}
+          backgroundImageUrl={backgroundImageUrl}
+          activeAsset={activeAsset}
+          onOpenAssetDrawer={() => setShowAssetModal((v) => !v)}
+          onUploadCustomBg={() => fileInputRef.current?.click()}
+          onAddText={handleAddText}
+          onAddShape={handleAddShape}
+          onDuplicate={handleDuplicateSelected}
+          onDelete={handleDeleteSelected}
+          onToggleLock={handleToggleLock}
+          isLocked={isLocked}
+          hasSelection={hasSelection}
+          onToggleBold={handleToggleBold}
+          onToggleItalic={handleToggleItalic}
+          selectedAlign={selectedAlign}
+          onTextAlign={handleTextAlign}
+          selectedFontSize={selectedFontSize}
+          onFontSizeChange={handleFontSizeChange}
+          selectedColor={selectedColor}
+          onTextColorChange={handleTextColorChange}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={undo}
+          onRedo={redo}
+          showWatermark={showWatermark}
+          onToggleWatermark={() => setShowWatermark((v) => !v)}
+        />
+
+        {/* ── Center Canvas Viewport & Bottom Action Bar ── */}
+        <div className="flex-1 flex flex-col items-center min-w-0 w-full gap-3">
+          <div
+            ref={containerRef}
+            className="relative flex min-h-[560px] w-full items-center justify-center overflow-auto rounded-2xl border border-border/70 bg-[#070B1A]/80 p-6 shadow-inner"
+          >
+            <div
+              className="relative overflow-hidden rounded-xl shadow-2xl shrink-0"
+              style={{
+                width: canvasDisplayWidth,
+                height: canvasDisplayHeight,
+              }}
+            >
+              <div
                 style={{
-                  background: `linear-gradient(135deg, ${theme.bgGradient[0]}, ${theme.accentColor})`,
+                  transform: `scale(${zoom})`,
+                  transformOrigin: "top left",
+                  width: currentDimensions.width,
+                  height: currentDimensions.height,
                 }}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <span className="text-[11px] font-semibold text-muted-foreground mr-1">Glass Card:</span>
-          {(["subtle", "medium", "solid", "none"] as const).map((op) => (
-            <button
-              key={op}
-              type="button"
-              onClick={() => setCardOpacity(op)}
-              className={`rounded-lg px-2 py-1 text-[11px] font-medium capitalize transition-all ${
-                cardOpacity === op
-                  ? "bg-primary text-primary-foreground font-semibold"
-                  : "bg-secondary/60 text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {op === "none" ? "Clear" : op}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-1">
-          {backgroundImageUrl && (
-            <button
-              type="button"
-              onClick={() => setBgSource("ai")}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
-                bgSource === "ai"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary/60 text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Sparkles className="size-3" /> AI Art
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
-              bgSource === "custom"
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary/60 text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Upload className="size-3" /> Upload
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleCustomUpload}
-          />
-
-          <button
-            type="button"
-            onClick={() => setBgSource("solid")}
-            className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
-              bgSource === "solid"
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary/60 text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Paintbrush className="size-3" /> Solid Color
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setBgSource("preset")}
-            className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
-              bgSource === "preset"
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary/60 text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Layers className="size-3" /> Preset
-          </button>
-
-          {/* Branded Asset / Logo / Inset Controls */}
-          <button
-            type="button"
-            onClick={() => setShowAssetModal((v) => !v)}
-            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
-              activeAsset
-                ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                : "bg-secondary/60 text-muted-foreground hover:text-foreground border border-transparent"
-            }`}
-          >
-            <ImageIcon className="size-3 text-amber-400" />
-            {activeAsset ? (
-              <span className="flex items-center gap-1 font-semibold">
-                {activeAsset.role === "avatar" ? "👤 Avatar" : activeAsset.role === "logo" ? "🏷️ Logo" : "🖼️ Inset"}
-                <span className="text-[10px] opacity-75 font-mono">({activeAsset.targetScope})</span>
-              </span>
-            ) : (
-              "Insert Asset"
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Branded Asset / Image Injection Drawer ── */}
-      {showAssetModal && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-border/80 bg-surface-raised/95 p-4 shadow-xl backdrop-blur-xl animate-in fade-in-50">
-          <div className="flex items-center justify-between border-b border-border/60 pb-2">
-            <div className="flex items-center gap-2">
-              <ImageIcon className="size-4 text-primary" />
-              <span className="text-xs font-bold text-foreground">Post Graphic & Brand Asset Module</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowAssetModal(false)}
-              className="rounded-lg p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
-            >
-              <X className="size-4" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-            {/* 1. Upload or Change Image */}
-            <div className="flex flex-col gap-1.5">
-              <span className="font-semibold text-muted-foreground">1. Custom Image / Graphic</span>
-              <button
-                type="button"
-                onClick={() => assetFileInputRef.current?.click()}
-                className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-primary/50 bg-primary/5 px-3 py-3 text-primary font-medium hover:bg-primary/10 transition-colors"
               >
-                <Upload className="size-3.5" />
-                {activeAsset ? "Replace Image File" : "Upload Picture (PNG/JPG)"}
-              </button>
-              <input
-                ref={assetFileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAssetUpload}
-              />
-              {activeAsset && (
-                <span className="text-[11px] text-muted-foreground truncate">
-                  Attached: {activeAsset.name}
-                </span>
-              )}
-            </div>
-
-            {/* 2. Semantic Role */}
-            <div className="flex flex-col gap-1.5">
-              <span className="font-semibold text-muted-foreground">2. Graphic Role & Styling</span>
-              <div className="grid grid-cols-2 gap-1.5">
-                {(
-                  [
-                    { id: "avatar", label: "👤 Avatar Ring" },
-                    { id: "logo", label: "🏷️ Top Logo" },
-                    { id: "hero_inset", label: "🖼️ Inset Card" },
-                    { id: "custom_sticker", label: "✨ Sticker" },
-                  ] as const
-                ).map((r) => (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => {
-                      if (!activeAsset) return;
-                      const updated: InjectedAssetSpec = {
-                        ...activeAsset,
-                        role: r.id as AssetRole,
-                        cropShape: r.id === "avatar" ? "circle" : "original",
-                      };
-                      setActiveAsset(updated);
-                      if (onInjectedAssetChange) onInjectedAssetChange(updated);
-                    }}
-                    className={`rounded-lg px-2 py-1.5 text-[11px] font-medium transition-all ${
-                      activeAsset?.role === r.id
-                        ? "bg-primary text-primary-foreground font-semibold shadow-sm"
-                        : "bg-secondary/60 text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
+                <canvas ref={canvasRef} />
               </div>
-            </div>
 
-            {/* 3. Selective Targeting */}
-            <div className="flex flex-col gap-1.5">
-              <span className="font-semibold text-muted-foreground">3. Selective Post Placement</span>
-              <div className="grid grid-cols-3 gap-1.5">
-                {(
-                  [
-                    { id: "all", label: "✅ All Posts" },
-                    { id: "custom", label: "🎯 Custom" },
-                    { id: "none", label: "🚫 None" },
-                  ] as const
-                ).map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => {
-                      if (!activeAsset) return;
-                      const updated: InjectedAssetSpec = {
-                        ...activeAsset,
-                        targetScope: s.id as AssetTargetScope,
-                      };
-                      setActiveAsset(updated);
-                      if (onInjectedAssetChange) onInjectedAssetChange(updated);
-                    }}
-                    className={`rounded-lg px-2 py-1.5 text-[11px] font-medium transition-all ${
-                      activeAsset?.targetScope === s.id
-                        ? "bg-primary text-primary-foreground font-semibold shadow-sm"
-                        : "bg-secondary/60 text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-              {activeAsset?.targetScope === "custom" && (
-                <div className="flex flex-col gap-1 pt-1">
-                  <span className="text-[10px] text-muted-foreground">Post numbers (comma-separated, e.g. 1,3,5):</span>
-                  <input
-                    type="text"
-                    placeholder="e.g. 1,3,5"
-                    defaultValue={activeAsset?.customPostNumbers?.join(",") || ""}
-                    onBlur={(e) => {
-                      if (!activeAsset) return;
-                      const nums = e.target.value
-                        .split(",")
-                        .map((n) => parseInt(n.trim(), 10))
-                        .filter((n) => !isNaN(n) && n > 0);
-                      const updated: InjectedAssetSpec = { ...activeAsset, customPostNumbers: nums };
-                      setActiveAsset(updated);
-                      if (onInjectedAssetChange) onInjectedAssetChange(updated);
-                    }}
-                    className="rounded-lg border border-border/60 bg-secondary/40 px-2 py-1 text-[11px] text-foreground placeholder:text-muted-foreground/50"
-                  />
+              {/* AI background loading overlay */}
+              {bgLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-xl bg-black/60 backdrop-blur-sm">
+                  <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  <span className="text-[11px] font-medium text-white/80">
+                    Loading AI background…
+                  </span>
                 </div>
               )}
             </div>
+
+            <div className="pointer-events-none absolute bottom-3 left-4 rounded-md bg-black/75 px-3 py-1 text-[10px] font-medium text-slate-400 backdrop-blur-md">
+              Click text to edit • Space + drag to pan • Ctrl+Z Undo
+            </div>
           </div>
 
-          {activeAsset && (
-            <div className="flex items-center justify-between border-t border-border/60 pt-2">
-              <span className="text-[11px] text-muted-foreground">
-                Status: Rendered on {shouldInjectAssetForPost(activeAsset, postNumber ?? 1, totalPosts ?? 5) ? `Post #${postNumber} (Active)` : `Other posts only (${activeAsset.targetScope})`}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveAsset(null);
-                  if (onInjectedAssetChange) onInjectedAssetChange(null);
-                  setShowAssetModal(false);
-                  toast.info("Branded asset removed from canvas");
-                }}
-                className="flex items-center gap-1 text-[11px] text-rose-400 hover:text-rose-300"
-              >
-                <Trash2 className="size-3" /> Remove Asset
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {bgSource === "solid" && (
-        <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-surface-raised/50 px-3 py-1.5 text-xs">
-          <span className="text-muted-foreground font-medium">Custom Solid Color:</span>
-          <input
-            type="color"
-            value={solidColor}
-            onChange={(e) => setSolidColor(e.target.value)}
-            className="size-6 cursor-pointer rounded border border-border/60 bg-transparent"
+          {/* Bottom Action Bar */}
+          <CanvasBottomBar
+            zoom={zoom}
+            setZoom={setZoom}
+            zoomLevels={ZOOM_LEVELS}
+            onRegenerateBg={onRegenerateBg}
+            isGeneratingBg={isGeneratingBg}
+            onResetLayout={renderCanvasComposition}
+            onCopyToClipboard={handleCopyToClipboard}
+            copied={copied}
+            onDownload={handleDownload}
           />
-          <span className="font-mono text-[11px] text-muted-foreground">{solidColor}</span>
-        </div>
-      )}
-
-      {/* ── Toolbar Row 2: Edit Tools ── */}
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border/70 bg-surface-raised/70 px-3 py-2">
-        {/* Undo / Redo */}
-        <div className="flex items-center gap-0.5 border-r border-border/60 pr-2">
-          <button
-            type="button"
-            onClick={undo}
-            disabled={!canUndo}
-            title="Undo (Ctrl+Z)"
-            className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30"
-          >
-            <Undo2 className="size-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={redo}
-            disabled={!canRedo}
-            title="Redo (Ctrl+Y)"
-            className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30"
-          >
-            <Redo2 className="size-3.5" />
-          </button>
-        </div>
-
-        {/* Add: Text / Shapes */}
-        <button
-          type="button"
-          onClick={handleAddText}
-          className="flex items-center gap-1 rounded-lg border border-border/70 bg-secondary/60 px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-secondary transition-colors"
-        >
-          <Type className="size-3.5" /> Text
-        </button>
-
-        {/* Shape group */}
-        <div className="flex items-center gap-0.5 border border-border/60 rounded-lg overflow-hidden">
-          <button
-            type="button"
-            onClick={() => handleAddShape("rect")}
-            title="Add Rectangle"
-            className="flex items-center justify-center px-2 py-1.5 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
-          >
-            <Square className="size-3" />
-          </button>
-          <button
-            type="button"
-            onClick={() => handleAddShape("circle")}
-            title="Add Circle"
-            className="flex items-center justify-center px-2 py-1.5 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
-          >
-            <Circle className="size-3" />
-          </button>
-          <button
-            type="button"
-            onClick={() => handleAddShape("line")}
-            title="Add Line"
-            className="flex items-center justify-center px-2 py-1.5 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
-          >
-            <Minus className="size-3" />
-          </button>
-        </div>
-
-        {/* Duplicate */}
-        <button
-          type="button"
-          onClick={handleDuplicateSelected}
-          disabled={!hasSelection}
-          title="Duplicate (Ctrl+D)"
-          className="flex items-center gap-1 rounded-lg border border-border/70 bg-secondary/60 px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-secondary transition-colors disabled:opacity-30"
-        >
-          <CopyIcon className="size-3.5" /> Dup.
-        </button>
-
-        {/* Delete */}
-        <button
-          type="button"
-          onClick={handleDeleteSelected}
-          disabled={!hasSelection}
-          className="flex items-center gap-1 rounded-lg border border-destructive/40 bg-destructive/10 px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20 transition-colors disabled:opacity-30"
-          title="Delete selected (Delete / Backspace)"
-        >
-          <Trash2 className="size-3.5" /> Del.
-        </button>
-
-        {/* Lock / Unlock */}
-        <button
-          type="button"
-          onClick={handleToggleLock}
-          disabled={!hasSelection}
-          title={isLocked ? "Unlock object" : "Lock object"}
-          className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all disabled:opacity-30 ${
-            isLocked
-              ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
-              : "border-border/60 bg-secondary/40 text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {isLocked ? <Lock className="size-3.5" /> : <Unlock className="size-3.5" />}
-        </button>
-
-        {/* Divider */}
-        <div className="h-6 w-px bg-border/60" />
-
-        {/* Text formatting: Bold, Italic, Underline */}
-        <div className="flex items-center gap-0.5">
-          <button
-            type="button"
-            onClick={handleToggleBold}
-            disabled={!hasSelection || selectedFontSize === null}
-            title="Bold"
-            className="flex size-7 items-center justify-center rounded text-xs font-bold text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30"
-          >
-            <Bold className="size-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={handleToggleItalic}
-            disabled={!hasSelection || selectedFontSize === null}
-            title="Italic"
-            className="flex size-7 items-center justify-center rounded text-xs text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30"
-          >
-            <Italic className="size-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={handleToggleUnderline}
-            disabled={!hasSelection || selectedFontSize === null}
-            title="Underline"
-            className="flex size-7 items-center justify-center rounded text-xs text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30"
-          >
-            <Underline className="size-3.5" />
-          </button>
-        </div>
-
-        {/* Alignment */}
-        <div className="flex items-center gap-0.5">
-          {[
-            { align: "left", Icon: AlignLeft },
-            { align: "center", Icon: AlignCenter },
-            { align: "right", Icon: AlignRight },
-          ].map(({ align, Icon }) => (
-            <button
-              key={align}
-              type="button"
-              onClick={() => handleTextAlign(align)}
-              title={`Align ${align}`}
-              className={`flex size-7 items-center justify-center rounded text-xs transition-all ${
-                selectedAlign === align
-                  ? "bg-primary/20 text-primary ring-1 ring-primary/40"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-              }`}
-            >
-              <Icon className="size-3.5" />
-            </button>
-          ))}
-        </div>
-
-        {/* Divider */}
-        <div className="h-6 w-px bg-border/60" />
-
-        {/* Font Size */}
-        <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-secondary/40 px-2 py-1">
-          <ALargeSmall className="size-3.5 text-muted-foreground" />
-          <button
-            type="button"
-            onClick={() => handleFontSizeChange(-2)}
-            disabled={!hasSelection || selectedFontSize === null}
-            className="size-5 flex items-center justify-center rounded text-xs font-bold text-muted-foreground hover:text-foreground disabled:opacity-30"
-          >
-            –
-          </button>
-          <span className="text-[11px] font-mono text-muted-foreground w-6 text-center">
-            {selectedFontSize ?? "--"}
-          </span>
-          <button
-            type="button"
-            onClick={() => handleFontSizeChange(2)}
-            disabled={!hasSelection || selectedFontSize === null}
-            className="size-5 flex items-center justify-center rounded text-xs font-bold text-muted-foreground hover:text-foreground disabled:opacity-30"
-          >
-            +
-          </button>
-        </div>
-
-        {/* Line Height */}
-        <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-secondary/40 px-2 py-1">
-          <span className="text-[10px] text-muted-foreground font-mono">LH</span>
-          <button
-            type="button"
-            onClick={() => handleLineHeightChange(-0.1)}
-            disabled={!hasSelection || selectedFontSize === null}
-            className="size-5 flex items-center justify-center rounded text-xs font-bold text-muted-foreground hover:text-foreground disabled:opacity-30"
-          >
-            –
-          </button>
-          <button
-            type="button"
-            onClick={() => handleLineHeightChange(0.1)}
-            disabled={!hasSelection || selectedFontSize === null}
-            className="size-5 flex items-center justify-center rounded text-xs font-bold text-muted-foreground hover:text-foreground disabled:opacity-30"
-          >
-            +
-          </button>
-        </div>
-
-        {/* Color */}
-        <div className="flex items-center gap-1.5 pl-1">
-          <span className="text-xs text-muted-foreground">Color:</span>
-          <input
-            type="color"
-            value={selectedColor}
-            onChange={(e) => handleTextColorChange(e.target.value)}
-            disabled={!hasSelection}
-            className="size-6 rounded cursor-pointer border border-border/60 bg-transparent disabled:opacity-30"
-            title="Text / fill color"
-          />
-        </div>
-
-        {/* Opacity */}
-        <div className="flex items-center gap-1.5 pl-1">
-          <span className="text-[10px] text-muted-foreground font-mono">Opacity:</span>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.05}
-            value={selectedOpacity}
-            onChange={(e) => handleOpacityChange(parseFloat(e.target.value))}
-            disabled={!hasSelection}
-            className="w-16 accent-primary disabled:opacity-30"
-            title="Object opacity"
-          />
-          <span className="text-[10px] font-mono text-muted-foreground w-7">
-            {Math.round(selectedOpacity * 100)}%
-          </span>
-        </div>
-
-        {/* Font Family Picker */}
-        <div className="flex items-center gap-1">
-          <span className="text-[10px] text-muted-foreground font-mono">Font:</span>
-          <select
-            value={selectedFontFamily}
-            onChange={(e) => handleFontFamily(e.target.value)}
-            disabled={!hasSelection || selectedFontSize === null}
-            className="rounded-lg border border-border/60 bg-secondary/60 px-1.5 py-1 text-[11px] text-foreground disabled:opacity-30"
-            title="Font family"
-          >
-            {FONT_FAMILIES.map((f, i) => (
-              <option key={f} value={f}>
-                {FONT_FAMILY_LABELS[i]}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Layer Order */}
-        <div className="flex items-center gap-1 pl-1 border-l border-border/60">
-          <button
-            type="button"
-            onClick={handleBringForward}
-            disabled={!hasSelection}
-            className="flex items-center gap-0.5 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30"
-            title="Bring Forward"
-          >
-            <MoveUp className="size-3" /> Up
-          </button>
-          <button
-            type="button"
-            onClick={handleSendBackward}
-            disabled={!hasSelection}
-            className="flex items-center gap-0.5 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground disabled:opacity-30"
-            title="Send Backward"
-          >
-            <MoveDown className="size-3" /> Down
-          </button>
-        </div>
-
-        {/* Watermark toggle */}
-        <button
-          type="button"
-          onClick={() => setShowWatermark((prev) => !prev)}
-          className={`flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all ${
-            showWatermark
-              ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 font-medium"
-              : "border-border/60 bg-secondary/40 text-muted-foreground hover:text-foreground"
-          }`}
-          title="Toggle AIFlick footer watermark on/off"
-        >
-          <Sparkles className="size-3" /> WM: {showWatermark ? "ON" : "OFF"}
-        </button>
-
-        <div className="flex-1" />
-
-        {/* Zoom Controls */}
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => {
-              const prev = [...ZOOM_LEVELS].reverse().find((z) => z < zoom) ?? ZOOM_LEVELS[0]!;
-              setZoom(prev);
-            }}
-            className="flex size-7 items-center justify-center rounded border border-border/60 bg-secondary/40 text-muted-foreground hover:text-foreground"
-            title="Zoom Out"
-          >
-            <ZoomOut className="size-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setZoom(0.65)}
-            className="flex items-center justify-center rounded border border-border/60 bg-secondary/40 px-2.5 py-1 text-xs font-mono text-muted-foreground hover:text-foreground"
-            title="Fit to Screen"
-          >
-            <Maximize2 className="size-3 mr-1" />
-            {Math.round(zoom * 100)}%
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              const next = ZOOM_LEVELS.find((z) => z > zoom) ?? ZOOM_LEVELS[ZOOM_LEVELS.length - 1]!;
-              setZoom(next);
-            }}
-            className="flex size-7 items-center justify-center rounded border border-border/60 bg-secondary/40 text-muted-foreground hover:text-foreground"
-            title="Zoom In"
-          >
-            <ZoomIn className="size-3.5" />
-          </button>
-        </div>
-      </div>
-      </div>
-
-      {/* ── Canvas Area ── */}
-      <div
-        ref={containerRef}
-        className="relative flex min-h-[580px] items-center justify-center overflow-auto rounded-2xl border border-border/70 bg-[#070B1A]/80 p-6 shadow-inner"
-      >
-        <div
-          className="relative overflow-hidden rounded-xl shadow-2xl shrink-0"
-          style={{
-            width: canvasDisplayWidth,
-            height: canvasDisplayHeight,
-          }}
-        >
-          <div
-            style={{
-              transform: `scale(${zoom})`,
-              transformOrigin: "top left",
-              width: currentDimensions.width,
-              height: currentDimensions.height,
-            }}
-          >
-            <canvas ref={canvasRef} />
-          </div>
-
-          {/* AI background loading overlay */}
-          {bgLoading && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-xl bg-black/60 backdrop-blur-sm">
-              <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <span className="text-[11px] font-medium text-white/80">Loading AI background…</span>
-            </div>
-          )}
-        </div>
-
-        <div className="pointer-events-none absolute bottom-3 left-4 rounded-md bg-black/75 px-3 py-1.5 text-[11px] font-medium text-slate-300 backdrop-blur-md">
-          💡 Click to select • Click again or double-click to edit text • Hold Space + drag to pan • Ctrl+Z Undo • Ctrl+D Duplicate
-        </div>
-      </div>
-
-      {/* ── Bottom Action Bar ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-        <div className="flex items-center gap-2">
-          {onRegenerateBg && (
-            <button
-              type="button"
-              onClick={() => {
-                setBgSource("ai");
-                onRegenerateBg();
-              }}
-              disabled={isGeneratingBg}
-              className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-secondary/80 px-3.5 py-2 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
-            >
-              <Sparkles className="size-3.5 text-primary" />
-              {isGeneratingBg ? "Regenerating AI Art..." : "Regenerate AI Background"}
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={renderCanvasComposition}
-            title="Reset layout to defaults"
-            className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-transparent px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-          >
-            <RotateCcw className="size-3.5" /> Reset
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleCopyToClipboard}
-            className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-secondary/80 px-3.5 py-2 text-xs font-medium text-foreground transition-all hover:bg-secondary active:scale-95"
-          >
-            {copied ? <Check className="size-3.5 text-emerald-400" /> : <Copy className="size-3.5" />}
-            {copied ? "Copied!" : "Copy Image"}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleDownload}
-            className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground shadow-md transition-all hover:brightness-110 active:scale-95"
-          >
-            <Download className="size-3.5" /> Download PNG
-          </button>
         </div>
       </div>
     </div>

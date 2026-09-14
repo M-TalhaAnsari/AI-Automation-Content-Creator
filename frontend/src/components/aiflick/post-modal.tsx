@@ -188,9 +188,11 @@ export function PostModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogContent
         className="flex h-[98vh] flex-col gap-0 overflow-hidden rounded-3xl border-white/15 bg-[#0B1535]/95 p-0 shadow-2xl backdrop-blur-2xl sm:max-w-7xl xl:max-w-[95vw] text-foreground"
+        onInteractOutside={(e) => e.preventDefault()}
+        onFocusOutside={(e) => e.preventDefault()}
       >
         {/* Modal Header */}
         <DialogHeader className="space-y-2 border-b border-white/10 px-6 pt-4 pb-3 text-left">
