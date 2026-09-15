@@ -14,8 +14,8 @@ from llm.errors import LLMCallFailed, LLMSchemaViolation
 
 logger = logging.getLogger("trendforge.llm")
 
-_MAX_RETRIES = 1
-_BACKOFF_BASE_SECONDS = 1.0
+_MAX_RETRIES = 2
+_BACKOFF_BASE_SECONDS = 2.0
 
 _groq_client: Groq | None = None
 _genai_client: "genai.Client | None" = None
@@ -45,9 +45,32 @@ def _lazy_genai_client() -> "genai.Client":
         api_key = getattr(CONFIG.models, "gemini_api_key", None)
         _genai_client = genai.Client(
             api_key=api_key,
-            http_options=genai_types.HttpOptions(timeout=12000),
+            http_options=genai_types.HttpOptions(timeout=60000),
         )
     return _genai_client
+
+
+def _salvage_groq_failed_generation(exc: Exception) -> str | None:
+    import re
+    # Groq returns error response dict with body
+    body = getattr(exc, "body", None)
+    if not isinstance(body, dict):
+        # Could be an attribute on response
+        resp = getattr(exc, "response", None)
+        if resp and hasattr(resp, "json"):
+            try:
+                body = resp.json()
+            except Exception:
+                body = None
+    if isinstance(body, dict):
+        err = body.get("error", {})
+        if isinstance(err, dict):
+            failed = err.get("failed_generation")
+            if failed and isinstance(failed, str):
+                cleaned = re.sub(r'\*\*\s*("[^"]+")\s*\*\*', r'\1', failed)
+                cleaned = re.sub(r'\*\*\s*("[^"]+")', r'\1', cleaned)
+                return cleaned.strip()
+    return None
 
 
 def call_groq(
@@ -58,15 +81,8 @@ def call_groq(
     tools: list[dict[str, Any]] | None = None,
     temperature: float = 0.0,
     reasoning_effort: str = "low",
+    max_tokens: int | None = None,
 ) -> LLMResult:
-    # FIX: client construction is now wrapped and re-raised as
-    # LLMCallFailed. Previously a construction-time failure (bad api key
-    # format, SDK-internal validation error, etc.) escaped as whatever
-    # raw exception type the SDK produced -- silently breaking this
-    # module's own documented contract that callers only need to catch
-    # (LLMCallFailed, LLMSchemaViolation). Confirmed by test: a caller
-    # using exactly that narrow except clause did not catch a simulated
-    # construction failure before this fix, and does after it.
     try:
         client = _lazy_groq_client()
     except Exception as e:
@@ -83,6 +99,8 @@ def call_groq(
     }
     if tools is not None:
         kwargs["tools"] = tools
+    if max_tokens is not None:
+        kwargs["max_tokens"] = max_tokens
     if schema is not None:
         kwargs["response_format"] = {
             "type": "json_schema",
@@ -92,11 +110,38 @@ def call_groq(
             },
         }
 
-    response, tokens_used = _call_with_retry(
-        lambda: _do_groq_call(client, kwargs), provider="groq"
-    )
+    try:
+        response, tokens_used = _call_with_retry(
+            lambda: _do_groq_call(client, kwargs), provider="groq"
+        )
+        raw_text = response.choices[0].message.content
+    except Exception as e:
+        # 1. Attempt to salvage any near-complete JSON from Groq's failed_generation
+        salvaged = _salvage_groq_failed_generation(e)
+        if salvaged and schema is not None:
+            try:
+                content = _validate(salvaged, schema, provider="groq-salvaged")
+                logger.info("[llm.client] Successfully salvaged Groq failed_generation payload.")
+                return LLMResult(content=content, tokens_used=0, raw_response=salvaged)
+            except Exception:
+                pass
 
-    raw_text = response.choices[0].message.content
+        # 2. If json_schema mode failed, retry once with json_object mode (less strict grammar)
+        if schema is not None and "response_format" in kwargs:
+            logger.warning("[llm.client] Groq json_schema call failed (%s); retrying with response_format={'type': 'json_object'}...", e)
+            kwargs_fallback = dict(kwargs)
+            kwargs_fallback["response_format"] = {"type": "json_object"}
+            try:
+                response, tokens_used = _call_with_retry(
+                    lambda: _do_groq_call(client, kwargs_fallback), provider="groq"
+                )
+                raw_text = response.choices[0].message.content
+                content = _validate(raw_text, schema, provider="groq-json-object", tokens_used=tokens_used)
+                return LLMResult(content=content, tokens_used=tokens_used, raw_response=response)
+            except Exception:
+                pass
+        raise
+
     content: dict[str, Any] | str = (
         _validate(raw_text, schema, provider="groq", tokens_used=tokens_used) if schema is not None else raw_text
     )
@@ -111,7 +156,6 @@ def call_gemini(
     schema: type[BaseModel] | None = None,
     temperature: float = 0.0,
 ) -> LLMResult:
-    # FIX: see call_groq's matching fix note.
     try:
         client = _lazy_genai_client()
     except Exception as e:
@@ -125,9 +169,22 @@ def call_gemini(
         config_kwargs["response_mime_type"] = "application/json"
         config_kwargs["response_schema"] = schema
 
-    response, tokens_used = _call_with_retry(
-        lambda: _do_gemini_call(client, model, user, config_kwargs), provider="gemini"
-    )
+    try:
+        response, tokens_used = _call_with_retry(
+            lambda: _do_gemini_call(client, model, user, config_kwargs), provider="gemini"
+        )
+    except LLMCallFailed as e:
+        # If the requested model failed (e.g. temporary 503/504) and was not gemini-3.6-flash, try gemini-3.6-flash as backup
+        if model != "gemini-3.6-flash":
+            logger.warning("[llm.client] Gemini %s failed (%s); trying fallback model gemini-3.6-flash...", model, e)
+            try:
+                response, tokens_used = _call_with_retry(
+                    lambda: _do_gemini_call(client, "gemini-3.6-flash", user, config_kwargs), provider="gemini"
+                )
+            except Exception:
+                raise e
+        else:
+            raise
 
     raw_text = response.text
     content: dict[str, Any] | str = (
@@ -215,8 +272,19 @@ def _validate(raw_text: str | None, schema: type[BaseModel], provider: str, toke
         )
         exc.tokens_used = tokens_used
         raise exc
+
+    import re
+    cleaned = raw_text.strip()
+    # Strip markdown code blocks e.g. ```json ... ```
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
+        cleaned = re.sub(r"\s*```$", "", cleaned).strip()
+    # Strip accidental bold markers on JSON keys e.g. **"hook"**:
+    cleaned = re.sub(r'\*\*\s*("[^"]+")\s*\*\*', r'\1', cleaned)
+    cleaned = re.sub(r'\*\*\s*("[^"]+")', r'\1', cleaned)
+
     try:
-        validated = schema.model_validate_json(raw_text)
+        validated = schema.model_validate_json(cleaned)
     except ValidationError as e:
         exc = LLMSchemaViolation(
             f"{provider} response failed validation against {schema.__name__}: {e}",

@@ -77,7 +77,7 @@ class ModelConfig:
     groq_model_small: str = os.getenv("GROQ_MODEL_SMALL", "openai/gpt-oss-20b")
     groq_model_large: str = os.getenv("GROQ_MODEL_LARGE", "openai/gpt-oss-120b")
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
-    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+    gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
     routing_temperature: float = 0.0
     generation_temperature: float = 0.85
 

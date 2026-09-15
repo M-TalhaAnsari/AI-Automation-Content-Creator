@@ -33,7 +33,7 @@ from __future__ import annotations
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, field_validator
 
 
 # ─────────────────────────────────────────────────────────────
@@ -91,11 +91,10 @@ class IntentSchema(BaseModel):
 # agents/10_selection_agent.md. No SelectionSchema; see module docstring.
 # ─────────────────────────────────────────────────────────────
 
-# Enforces the "^#" pattern GeneratedPostsSchema's hashtags field needs,
-# replacing the old `t if t.startswith("#") else f"#{t}"` normalization
-# loop in content_generator.py (fix #4). Behavior change worth knowing:
-# a stray non-"#" hashtag used to be silently fixed in code; now it's a
-# hard LLMSchemaViolation on that call, same as any other schema break.
+# Hashtag type kept for schema documentation / JSON-schema generation only.
+# Actual enforcement + normalization is done by PostItem.normalize_hashtags below
+# so that providers (e.g. Groq) that return "softwarearchitecture" instead of
+# "#softwarearchitecture" don't blow up validation — we fix it silently instead.
 Hashtag = Annotated[str, StringConstraints(pattern=r"^#")]
 
 
@@ -114,7 +113,20 @@ class PostItem(BaseModel):
         ),
     )
     caption: str
-    hashtags: list[Hashtag] = Field(default_factory=list)
+    hashtags: list[str] = Field(default_factory=list)
+
+    @field_validator("hashtags", mode="before")
+    @classmethod
+    def normalize_hashtags(cls, v):
+        """Auto-prefix any hashtag that is missing its '#' character.
+        Groq models frequently omit the leading '#' even when the schema
+        description asks for it. Rather than raising LLMSchemaViolation and
+        falling all the way back to the dumb template generator, we fix it here
+        so the rest of the pipeline gets clean data regardless of the provider.
+        """
+        if not isinstance(v, list):
+            return v
+        return [tag if isinstance(tag, str) and tag.startswith("#") else f"#{tag}" for tag in v]
 
 
 class EditSchema(BaseModel):

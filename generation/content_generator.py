@@ -15,35 +15,135 @@ from llm.schemas import GeneratedPostsSchema
 def _build_fallback_posts(state: TrendForgeState) -> list:
     posts = []
     fetched = state.get("fetched_data", {})
-    topic = state.get("core_topic", "trending topics")
+    topic = state.get("core_topic", "trending topics").strip()
+    topic_title = topic.title()
+    clean_tag = "".join(c for c in topic.lower() if c.isalnum()) or "techtrends"
     count = state.get("post_count", 5)
-    n = 0
+    content_intent = state.get("content_intent", "educate")
 
+    # If real fetched items with meaningful descriptions exist and intent is showcase, use them
+    valid_items = []
     for source, items in fetched.items():
         for item in items:
-            if n >= count:
-                break
-            title = item.get("title", item.get("name", f"Item {n+1}"))
-            url = item.get("link", "")
-            desc = item.get("summary", item.get("description", item.get("snippet", "")))
-            title = html.unescape(title).strip()
-            desc = html.unescape(str(desc)).strip()
+            title = item.get("title", item.get("name", "")).strip()
+            desc = item.get("summary", item.get("description", item.get("snippet", ""))).strip()
+            # Ignore search-engine query pages as item titles
+            if title and not title.lower().startswith("tavily deep synthesis") and "search?q=" not in item.get("link", ""):
+                valid_items.append((title, desc, item.get("link", "")))
+
+    if content_intent == "showcase" and len(valid_items) >= count:
+        for idx in range(count):
+            title, desc, link = valid_items[idx]
+            clean_t = html.unescape(title)
+            clean_d = html.unescape(str(desc))
             posts.append({
-                "number": n + 1,
-                "title": title,
-                "hook": f"This {topic} project is changing everything 👇",
+                "number": idx + 1,
+                "title": clean_t[:60],
+                "hook": f"Why {clean_t[:40]} is making waves in {topic}",
                 "summary": [
-                    f"📌 {str(desc)[:80]}" if desc else f"📌 {title}",
-                    "🔗 Check the link for full details",
-                    "⭐ Save this post to revisit later",
+                    f"1. {clean_d[:70]}" if clean_d else f"1. Core feature of {clean_t[:30]}",
+                    f"2. Built for modern {topic} workflows",
+                    "3. Open source & community backed",
                 ],
-                "link": url,
-                "caption": f"🚀 {title}\n\n{str(desc)[:150]}\n\nLink in bio 👆\n\nSave this! 🔖",
-                "hashtags": [f"#{topic.replace(' ', '')}", "#trending", "#fyp", "#viral", "#learnmore"],
+                "link": link,
+                "caption": (
+                    f"Exploring {clean_t} — a standout tool in {topic}.\n\n"
+                    f"{clean_d[:200]}\n\n"
+                    f"Have you worked with {clean_t}? Drop your thoughts below or save this post! 🔖"
+                ),
+                "hashtags": [f"#{clean_tag}", "#tech", "#innovation", "#developers", "#trends"],
             })
-            n += 1
-        if n >= count:
-            break
+        return posts
+
+    # Educational / Conceptual fallback: structured, high-signal carousel breakdown
+    curriculum = [
+        (
+            f"Understanding {topic_title}",
+            f"The foundations you need to master {topic}",
+            [
+                f"1. Core principles of {topic}",
+                "2. Why modern teams care about this",
+                "3. The primary problem it solves",
+            ],
+            (
+                f"Mastering {topic} starts with understanding the core problems it addresses.\n\n"
+                f"Whether building from scratch or scaling an existing system, the choices you make here "
+                f"directly impact delivery speed, maintenance overhead, and scalability.\n\n"
+                f"Save this guide to reference on your next sprint! 🔖"
+            ),
+        ),
+        (
+            f"Key Techniques in {topic_title}",
+            "Different approaches compared for real-world use",
+            [
+                "1. Traditional monolithic patterns",
+                "2. Modern distributed architectures",
+                "3. Hybrid & modular compromises",
+            ],
+            (
+                f"There is no one-size-fits-all approach to {topic}.\n\n"
+                f"From straightforward single-unit structures to decoupled services, every pattern has "
+                f"distinct trade-offs in complexity, reliability, and team autonomy.\n\n"
+                f"Which approach has worked best for your stack?"
+            ),
+        ),
+        (
+            f"Trade-Offs & Complexity",
+            "What you gain vs what you give up",
+            [
+                "1. Operational overhead vs velocity",
+                "2. Debugging & observability challenges",
+                "3. Infrastructure cost considerations",
+            ],
+            (
+                f"Every architectural choice in {topic} comes with trade-offs.\n\n"
+                f"Premature optimization often introduces distributed complexity before team size requires it. "
+                f"Keep your structure as simple as possible until concrete scale demands otherwise.\n\n"
+                f"Double tap if you've experienced this firsthand! 💡"
+            ),
+        ),
+        (
+            f"Best Practices for {topic_title}",
+            "Rules senior engineers follow in production",
+            [
+                "1. Enforce strict domain boundaries",
+                "2. Keep modules decoupled and testable",
+                "3. Prioritize developer onboarding speed",
+            ],
+            (
+                f"Pro tip for {topic}: design with clear boundaries from day one.\n\n"
+                f"Even in a single codebase, keeping modules decoupled allows future migrations to happen "
+                f"seamlessly without painful code rewrites.\n\n"
+                f"Bookmark this checklist for code reviews! 📌"
+            ),
+        ),
+        (
+            f"Decision Framework for {topic_title}",
+            "How to pick the right path for your next project",
+            [
+                "1. Evaluate team size and release velocity",
+                "2. Measure domain & data complexity",
+                "3. Choose the simplest model that scales",
+            ],
+            (
+                f"Still deciding on the right approach to {topic}?\n\n"
+                f"Ask these 3 questions: How big is the team? How fast do we need to ship? What are our scaling bottlenecks?\n\n"
+                f"Which structure are you leaning toward? Comment below! 👇"
+            ),
+        ),
+    ]
+
+    for idx in range(min(count, len(curriculum))):
+        title, hook, summary, caption = curriculum[idx]
+        posts.append({
+            "number": idx + 1,
+            "title": title,
+            "hook": hook,
+            "summary": summary,
+            "link": "",
+            "caption": caption,
+            "hashtags": [f"#{clean_tag}", "#softwarearchitecture", "#codingtips", "#programming", "#techinsights"],
+        })
 
     return posts
 

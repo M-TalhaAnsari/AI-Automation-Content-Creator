@@ -126,6 +126,9 @@ Create {post_count} distinct, platform-ready {platform_name} post cards or carou
     5. **NO MARKDOWN HASHES OR ROBOTIC AI ARTIFACTS:**
        - NEVER use markdown heading markers (`#`, `##`, `###`) or bold stars inside "title", "hook", or "summary". Write pure, clean human text.
        - NEVER use cliché AI filler ("In today's fast-paced digital landscape", "Let's delve in", "Game changer"). Write like an elite human creator.
+    6. **STRICT JSON SYNTAX DISCIPLINE:**
+       - All JSON keys must be plain string literals enclosed in double quotes (e.g. "title", "hook", "summary", "caption").
+       - NEVER put markdown bold asterisks around JSON keys (NEVER write **"hook"**: or **"title"**:). The entire response must be 100% strictly parseable JSON matching the schema.
 
     **REAL SOURCE DATA:**
     {data_block}

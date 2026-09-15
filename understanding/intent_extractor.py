@@ -88,14 +88,18 @@ RULES:
    - news: breaking news, latest updates, announcements, releases
 
 3. search_query: specific, targeted, includes year 2025/2026 and named
-   entities where relevant.
+   entities where relevant. CRITICAL DOMAIN SPECIFICITY: Always include the
+   domain context in search queries. If the topic is in category 'tech' (e.g.
+   "architectural styles", "clean architecture", "design patterns", "microservices"),
+   the query MUST explicitly include "software" or "system" (e.g. "software architectural styles patterns 2025")
+   so web search engines do not mistake tech concepts for physical building architecture or home decor.
 
 4. content_intent: showcase / educate / news / inspire / review
-   - "showcase" = show off projects/tools to audience
-   - "educate" = teach audience how to use something
+   - "educate" = teaching or explaining concepts, architectures, patterns, techniques, methods, comparisons (e.g. monolith vs microservices), tutorials, guides, tips, best practices, or mental models
+   - "showcase" = showing off specific tangible software projects, GitHub repos, apps, gadgets, or tools to an audience (must be concrete tools/repos to showcase, NOT concepts or architectural techniques)
    - "news" = share latest updates/announcements
    - "inspire" = motivate/inspire audience
-   - "review" = give opinion on something
+   - "review" = give opinion or critique on something
 
 5. item_kind — the rule most retries come from. Name what kind of thing
    each item should be ONLY if the user asked for discrete, individually
@@ -257,6 +261,20 @@ class IntentExtractor:
         q2 = llm.get("search_query_2", "")
         q3 = llm.get("search_query_3", "")
         queries = [q for q in [q1, q2, q3] if q]
+
+        # Domain safety guard: if category is tech, ensure queries are not ambiguous for general web search
+        if state.get("detected_category") == "tech":
+            tech_anchors = ("software", "code", "coding", "developer", "system", "programming", "tech", "computing", "api", "ai", "cloud")
+            scoped_queries = []
+            for q in queries:
+                q_low = q.lower()
+                if not any(anchor in q_low for anchor in tech_anchors):
+                    q = f"software {q}"
+                scoped_queries.append(q)
+            queries = scoped_queries
+            if queries:
+                q1 = queries[0]
+
         state["fetch_summary"] = q1
         state["search_queries"] = queries
         add_log(state, f"[IntentExtractor] Search queries generated: {queries}")
