@@ -174,17 +174,22 @@ def call_gemini(
             lambda: _do_gemini_call(client, model, user, config_kwargs), provider="gemini"
         )
     except LLMCallFailed as e:
-        # If the requested model failed (e.g. temporary 503/504) and was not gemini-3.6-flash, try gemini-3.6-flash as backup
-        if model != "gemini-3.6-flash":
-            logger.warning("[llm.client] Gemini %s failed (%s); trying fallback model gemini-3.6-flash...", model, e)
+        fallback_candidates = ["gemini-flash-latest", "gemini-3-flash-preview"]
+        succeeded = False
+        for fallback_model in fallback_candidates:
+            if fallback_model == model:
+                continue
+            logger.warning("[llm.client] Gemini %s failed (%s); trying fallback model %s...", model, e, fallback_model)
             try:
                 response, tokens_used = _call_with_retry(
-                    lambda: _do_gemini_call(client, "gemini-3.6-flash", user, config_kwargs), provider="gemini"
+                    lambda: _do_gemini_call(client, fallback_model, user, config_kwargs), provider="gemini"
                 )
+                succeeded = True
+                break
             except Exception:
-                raise e
-        else:
-            raise
+                continue
+        if not succeeded:
+            raise e
 
     raw_text = response.text
     content: dict[str, Any] | str = (

@@ -154,3 +154,28 @@ class GeneratedPostsSchema(EditSchema):
 class ItemKindCheckSchema(BaseModel):
     mismatched_indices: list[int] = Field(default_factory=list)
     reason: str
+
+
+# ─────────────────────────────────────────────────────────────
+# Conversation Agent Turn Schema
+# ─────────────────────────────────────────────────────────────
+
+class ConversationTurnSchema(BaseModel):
+    action: Literal[
+        "run_new_request",
+        "edit_existing",
+        "generate_more",
+        "undo",
+        "clarify",
+        "add_constraint",
+        "remove_constraint",
+        "targeted_refetch",
+    ]
+    target_posts: list[int] = Field(default_factory=list, description="Target post numbers if action is edit_existing (leave empty for all)")
+    instruction: str = Field(default="", description="Modification instruction if edit_existing")
+    prompt: str = Field(default="", description="New prompt if run_new_request")
+    count: int = Field(default=1, description="Number of additional posts if generate_more")
+    topic_delta: str = Field(default="", description="Refinement if generate_more or targeted_refetch")
+    clarify_question: str = Field(default="", description="Question if clarify")
+    constraint_type: str = Field(default="", description="'exclude' or 'prefer' if constraint action")
+    constraint_value: str = Field(default="", description="Value for constraint action")

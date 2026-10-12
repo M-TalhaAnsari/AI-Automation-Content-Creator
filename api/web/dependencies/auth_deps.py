@@ -44,11 +44,7 @@ async def verify_identity(
 ) -> str:
     """Accepts either a logged-in user (Bearer JWT) or an anonymous guest (X-Anon-Id)."""
     if authorization and authorization.startswith("Bearer "):
-        try:
-            return await verify_jwt(authorization=authorization)
-        except HTTPException:
-            if not x_anon_id:
-                raise
+        return await verify_jwt(authorization=authorization)
 
     if x_anon_id:
         from api.web import anon_trial

@@ -25,25 +25,33 @@ flagging it rather than silently expanding this fix's scope further.
 """
 
 import json
+import logging
+import re
 from Config.config import CONFIG
+from llm.client import call_gemini, call_groq
+from llm.schemas import ConversationTurnSchema
+from llm.errors import LLMCallFailed, LLMSchemaViolation
+
+logger = logging.getLogger("trendforge.orchestration.conversation_agent")
 
 SYSTEM_PROMPT = (
-    "You are TrendForge's conversation assistant. The user is generating "
-    "social media content. Decide, for each message, whether to call a "
-    "tool to modify/refine existing content or preferences, call "
-    "generate_more for ADDITIONAL content on the SAME topic as what's "
-    "already been generated, or call run_new_request for a fresh, "
-    "genuinely UNRELATED content request. Phrases like 'one more', "
-    "'give me another', 'a few more of these' mean generate_more, not "
-    "run_new_request. If genuinely uncertain what the user wants, call "
-    "clarify and ask — do not guess at destructive or content-altering "
-    "actions."
+    "You are TrendForge's conversation assistant. The user is managing social media content.\n\n"
+    "CRITICAL ACTION ROUTING RULES:\n"
+    "1. `edit_existing`: Call this whenever the user wants to edit, update, refine, or ADD sections "
+    "(such as 'add pros and cons', 'add bullet points', 'include takeaways', 'make longer/shorter') "
+    "to the currently generated posts. If the user mentions 'above posts', 'each post', 'all posts', "
+    "or refers to specific post numbers, this is ALWAYS `edit_existing`. NEVER use `run_new_request` for modifications!\n"
+    "2. `generate_more`: Call this when the user wants ADDITIONAL posts on the same general topic "
+    "('one more', 'give me 2 more', 'another post on this').\n"
+    "3. `run_new_request`: ONLY call this when the user introduces a completely NEW, unrelated topic "
+    "(e.g., 'now make posts about fitness', 'let's switch to crypto').\n"
+    "4. If genuinely ambiguous, call `clarify`."
 )
 
 TOOLS = [
     {"type": "function", "function": {
         "name": "run_new_request",
-        "description": "Generate fresh content for a new topic/platform request.",
+        "description": "Generate fresh content for a completely NEW, unrelated topic. NEVER call this when the user refers to existing/above posts.",
         "parameters": {"type": "object", "properties": {
             "prompt": {"type": "string"},
             "platform": {"type": "string", "enum": ["instagram", "youtube", "tiktok", "linkedin", "facebook"]},
@@ -71,14 +79,16 @@ TOOLS = [
     }},
     {"type": "function", "function": {
         "name": "edit_existing",
-        "description": "Modify wording, tone, or length of already-generated posts.",
+        "description": "Modify, expand, refine, or add sections (e.g. 'add pros and cons', 'more bullet points', 'make shorter') to already-generated posts.",
         "parameters": {"type": "object", "properties": {
             "target_posts": {
                 "type": "array", "items": {"type": "integer"},
-                "description": "1-based post numbers to target. Omit this field "
-                                "entirely if the user means ALL current posts.",
+                "description": "1-based post numbers to target (e.g. [1] or [1, 2]). Omit this field entirely if the user means ALL current posts.",
             },
-            "instruction": {"type": "string"},
+            "instruction": {
+                "type": "string",
+                "description": "The exact modification instruction to apply to the post(s).",
+            },
         }, "required": ["instruction"]},
     }},
     {"type": "function", "function": {
@@ -246,8 +256,18 @@ def process_turn(conversation: dict, user_message: str) -> dict:
     conversation.setdefault("message_history", []).append({"role": "user", "content": user_message})
 
     fallback_args = {"prompt": user_message, "platform": conversation.get("last_platform")}
+    posts = conversation.get("last_generated_posts") or []
 
-    if not conversation.get("last_generated_posts"):
+    if not posts:
+        EDIT_INTENT_PATTERN = re.compile(
+            r"\b(above posts?|previous posts?|edit post|change post|update post|for all the above|in all posts?|make them|add .* to (the|all|each) post)\b",
+            re.IGNORECASE,
+        )
+        if EDIT_INTENT_PATTERN.search(user_message):
+            question = "There are no previous posts loaded in this session to edit. Please create a set of posts first, or tell me what topic you'd like to post about!"
+            conversation.setdefault("message_history", []).append({"role": "assistant", "content": question})
+            return {"action": "clarify", "args": {"clarify_question": question}, "tokens_used": 0, "error": None}
+
         return _resolve("run_new_request", fallback_args, conversation, 0)
 
     pending = conversation.get("pending_confirmation")
@@ -275,62 +295,153 @@ def process_turn(conversation: dict, user_message: str) -> dict:
             conversation.setdefault("message_history", []).append({"role": "assistant", "content": cancellation})
             return {"action": "clarify", "args": {"clarify_question": cancellation}, "tokens_used": 0, "error": None}
 
+    # -------------------------------------------------------------
+    # Fast Deterministic Shortcuts (0ms, 0 tokens, no LLM failure)
+    # -------------------------------------------------------------
+    clean_msg = user_message.strip()
+
+    # 1. Edit all posts: "For all the above post add pros and cons...", "All posts: add ...", "In all posts ..."
+    m_all = re.search(
+        r"^(?:for\s+)?(?:all\s+(?:the\s+)?(?:above\s+)?posts?|every\s+post|in\s+all\s+posts?)\s*[,:]?\s*(.+)$",
+        clean_msg,
+        re.IGNORECASE,
+    )
+    if m_all:
+        instruction = m_all.group(1).strip()
+        args = {"target_posts": "all", "instruction": instruction}
+        conversation.setdefault("message_history", []).append({"role": "assistant", "content": "dispatched:edit_existing"})
+        return _resolve("edit_existing", args, conversation, tokens_used=0)
+
+    # 2. Edit single/specific post: "For post 1: ...", "In post 2, ...", "Post 3: ...", "Edit post 1: ..."
+    m_single = re.search(
+        r"^(?:(?:for|in|on|edit|update)\s+)?post\s+(\d+)\s*[,:]?\s*(.+)$",
+        clean_msg,
+        re.IGNORECASE,
+    )
+    if m_single:
+        post_num = int(m_single.group(1))
+        instruction = m_single.group(2).strip()
+        args = {"target_posts": [post_num], "instruction": instruction}
+        conversation.setdefault("message_history", []).append({"role": "assistant", "content": "dispatched:edit_existing"})
+        return _resolve("edit_existing", args, conversation, tokens_used=0)
+
+    # 3. Add section / pros and cons across existing posts: "Add pros and cons to each post", "Add bullet points"
+    m_section = re.search(
+        r"\b(add|include|put)\s+(?:the\s+)?(?:pros\s+and\s+cons|advantages\s+and\s+disadvantages|bullet\s+points?|takeaways?|summary)\b",
+        clean_msg,
+        re.IGNORECASE,
+    )
+    if m_section:
+        args = {"target_posts": "all", "instruction": clean_msg}
+        conversation.setdefault("message_history", []).append({"role": "assistant", "content": "dispatched:edit_existing"})
+        return _resolve("edit_existing", args, conversation, tokens_used=0)
+
+    # 4. Modify style / length across existing posts: "Make them shorter", "Make all posts punchier"
+    m_make = re.search(
+        r"^(?:make\s+(?:them|all\s+posts|the\s+posts|everything)|shorten\s+(?:them|all\s+posts))\s*(.*)$",
+        clean_msg,
+        re.IGNORECASE,
+    )
+    if m_make:
+        args = {"target_posts": "all", "instruction": clean_msg}
+        conversation.setdefault("message_history", []).append({"role": "assistant", "content": "dispatched:edit_existing"})
+        return _resolve("edit_existing", args, conversation, tokens_used=0)
+
+    # 5. Undo
+    if re.match(r"^(?:undo|revert|put it back|go back)\b", clean_msg, re.IGNORECASE):
+        conversation.setdefault("message_history", []).append({"role": "assistant", "content": "dispatched:undo"})
+        return _resolve("undo", {}, conversation, tokens_used=0)
+
+    # -------------------------------------------------------------
+    # LLM Resolution (Gemini with Groq fallback)
+    # -------------------------------------------------------------
     try:
-        from groq import Groq
-        client = Groq(api_key=CONFIG.models.groq_api_key)
         messages = _build_context_messages(conversation, pending_confirmation=pending)
+        system_str = messages[0]["content"] if messages and messages[0].get("role") == "system" else SYSTEM_PROMPT
 
-        response = client.chat.completions.create(
-            model=CONFIG.models.groq_model_large,
-            temperature=0.0,
-            reasoning_effort="low",
-            tools=TOOLS,
-            tool_choice="auto",
-            messages=messages,
-        )
-        tokens_used = getattr(response.usage, "total_tokens", 0) if response.usage else 0
-        choice = response.choices[0].message
-        tool_calls = getattr(choice, "tool_calls", None)
+        history_parts = []
+        for m in messages[1:]:
+            r = m.get("role", "user").upper()
+            c = m.get("content", "")
+            if c:
+                history_parts.append(f"{r}: {c}")
 
-        if not tool_calls:
-            conversation["message_history"].append({"role": "assistant", "content": choice.content or ""})
-            if pending:
-                return _ask_reconfirm(conversation, tokens_used)
-            return _resolve("run_new_request", fallback_args, conversation, tokens_used)
+        user_prompt = ""
+        if history_parts:
+            user_prompt += "RECENT CONVERSATION HISTORY:\n" + "\n".join(history_parts[-8:]) + "\n\n"
+        user_prompt += f"CURRENT USER MESSAGE:\n{user_message}"
 
-        call = tool_calls[0]
-        conversation["message_history"].append({
-            "role": "assistant", "content": choice.content or "",
-            "tool_calls": [{"id": call.id, "type": "function",
-                            "function": {"name": call.function.name, "arguments": call.function.arguments}}],
-        })
-
-        action_name = call.function.name
+        llm_res = None
         try:
-            args = json.loads(call.function.arguments or "{}")
-        except Exception:
+            llm_res = call_gemini(
+                system=system_str,
+                user=user_prompt,
+                model=CONFIG.models.gemini_model,
+                schema=ConversationTurnSchema,
+                temperature=0.0,
+            )
+        except Exception as gemini_err:
+            logger.warning(f"call_gemini turn resolution failed: {gemini_err}. Trying call_groq fallback...")
+            try:
+                llm_res = call_groq(
+                    system=system_str,
+                    user=user_prompt,
+                    model=CONFIG.models.groq_model_large,
+                    schema=ConversationTurnSchema,
+                    temperature=0.0,
+                )
+            except Exception as groq_err:
+                logger.error(f"Both Gemini and Groq failed in conversation_agent: {groq_err}")
+                raise gemini_err
+
+        tokens_used = llm_res.tokens_used if llm_res else 0
+        data = llm_res.content if llm_res and isinstance(llm_res.content, dict) else {}
+        action_name = data.get("action", "run_new_request")
+
+        if action_name == "edit_existing":
+            tp = data.get("target_posts")
+            instr = data.get("instruction") or user_message
+            args = {"target_posts": tp if tp else "all", "instruction": instr}
+        elif action_name == "run_new_request":
+            args = {
+                "prompt": data.get("prompt") or user_message,
+                "platform": conversation.get("last_platform"),
+            }
+        elif action_name == "generate_more":
+            args = {
+                "count": data.get("count", 1),
+                "topic_delta": data.get("topic_delta", ""),
+            }
+        elif action_name == "add_constraint":
+            args = {
+                "constraint_type": data.get("constraint_type", "exclude"),
+                "constraint_value": data.get("constraint_value", ""),
+            }
+        elif action_name == "remove_constraint":
+            args = {
+                "constraint_value": data.get("constraint_value", ""),
+            }
+        elif action_name == "targeted_refetch":
+            args = {
+                "topic_delta": data.get("topic_delta", ""),
+            }
+        elif action_name == "undo":
             args = {}
+        elif action_name == "clarify":
+            args = {
+                "clarify_question": data.get("clarify_question") or "Could you clarify what you'd like to do?",
+            }
+        else:
+            args = fallback_args
+            action_name = "run_new_request"
 
-        if action_name not in VALID_TOOL_NAMES or not isinstance(args, dict):
-            error = f"Invalid tool call: {action_name!r} / {args!r}"
-            if pending:
-                return _ask_reconfirm(conversation, tokens_used, error=error)
-            return _resolve("run_new_request", fallback_args, conversation, tokens_used, error=error)
-
-        conversation["message_history"].append({
-            "role": "tool", "tool_call_id": call.id, "content": f"dispatched:{action_name}",
+        conversation.setdefault("message_history", []).append({
+            "role": "assistant",
+            "content": f"dispatched:{action_name}",
         })
 
         if pending:
             conversation.pop("pending_confirmation", None)
-            # FIX: previously, only "clarify" was special-cased here --
-            # ANY OTHER tool call (e.g. a correctly-resolved `undo` in
-            # response to the user changing their mind) was discarded
-            # and pending["action"] was force-run regardless. Now: only
-            # an exact repeat of the pending action counts as
-            # confirmation. Everything else is dispatched as what the
-            # user actually asked for, via _resolve() -- so a different
-            # destructive action still gets its own confirmation gate.
             if action_name == pending["action"]:
                 return {"action": pending["action"], "args": pending["args"], "tokens_used": tokens_used, "error": None}
             return _resolve(action_name, args, conversation, tokens_used)
@@ -339,6 +450,7 @@ def process_turn(conversation: dict, user_message: str) -> dict:
 
     except Exception as e:
         error = f"Orchestrator call failed: {e}"
+        logger.error(error)
         if pending:
             return _ask_reconfirm(
                 conversation, 0,

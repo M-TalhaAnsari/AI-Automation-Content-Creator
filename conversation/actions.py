@@ -59,12 +59,14 @@ def edit_existing(target_posts, instruction: str, last_generated_posts: List[Dic
     if not last_generated_posts:
         return {"edited_posts": last_generated_posts, "tokens_used": 0, "error": "no_posts_to_edit"}
 
-    if target_posts == "all":
+    if target_posts == "all" or not target_posts:
         indices = list(range(len(last_generated_posts)))
     elif isinstance(target_posts, list):
         indices = [i - 1 for i in target_posts if isinstance(i, int) and 1 <= i <= len(last_generated_posts)]
+        if not indices:
+            indices = list(range(len(last_generated_posts)))
     else:
-        indices = []
+        indices = list(range(len(last_generated_posts)))
 
     if not indices:
         return {"edited_posts": last_generated_posts, "tokens_used": 0, "error": "no_valid_target_posts"}

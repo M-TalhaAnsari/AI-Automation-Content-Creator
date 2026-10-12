@@ -58,6 +58,29 @@ def load_conversation(session_id: str, client_name: str) -> Dict[str, Any]:
         logger.warning("Redis unreachable on load for %s/%s: %s", client_name, session_id, e)
         raw = None
 
+    if raw is None:
+        # Fallback 1: Search Redis for any session matching this exact session_id regardless of client_name prefix
+        try:
+            pattern = f"{KEY_PREFIX}*:{session_id}"
+            for k in _client.keys(pattern):
+                candidate = _client.get(k)
+                if candidate:
+                    try:
+                        cand_data = json.loads(candidate)
+                        if isinstance(cand_data, dict) and cand_data.get("last_generated_posts"):
+                            raw = candidate
+                            logger.info(
+                                "Recovered session %s across client identities (matched %s for %s)",
+                                session_id, k, client_name
+                            )
+                            # Cache under current client_name as well so subsequent lookups are O(1)
+                            _client.set(_key(session_id, client_name), candidate, ex=SESSION_TTL_SECONDS)
+                            break
+                    except Exception:
+                        pass
+        except redis_exceptions.RedisError as e:
+            logger.debug("Redis scan for session %s fallback failed: %s", session_id, e)
+
     if raw is not None:
         try:
             data = json.loads(raw)

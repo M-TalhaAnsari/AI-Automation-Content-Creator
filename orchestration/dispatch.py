@@ -19,6 +19,16 @@ def _snapshot_posts(conversation):
     conversation["post_history"] = history[-MAX_POST_HISTORY:]
 
 
+def _safe_print(text: str) -> None:
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        try:
+            print(text.encode("ascii", errors="replace").decode("ascii"))
+        except Exception:
+            pass
+
+
 def _generate_with_validation(state, verbose=False):
     from generation.content_generator import ContentGenerator
 
@@ -199,10 +209,14 @@ def _handle_edit_existing(args, conversation, verbose):
     _snapshot_posts(conversation)
     conversation["last_generated_posts"] = result["edited_posts"]
 
-    if target_posts != "all" and isinstance(target_posts, list):
+    if target_posts != "all" and isinstance(target_posts, list) and len(target_posts) > 0:
         targeted_indices = [i - 1 for i in target_posts if isinstance(i, int) and 0 <= i - 1 < len(result["edited_posts"])]
-        conversation["last_turn_posts"] = [result["edited_posts"][i] for i in targeted_indices]
-        target_label = f"Post {target_posts[0]}" if len(target_posts) == 1 else f"Posts {', '.join(map(str, target_posts))}"
+        if targeted_indices:
+            conversation["last_turn_posts"] = [result["edited_posts"][i] for i in targeted_indices]
+            target_label = f"Post {target_posts[0]}" if len(target_posts) == 1 else f"Posts {', '.join(map(str, target_posts))}"
+        else:
+            conversation["last_turn_posts"] = result["edited_posts"]
+            target_label = "your posts"
     else:
         conversation["last_turn_posts"] = result["edited_posts"]
         target_label = "your posts"
@@ -215,9 +229,9 @@ def _handle_edit_existing(args, conversation, verbose):
     add_tokens(state, "content_generation", result["tokens_used"])
     state = format_output(state)
     saved_path = save_output(state)
-    print(state["final_output"])
+    _safe_print(state["final_output"])
     if saved_path:
-        print(f"  \U0001f4be Saved to: {saved_path}")
+        _safe_print(f"  Saved to: {saved_path}")
     conversation["last_output"] = (
         f"Updated {target_label} based on: \"{instruction}\"" if instruction else f"Updated {target_label}."
     )
@@ -283,9 +297,9 @@ def _handle_targeted_refetch(args, conversation, verbose):
     _snapshot_posts(conversation)
     state = format_output(state)
     saved_path = save_output(state)
-    print(state["final_output"])
+    _safe_print(state["final_output"])
     if saved_path:
-        print(f"  \U0001f4be Saved to: {saved_path}")
+        _safe_print(f"  Saved to: {saved_path}")
     conversation["last_topic"] = state["core_topic"]
     conversation["last_generated_posts"] = state["generated_posts"]
     conversation["last_output"] = _summarize_for_chat(
