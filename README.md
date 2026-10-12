@@ -1,6 +1,22 @@
-﻿# AIFlick ⚡ — AI-Powered Social Content Creator
+![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi&logoColor=white)
+![LangGraph](https://img.shields.io/badge/LangGraph-multi--agent-1C3C3C)
+
+# AIFlick ⚡ — AI-Powered Social Content Creator
 
 > **Turn any trend, topic, or idea into polished, platform-ready Instagram / LinkedIn / TikTok posts in seconds — with a fully-editable visual canvas, AI background generation, and real-time copy sync.**
+
+## At a glance
+
+| | |
+|---|---|
+| **What it does** | Idea → researched, drafted, and designed social posts, end to end |
+| **Pipeline** | LangGraph multi-agent research (6+ live sources) → up to 10 platform-optimized drafts per request |
+| **Design layer** | Real-time editable Fabric.js canvas, sub-millisecond sidebar↔canvas text sync |
+| **Image pipeline** | Async Redis/RQ job queue across 3 image providers (FLUX/Pollinations, Hugging Face, Imagen) |
+| **Product shape** | 3-tier subscription model (Explorer / Creator / Pro) with per-tier rate limits |
+| **Stack** | React 19 · FastAPI · LangGraph · PostgreSQL · Redis + RQ |
 
 ---
 
@@ -15,11 +31,6 @@ AIFlick is a full-stack AI content creation platform. You describe what you want
 5. **Exports** posts as high-res images ready to upload
 
 ---
-## IMAGES
-![alt text](image.png)
-![alt text](image-1.png)
-![alt text](image-3.png)
-![alt text](image-2.png)
 
 ## 🏗 Tech Stack
 
@@ -38,6 +49,11 @@ AIFlick is a full-stack AI content creation platform. You describe what you want
 | **Deployment** | Docker + docker-compose / Cloudflare Workers (frontend via Nitro) |
 
 ---
+## IMAGES
+![alt text](image.png)
+![alt text](image-1.png)
+![alt text](image-3.png)
+![alt text](image-2.png)
 
 ## 🚀 Quick Start (Local Development)
 
@@ -51,8 +67,8 @@ AIFlick is a full-stack AI content creation platform. You describe what you want
 ### 1 — Clone & configure environment
 
 ```bash
-git clone <your-repo-url>
-cd trendforge
+git clone https://github.com/M-TalhaAnsari/AI-Automation-Content-Creator.git
+cd AI-Automation-Content-Creator
 cp .env.example .env
 # Edit .env with your API keys
 ```
@@ -180,92 +196,6 @@ docker compose logs -f app worker image-worker
 
 ---
 
-## 📦 Frontend Deployment
-
-### Cloudflare Workers (recommended)
-
-```bash
-cd frontend
-npm run build
-npx wrangler deploy
-```
-
-### Vercel / Netlify Static
-
-```bash
-cd frontend && npm run build
-# Deploy .output/public/
-```
-
-### Self-hosted Node SSR
-
-```bash
-cd frontend && npm run build
-node .output/server/index.mjs
-```
-
----
-
-## 🔄 CI/CD — GitHub Actions
-
-Create `.github/workflows/deploy.yml`:
-
-```yaml
-name: CI/CD
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  test-backend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
-      - run: pip install -r requirements.txt
-      - run: python -m pytest tests/ -v
-
-  build-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: cd frontend && npm ci && npm run build
-
-  deploy-api:
-    needs: test-backend
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build Docker image
-        run: docker build -t aiflick-api .
-      - name: Deploy (Fly.io / Railway / Render)
-        run: flyctl deploy --remote-only     # or your deploy command
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-
-  deploy-frontend:
-    needs: build-frontend
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: "20" }
-      - run: cd frontend && npm ci && npm run build
-      - name: Deploy to Cloudflare Workers
-        run: cd frontend && npx wrangler deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-```
-
----
-
 ## 🛡 Security
 
 - **JWT auth** — access tokens (15 min) + refresh tokens (7 days)
@@ -273,7 +203,7 @@ jobs:
 - **SlowAPI rate limiting** — Explorer: 5 RPM, Creator: 60 RPM, Pro: 200 RPM
 - **CORS** — origin whitelist
 - **HTML escaping** — all fetched data sanitized before LLM injection
-- **Prompt safety rules** — no markdown injection, no AI artifact generation
+- **Prompt safety rules** — no markdown injection, no unauthorized artifact generation
 
 ---
 
@@ -309,4 +239,4 @@ npm run format    # Prettier
 
 ---
 
-**AIFlick** — Used by modern creators to go from idea to post in seconds.
+**Author:** Muhammad Talha Ansari — [LinkedIn](https://www.linkedin.com/in/talha-ansari-504312375/) · [GitHub](https://github.com/M-TalhaAnsari)
